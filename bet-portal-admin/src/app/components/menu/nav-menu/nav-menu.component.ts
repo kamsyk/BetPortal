@@ -1,13 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { KsSignUpComponent, KsTextFieldComponent } from 'ks-ag-controls';
 import { MatInputModule } from '@angular/material/input';
+import { KsSignUpComponent } from 'ks-ag-controls';
 
 @Component({
   selector: 'app-nav-menu',
   standalone: true,
-  imports: [MatDialogModule, MatInputModule, KsTextFieldComponent, KsSignUpComponent ],
+  imports: [MatDialogModule, MatInputModule, KsSignUpComponent],
   templateUrl: './nav-menu.component.html',
   styleUrls: ['./nav-menu.component.scss'],
 })
