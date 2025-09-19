@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "MSbLY5nRpa4=",
+  "success": true,
+  "projectFilePath": "D:\\Develop\\CSharpProjects\\BetPortal\\BetPortalWebApi\\BetPortalWebApi\\BetPortalWebApi.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\burtk\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.9\\microsoft.aspnetcore.openapi.9.0.9.nupkg.sha512",
+    "C:\\Users\\burtk\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
+  "logs": []
+}
