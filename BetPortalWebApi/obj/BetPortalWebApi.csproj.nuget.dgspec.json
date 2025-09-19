@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Develop\\CSharpProjects\\BetPortal\\BetPortalWebApi\\BetPortalWebApi\\BetPortalWebApi.csproj": {}
+    "D:\\Develop\\CSharpProjects\\BetPortal\\BetPortalWebApi\\BetPortalWebApi.csproj": {}
   },
   "projects": {
-    "D:\\Develop\\CSharpProjects\\BetPortal\\BetPortalWebApi\\BetPortalWebApi\\BetPortalWebApi.csproj": {
+    "D:\\Develop\\CSharpProjects\\BetPortal\\BetPortalWebApi\\BetPortalWebApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Develop\\CSharpProjects\\BetPortal\\BetPortalWebApi\\BetPortalWebApi\\BetPortalWebApi.csproj",
+        "projectUniqueName": "D:\\Develop\\CSharpProjects\\BetPortal\\BetPortalWebApi\\BetPortalWebApi.csproj",
         "projectName": "BetPortalWebApi",
-        "projectPath": "D:\\Develop\\CSharpProjects\\BetPortal\\BetPortalWebApi\\BetPortalWebApi\\BetPortalWebApi.csproj",
+        "projectPath": "D:\\Develop\\CSharpProjects\\BetPortal\\BetPortalWebApi\\BetPortalWebApi.csproj",
         "packagesPath": "C:\\Users\\burtk\\.nuget\\packages\\",
-        "outputPath": "D:\\Develop\\CSharpProjects\\BetPortal\\BetPortalWebApi\\BetPortalWebApi\\obj\\",
+        "outputPath": "D:\\Develop\\CSharpProjects\\BetPortal\\BetPortalWebApi\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",

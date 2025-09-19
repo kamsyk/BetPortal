@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BetPortalWebApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+70ffca93cec948099e7f4c7a2a1cd28a2164fefe")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b46c8cf7ecf8bcf3b837674758c40fb9dea77887")]
 [assembly: System.Reflection.AssemblyProductAttribute("BetPortalWebApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BetPortalWebApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
