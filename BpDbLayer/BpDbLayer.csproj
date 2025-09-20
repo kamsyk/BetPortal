@@ -7,19 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EditorConfigFiles Remove="D:\Develop\CSharpProjects\BetPortal\BpDbLayer\.editorconfig" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="stylecop.json" />
   </ItemGroup>
 
   <ItemGroup>
     <AdditionalFiles Include="stylecop.json" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="D:\Develop\CSharpProjects\BetPortal\BpDbLayer\.editorconfig" />
   </ItemGroup>
 
   <ItemGroup>
