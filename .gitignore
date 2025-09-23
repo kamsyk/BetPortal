@@ -45,3 +45,4 @@ Thumbs.db
 .vs/
 obj/
 bin/
+BpDbLayer/Secrets/DbSecrets.txt
