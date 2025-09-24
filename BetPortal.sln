@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetPortalWebApi", "BetPorta
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BpDbLayer", "BpDbLayer\BpDbLayer.csproj", "{A7EBCFEE-04B5-4CB0-A928-88B60EF8E0AA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EfDbTool", "EfDbTool\EfDbTool.csproj", "{C9DC2D27-8926-4E35-AB0B-3C0C0EDE6847}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{A7EBCFEE-04B5-4CB0-A928-88B60EF8E0AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7EBCFEE-04B5-4CB0-A928-88B60EF8E0AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7EBCFEE-04B5-4CB0-A928-88B60EF8E0AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9DC2D27-8926-4E35-AB0B-3C0C0EDE6847}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9DC2D27-8926-4E35-AB0B-3C0C0EDE6847}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9DC2D27-8926-4E35-AB0B-3C0C0EDE6847}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9DC2D27-8926-4E35-AB0B-3C0C0EDE6847}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
