@@ -1,28 +1,27 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
-namespace BpDbLayer.Models
+namespace BpDbLayer.Models;
+
+public partial class BpUser
 {
-    public class BpUser
-    {
-        public int Id { get; set; }
+    [Key]
+    public int Id { get; set; }
 
-        [StringLength(40)]
-        public string UserName { get; set; } = null!;
+    public string UserName { get; set; } = null!;
 
-        [StringLength(40)]
-        public string? FirstName { get; set; }
+    public string? FirstName { get; set; }
 
-        [StringLength(40)]
-        public string? Surname { get; set; }
+    public string? Surname { get; set; }
 
-        [StringLength(80)]
-        public string Email { get; set; } = null!;
+    public string Email { get; set; } = null!;
 
-        [StringLength(40)]
-        public string? Password { get; set; }
+    public string? Password { get; set; }
 
-        public DateTime CreatedDate { get; set; }
+    public DateTime CreatedDate { get; set; }
 
-        public DateTime ModifiedDate { get; set; }
-    }
+    public DateTime ModifiedDate { get; set; }
+
+    public virtual ICollection<BpRole> BpRoles { get; set; } = new List<BpRole>();
 }
