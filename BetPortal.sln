@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetPortalWebApi", "BetPorta
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BpDbLayer", "BpDbLayer\BpDbLayer.csproj", "{A7EBCFEE-04B5-4CB0-A928-88B60EF8E0AA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MsSqlServerMigrationUpdate", "MsSqlServerMigrationUpdate\MsSqlServerMigrationUpdate.csproj", "{76C2F9E9-337C-4CE7-926A-79B5A3BED72C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{A7EBCFEE-04B5-4CB0-A928-88B60EF8E0AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7EBCFEE-04B5-4CB0-A928-88B60EF8E0AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7EBCFEE-04B5-4CB0-A928-88B60EF8E0AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76C2F9E9-337C-4CE7-926A-79B5A3BED72C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76C2F9E9-337C-4CE7-926A-79B5A3BED72C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76C2F9E9-337C-4CE7-926A-79B5A3BED72C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76C2F9E9-337C-4CE7-926A-79B5A3BED72C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
