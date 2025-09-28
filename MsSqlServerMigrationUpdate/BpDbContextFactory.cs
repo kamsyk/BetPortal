@@ -6,7 +6,7 @@ namespace MsSqlServerMigrationUpdate
         public BpDbContext CreateDbContext(string[] args) {
             // 1) Jednoduše: natvrdo spojovací řetězec (rychlé pro běh migrací)
             var connectionString =
-                "Server=.;Database=BpDb;Trusted_Connection=True;TrustServerCertificate=True";
+                "Server=localhost;Initial Catalog=BetPortal;Integrated Security=True;TrustServerCertificate=true;";
 
             // 2) Nebo si ho načti z env proměnné:
             // var connectionString = Environment.GetEnvironmentVariable("BPDB_CS") ?? "...fallback...";

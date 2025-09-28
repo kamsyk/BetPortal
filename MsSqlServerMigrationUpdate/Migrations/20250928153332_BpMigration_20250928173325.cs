@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace BpDbLayer.Migrations
+namespace MsSqlServerMigrationUpdate.Migrations
 {
     /// <inheritdoc />
-    public partial class BpMigration_20250926203309 : Migration
+    public partial class BpMigration_20250928173325 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
