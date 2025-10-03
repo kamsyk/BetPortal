@@ -13,6 +13,7 @@ string? dbConnectionString = builder.Configuration.GetConnectionString("BetPorta
 if (string.IsNullOrEmpty(dbConnectionString)) {
     throw new ArgumentNullException(dbConnectionString);
 }
+
 builder.Services.AddDbContext<BpDbContext>((provider, options) => {
     options.UseSqlServer(dbConnectionString, mssqlOptions => mssqlOptions.MigrationsAssembly("DbUpdateMsSql"));
 });
@@ -20,8 +21,7 @@ builder.Services.AddDbContext<BpDbContext>((provider, options) => {
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+if (app.Environment.IsDevelopment()) {
     app.MapOpenApi();
 }
 
