@@ -1,4 +1,4 @@
-﻿namespace BpDbLayer.Models
+﻿namespace BpDbLayer.Models.Interfaces
 {
     internal interface IModified
     {

@@ -10,6 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 string? dbConnectionString = builder.Configuration.GetConnectionString("BetPortalDbConnectionString");
+
 if (string.IsNullOrEmpty(dbConnectionString))
 {
     throw new ArgumentNullException(dbConnectionString);
