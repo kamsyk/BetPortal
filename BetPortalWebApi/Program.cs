@@ -10,18 +10,21 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 string? dbConnectionString = builder.Configuration.GetConnectionString("BetPortalDbConnectionString");
-if (string.IsNullOrEmpty(dbConnectionString)) {
+if (string.IsNullOrEmpty(dbConnectionString))
+{
     throw new ArgumentNullException(dbConnectionString);
 }
 
-builder.Services.AddDbContext<BpDbContext>((provider, options) => {
+builder.Services.AddDbContext<BpDbContext>((provider, options) =>
+{
     options.UseSqlServer(dbConnectionString, mssqlOptions => mssqlOptions.MigrationsAssembly("DbUpdateMsSql"));
 });
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment()) {
+if (app.Environment.IsDevelopment())
+{
     app.MapOpenApi();
 }
 
