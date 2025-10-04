@@ -1,5 +1,4 @@
-﻿using BpDbLayer;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
 namespace DbMigration.MsSql
@@ -8,7 +7,7 @@ namespace DbMigration.MsSql
     {
         public BpDbContext CreateDbContext(string[] args)
         {
-            var connectionString = "";
+            var connectionString = string.Empty;
 
             var options = new DbContextOptionsBuilder<BpDbContext>()
                 .UseSqlServer(connectionString)

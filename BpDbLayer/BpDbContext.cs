@@ -7,5 +7,9 @@ namespace BpDbLayer
         : DbContext(options)
     {
         public DbSet<BpUser> BpUsers { get; set; }
+
+        public DbSet<BpRole> BpRoles { get; set; }
+
+        public DbSet<UserToken> UserTokens { get; set; }
     }
 }
