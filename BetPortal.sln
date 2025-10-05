@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbMigration.MySql", "DbMigration.MySql\DbMigration.MySql.csproj", "{5DD97F47-7E51-4D9D-815F-58B0B872CFDB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{B6B17CE1-ED03-49AB-ABE2-84100B960C26}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B6B17CE1-ED03-49AB-ABE2-84100B960C26}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B6B17CE1-ED03-49AB-ABE2-84100B960C26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DD97F47-7E51-4D9D-815F-58B0B872CFDB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DD97F47-7E51-4D9D-815F-58B0B872CFDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DD97F47-7E51-4D9D-815F-58B0B872CFDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DD97F47-7E51-4D9D-815F-58B0B872CFDB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
