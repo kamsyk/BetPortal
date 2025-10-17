@@ -46,4 +46,4 @@ Thumbs.db
 obj/
 bin/
 BpDbLayer/Secrets/DbSecrets.txt
-/App.Development.config
+App.Development.config
