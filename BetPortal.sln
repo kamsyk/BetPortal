@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36511.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetPortalWebApi", "BetPortalWebApi\BetPortalWebApi.csproj", "{8DCE8639-2D7F-4725-823D-EDAC2CFD55FE}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BpDbLayer", "BpDbLayer\BpDbLayer.csproj", "{A7EBCFEE-04B5-4CB0-A928-88B60EF8E0AA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbMigration.MsSql", "DbMigration.MsSql\DbMigration.MsSql.csproj", "{B6B17CE1-ED03-49AB-ABE2-84100B960C26}"
@@ -17,16 +15,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbMigration.MySql", "DbMigration.MySql\DbMigration.MySql.csproj", "{5DD97F47-7E51-4D9D-815F-58B0B872CFDB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetPortalWebApi", "BetPortalWebApi\BetPortalWebApi.csproj", "{867C9EA5-097F-6047-3B75-5E11BFE27CE4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{8DCE8639-2D7F-4725-823D-EDAC2CFD55FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8DCE8639-2D7F-4725-823D-EDAC2CFD55FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8DCE8639-2D7F-4725-823D-EDAC2CFD55FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8DCE8639-2D7F-4725-823D-EDAC2CFD55FE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A7EBCFEE-04B5-4CB0-A928-88B60EF8E0AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A7EBCFEE-04B5-4CB0-A928-88B60EF8E0AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7EBCFEE-04B5-4CB0-A928-88B60EF8E0AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -39,6 +35,10 @@ Global
 		{5DD97F47-7E51-4D9D-815F-58B0B872CFDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5DD97F47-7E51-4D9D-815F-58B0B872CFDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5DD97F47-7E51-4D9D-815F-58B0B872CFDB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{867C9EA5-097F-6047-3B75-5E11BFE27CE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{867C9EA5-097F-6047-3B75-5E11BFE27CE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{867C9EA5-097F-6047-3B75-5E11BFE27CE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{867C9EA5-097F-6047-3B75-5E11BFE27CE4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
