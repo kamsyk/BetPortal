@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DbMigration.MsSql.Migrations
 {
     [DbContext(typeof(BpDbContext))]
-    [Migration("20251005125820_BpMigration_20251005145811")]
-    partial class BpMigration_20251005145811
+    [Migration("20251017124656_BpMigration_20251017144651")]
+    partial class BpMigration_20251017144651
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

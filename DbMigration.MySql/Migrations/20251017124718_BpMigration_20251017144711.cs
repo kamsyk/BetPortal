@@ -1,3 +1,5 @@
+#pragma warning disable SA1137 // ElementsShouldHaveTheSameIndentation
+#pragma warning disable SA1413 // Use trailing comma in multi-line initializers
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -7,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DbMigration.MySql.Migrations
 {
     /// <inheritdoc />
-    public partial class BpMigration_20251005173343 : Migration
+    public partial class BpMigration_20251017144711 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -7,7 +7,7 @@ namespace DbMigration.MySql
     {
         public BpDbContext CreateDbContext(string[] args)
         {
-            var connectionString = "server=localhost;port=3306;database=betportal;user=root;password=yourpassword;";
+            var connectionString = "server=localhost;port=3306;database=betportal;user=root;password=;";
 
             var options = new DbContextOptionsBuilder<BpDbContext>()
                 .UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 21)))
