@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using System.Configuration;
 
 namespace DbMigration.MySql
 {
@@ -7,7 +8,7 @@ namespace DbMigration.MySql
     {
         public BpDbContext CreateDbContext(string[] args)
         {
-            var connectionString = "server=localhost;port=3306;database=betportal;user=root;password=;";
+            var connectionString = ConfigurationManager.ConnectionStrings["MySqlConnectionString"]?.ConnectionString;
 
             var options = new DbContextOptionsBuilder<BpDbContext>()
                 .UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 21)))
