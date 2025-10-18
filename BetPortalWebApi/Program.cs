@@ -1,4 +1,6 @@
 using System.Text;
+using BetPortalWebApi.Services;
+using BetPortalWebApi.Services.Interfaces;
 using BpDbLayer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -33,13 +35,10 @@ builder.Services.AddSwaggerGen(o =>
     });
 });
 
-// Register your user service (demo in-memory; replace with real one when ready)
-builder.Services.AddSingleton<IUserService, InMemoryUserService>();
-
+builder.Services.AddSingleton<IUserService, UserService>();
 
 // Bind JwtOptions used by AuthController
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
-
 
 // JWT auth
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
@@ -66,7 +65,6 @@ builder.Services
             ClockSkew = TimeSpan.FromMinutes(1),
         };
     });
-
 
 builder.Services.AddAuthorization();
 

@@ -42,6 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\KsAuthentication\KsAuthentication\KsAuthentication.csproj" />
     <ProjectReference Include="..\BpDbLayer\BpDbLayer.csproj" />
   </ItemGroup>
 
