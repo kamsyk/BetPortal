@@ -1,9 +1,10 @@
 ﻿using BetPortalWebApi.Contracts.User;
+using KsAuthentication.Contracts;
 
 namespace BetPortalWebApi.Services.Interfaces
 {
     public interface IUserService
     {
-        Task<BpUserDto?> ValidateCredentialsAsync(string email, string password);
+        Task<JwtUser?> ValidateCredentialsAsync(string email, string password);
     }
 }

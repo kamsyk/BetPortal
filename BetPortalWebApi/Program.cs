@@ -2,6 +2,7 @@ using System.Text;
 using BetPortalWebApi.Services;
 using BetPortalWebApi.Services.Interfaces;
 using BpDbLayer;
+using KsAuthentication.Jwt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -101,12 +102,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-// Options type used by AuthController
-public sealed class JwtOptions
-{
-    public string Key { get; set; } = "";
-    public string Issuer { get; set; } = "";
-    public string Audience { get; set; } = "";
-    public int ExpireMinutes { get; set; } = 60;
-}
