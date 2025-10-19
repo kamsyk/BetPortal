@@ -7,7 +7,7 @@ import { KsSignUpComponent } from 'ks-ag-controls';
 @Component({
   selector: 'app-nav-menu',
   standalone: true,
-  imports: [MatDialogModule, MatInputModule, KsSignUpComponent],
+  imports: [MatDialogModule, MatInputModule],
   templateUrl: './nav-menu.component.html',
   styleUrls: ['./nav-menu.component.scss'],
 })
