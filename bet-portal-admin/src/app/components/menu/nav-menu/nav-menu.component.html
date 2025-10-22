@@ -21,7 +21,14 @@
           <a class="nav-link" routerLink="/contact">Contact</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" (click)="signUp()">Login</a>
+          <a
+            class="nav-link"
+            (click)="signUp()"
+            (keyup.enter)="signUp()"
+            tabindex="0"
+            role="button"
+            >Login</a
+          >
         </li>
       </ul>
     </div>
