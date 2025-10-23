@@ -12,6 +12,8 @@ import {
   withInterceptors,
 } from '@angular/common/http';
 import { authInterceptor } from './auth/auth.interceptor';
+import { environment } from '../environments/environment';
+import { API_BASE_URL } from '../core/tokens';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -19,5 +21,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideClientHydration(withEventReplay()),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    { provide: API_BASE_URL, useValue: environment.apiUrl },
   ],
 };
