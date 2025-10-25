@@ -24,7 +24,7 @@
     "@angular/router": "^20.2.4",
     "@angular/ssr": "^20.2.2",
     "bootstrap": "^5.3.8",
-    "express": "^4.18.2",
+    "express": "^5.1.0",
     "ks-ag-controls": "file:../../../Angular/ks-ag-controls/ks-ag-controls-workspace/dist/ks-ag-controls/ks-ag-controls-0.0.6.tgz",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
