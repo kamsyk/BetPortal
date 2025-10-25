@@ -1,4 +1,5 @@
 <lib-ks-login
   [loginUrl]="loginUrl()"
   [redirectUrl]="redirectUrl()"
+  (loginSuccess)="onLoginSuccess($event)"
 ></lib-ks-login>
