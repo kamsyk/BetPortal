@@ -39,8 +39,9 @@ app.use(
 
 /**
  * Handle all other requests by rendering the Angular application.
+ * Use a simple middleware (no path pattern) to avoid path-to-regexp errors.
  */
-app.use('/**', (req, res, next) => {
+app.use((req, res, next) => {
   angularApp
     .handle(req)
     .then((response) =>
