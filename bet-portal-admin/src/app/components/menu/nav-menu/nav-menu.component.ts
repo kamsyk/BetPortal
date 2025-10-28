@@ -2,7 +2,8 @@ import { Component, inject } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
-import { KsSignUpComponent } from 'ks-ag-controls';
+import { AuthService } from 'ks-ag-controls';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-nav-menu',
@@ -12,6 +13,9 @@ import { KsSignUpComponent } from 'ks-ag-controls';
   styleUrls: ['./nav-menu.component.scss'],
 })
 export class NavMenuComponent {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
   isMobile = false;
 
   private breakpointObserver = inject(BreakpointObserver);
@@ -25,8 +29,8 @@ export class NavMenuComponent {
       });
   }
 
-  signUp() {
-    alert('test');
-    this.dialog.open(KsSignUpComponent);
+  logOut() {
+    this.authService.logout();
+    this.router.navigateByUrl('/login');
   }
 }

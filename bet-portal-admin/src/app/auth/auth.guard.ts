@@ -29,15 +29,15 @@ export const authGuard: CanActivateFn = (_route, state) => {
   //   // return auth.isAuthenticated() ? true : toLogin;
   // }
 console.log('Auth Guard Invoked. Platform:', isPlatformBrowser(platformId) ? 'BROWSER' : 'SSR');
-const allCookies = cookieService.getAll();
-    console.log('[SSR Guard] All cookies:', Object.keys(allCookies));
-    const serverToken = inject(AUTH_SERVER_TOKEN, { optional: true });
-    console.log('[SSR Guard] Token from AUTH_SERVER_TOKEN:', serverToken ? 'EXISTS' : 'NULL');
-const token = cookieService.get('auth_token');
-    console.log('[SSR Guard] Token from SsrCookieService:', token ? 'EXISTS' : 'NULL');
+// const allCookies = cookieService.getAll();
+//     console.log('[SSR Guard] All cookies:', Object.keys(allCookies));
+//     const serverToken = inject(AUTH_SERVER_TOKEN, { optional: true });
+//     console.log('[SSR Guard] Token from AUTH_SERVER_TOKEN:', serverToken ? 'EXISTS' : 'NULL');
+// const token = cookieService.get('auth_token');
+//     console.log('[SSR Guard] Token from SsrCookieService:', token ? 'EXISTS' : 'NULL');
 
 
-  if (!isPlatformBrowser(platformId) || 1 == 1) {
+  if (!isPlatformBrowser(platformId)) {
     console.log('[SSR Guard] Checking authentication');
 
     // Check via SsrCookieService
@@ -52,7 +52,11 @@ const token = cookieService.get('auth_token');
     const allCookies = cookieService.getAll();
     console.log('[SSR Guard] All cookies:', Object.keys(allCookies));
 
-    if (token || serverToken || allCookies) return true;
+    console.log('[SSR Guard] Authentication result:', (token || serverToken) ? 'AUTHENTICATED' : 'NOT AUTHENTICATED');
+
+    if (token || serverToken) return true;
+
+    console.log('Login url:', toLogin);
     return toLogin;
   }
 
