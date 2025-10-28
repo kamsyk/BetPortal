@@ -37,7 +37,7 @@ const token = cookieService.get('auth_token');
     console.log('[SSR Guard] Token from SsrCookieService:', token ? 'EXISTS' : 'NULL');
 
 
-  if (!isPlatformBrowser(platformId)) {
+  if (!isPlatformBrowser(platformId) || 1 == 1) {
     console.log('[SSR Guard] Checking authentication');
 
     // Check via SsrCookieService
