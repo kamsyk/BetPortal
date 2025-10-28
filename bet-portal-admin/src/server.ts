@@ -37,16 +37,39 @@ app.use(
   }),
 );
 
+//TODO: KSY Fix global request usage in auth.guard.ts
+
 /**
  * Handle all other requests by rendering the Angular application.
  */
+// app.use((req, res, next) => {
+//   angularApp
+//     .handle(req)
+//     .then((response) =>
+//       response ? writeResponseToNodeResponse(response, res) : next(),
+//     )
+//     .catch(next);
+// });
+
 app.use((req, res, next) => {
+  console.log(`[Express] ${req.method} ${req.url}`);
+  console.log('[Express] Cookie header:', req.headers.cookie || 'NO COOKIES');
+
+  // Store request in global for Angular guards to access
+  (global as any).__request__ = req;
+
   angularApp
     .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
-    .catch(next);
+    .then((response) => {
+      // Clear the global request after handling
+      delete (global as any).__request__;
+      return response ? writeResponseToNodeResponse(response, res) : next();
+    })
+    .catch((error) => {
+      // Clear the global request on error too
+      delete (global as any).__request__;
+      next(error);
+    });
 });
 
 /**
