@@ -8,11 +8,16 @@ import express from 'express';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+
 const serverDistFolder = dirname(fileURLToPath(import.meta.url));
 const browserDistFolder = resolve(serverDistFolder, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
+
+interface GlobalWithRequest {
+  __request__?: express.Request;
+}
 
 /**
  * Example Express Rest API endpoints can be defined here.
@@ -56,18 +61,18 @@ app.use((req, res, next) => {
   console.log('[Express] Cookie header:', req.headers.cookie || 'NO COOKIES');
 
   // Store request in global for Angular guards to access
-  (global as any).__request__ = req;
+ (globalThis as unknown as GlobalWithRequest).__request__ = req;
 
   angularApp
     .handle(req)
     .then((response) => {
       // Clear the global request after handling
-      delete (global as any).__request__;
+      delete (globalThis as unknown as GlobalWithRequest).__request__;
       return response ? writeResponseToNodeResponse(response, res) : next();
     })
     .catch((error) => {
       // Clear the global request on error too
-      delete (global as any).__request__;
+      delete (globalThis as unknown as GlobalWithRequest).__request__;
       next(error);
     });
 });
