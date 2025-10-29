@@ -13,24 +13,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/home/home.component').then((m) => m.HomeComponent),
   },
+  {
+    path: 'sports-list',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/sports/sports-list/sports-list.component').then((m) => m.SportsListComponent),
+  },
   { path: '**', redirectTo: '' },
 ];
-
-/*
-export const routes: Routes = [
-  {
-    path: '',
-    canActivate: [authGuard],
-    children: [
-      {
-        path: '',
-        pathMatch: 'full',
-        loadComponent: () =>
-          import('./pages/home/home.component').then(m => m.HomeComponent),
-      },
-      { path: '**', redirectTo: '' },
-    ],
-  },
-];
-//export const routes: Routes = [];
-*/
