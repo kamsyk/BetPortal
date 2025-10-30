@@ -4,6 +4,8 @@ import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from 'ks-ag-controls';
 import { SsrCookieService } from 'ngx-cookie-service-ssr';
 import { AUTH_SERVER_TOKEN } from '../../core/tokens';
+import { catchError } from 'rxjs/internal/operators/catchError';
+import { map, of } from 'rxjs';
 
 interface GlobalWithRequest {
   __request__?: {
@@ -62,72 +64,49 @@ function getCookieOnServer(name: string): string | null {
 }
 
 export const authGuard: CanActivateFn = (_route, state) => {
-  const auth = inject(AuthService);
+  // const auth = inject(AuthService);
+  // const router = inject(Router);
+  // const platformId = inject(PLATFORM_ID);
+  // const cookieService = inject(SsrCookieService);
+
+  // const toLogin = router.createUrlTree(['/login'], {
+  //   queryParams: { returnUrl: state.url || '/' },
+  // });
+
+  // //console.log('Auth Guard Invoked. Platform:', isPlatformBrowser(platformId) ? 'BROWSER' : 'SSR');
+  // //console.log('Auth Guard Invoked. Platform:', isPlatformBrowser(platformId) ? 'BROWSER' : 'SSR');
+
+  // if (!isPlatformBrowser(platformId)) {
+  //   console.log('[SSR Guard] Checking authentication');
+
+  //   const token = getCookieOnServer('auth_token');
+  //   if (token) return true;
+  // }
+
+
+  // const tokenBrowser = cookieService.get('auth_token');
+  // if (tokenBrowser) return true;
+
+  // console.log('Login url:', toLogin);
+  // return toLogin;
+
+  const authService = inject(AuthService);
   const router = inject(Router);
   const platformId = inject(PLATFORM_ID);
-  const cookieService = inject(SsrCookieService);
 
   const toLogin = router.createUrlTree(['/login'], {
     queryParams: { returnUrl: state.url || '/' },
   });
 
-  // // SSR-safe: no dialogs; just redirect
-  // if (!isPlatformBrowser(platformId)) {
-  //   //return true;
-
-  //   const token = cookieService.get('auth_token');
-  //    if(token) return true;
-
-  //   const serverToken = inject(AUTH_SERVER_TOKEN, { optional: true });
-  //   return serverToken ? true : toLogin;
-
-  //   // Uncomment below to enforce auth on SSR too
-  //   // return auth.isAuthenticated() ? true : toLogin;
-  // }
-console.log('Auth Guard Invoked. Platform:', isPlatformBrowser(platformId) ? 'BROWSER' : 'SSR');
-// const allCookies = cookieService.getAll();
-//     console.log('[SSR Guard] All cookies:', Object.keys(allCookies));
-//     const serverToken = inject(AUTH_SERVER_TOKEN, { optional: true });
-//     console.log('[SSR Guard] Token from AUTH_SERVER_TOKEN:', serverToken ? 'EXISTS' : 'NULL');
-// const token = cookieService.get('auth_token');
-//     console.log('[SSR Guard] Token from SsrCookieService:', token ? 'EXISTS' : 'NULL');
-
-
+  // SSR: Allow all (session validation happens on server)
   if (!isPlatformBrowser(platformId)) {
-    console.log('[SSR Guard] Checking authentication');
-
-    const token = getCookieOnServer('auth_token');
-    //console.log('[SSR Guard] Manual cookie parse result:', token ? 'EXISTS' : 'NULL');
-
-
-    // // Check via SsrCookieService
-    // const token = cookieService.get('auth_token');
-    // console.log('[SSR Guard] Token from SsrCookieService:', token ? 'EXISTS' : 'NULL');
-
-    // // Check via AUTH_SERVER_TOKEN
-    // const serverToken = inject(AUTH_SERVER_TOKEN, { optional: true });
-    // console.log('[SSR Guard] Token from AUTH_SERVER_TOKEN:', serverToken ? 'EXISTS' : 'NULL');
-
-    // // Check all cookies
-    // const allCookies = cookieService.getAll();
-    // console.log('[SSR Guard] All cookies:', Object.keys(allCookies));
-
-    // console.log('[SSR Guard] Authentication result:', (token || serverToken) ? 'AUTHENTICATED' : 'NOT AUTHENTICATED');
-
-   // if (token || serverToken) return true;
-
-   if (token) return true;
-
-
-
+    console.log('[SSR Guard] Allowing access - session validated by server');
+    return true;
   }
 
-  // Browser: if not authenticated, redirect
-  //return auth.isAuthenticated() ? true : toLogin;
-
-  const tokenBrowser = cookieService.get('auth_token');
-  if (tokenBrowser) return true;
-
-  console.log('Login url:', toLogin);
-  return toLogin;
+  // Browser: Validate session with server
+  return authService.validateSession().pipe(
+    map(isValid => isValid ? true : toLogin),
+    catchError(() => of(toLogin))
+  );
 };

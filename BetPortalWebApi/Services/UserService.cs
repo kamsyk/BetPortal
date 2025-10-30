@@ -6,7 +6,7 @@ namespace BetPortalWebApi.Services
 {
     public class UserService : BpBaseService, IUserService
     {
-        private static readonly JwtUser Demo = new ()
+        public static readonly JwtUser Demo = new ()
         {
             UserName = "test",
             Email = "test@local",
@@ -21,6 +21,11 @@ namespace BetPortalWebApi.Services
             }
 
             return Task.FromResult<JwtUser?>(null);
+        }
+
+        public Task<JwtUser?> GetByIdAsync(Guid userId)
+        {
+           return Task.FromResult<JwtUser?>(Demo);
         }
     }
 }

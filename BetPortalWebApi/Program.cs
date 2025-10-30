@@ -37,6 +37,8 @@ builder.Services.AddSwaggerGen(o =>
 });
 
 builder.Services.AddSingleton<IUserService, UserService>();
+builder.Services.AddSingleton<IAuthService, AuthService>();
+builder.Services.AddSingleton<ISessionService, RedisSessionService>();
 
 // Bind JwtOptions used by AuthController
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
