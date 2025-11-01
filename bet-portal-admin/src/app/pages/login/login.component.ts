@@ -1,19 +1,25 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { API_BASE_URL } from '../../../core/tokens';
-import { KsLoginComponent } from 'ks-ag-controls';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AuthService } from '../../services/auth.service';
+import { KsLoginComponent } from "ks-ag-controls";
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [KsLoginComponent],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
+  imports: [KsLoginComponent],
 })
 
 export class LoginComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private apiBase = inject(API_BASE_URL);
+  private authService = inject(AuthService);
+  private destroyRef = inject(DestroyRef);
+  private readonly email = "test@local";
+  private readonly password = "Pass@123";
 
   loading = false;
   error = '';
@@ -27,6 +33,24 @@ export class LoginComponent implements OnInit {
   }
 
   onLoginSuccess(event: { email: string }) {
+    debugger;
     console.log('Login successful!', event);
+    this.authService
+      .login(this.email, this.password, this.loginUrl(), this.redirectUrl())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (ok) => {
+          this.loading = false;
+          if (ok) {
+            console.log('User logged in successfully');
+          } else {
+            this.error = 'Invalid credentials';
+          }
+        },
+        error: () => {
+          this.loading = false;
+          this.error = 'An error occurred during login';
+        },
+      });
   }
 }

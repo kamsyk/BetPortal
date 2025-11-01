@@ -74,7 +74,8 @@
               "buildTarget": "bet-portal-admin:build:production"
             },
             "development": {
-              "buildTarget": "bet-portal-admin:build:development"
+              "buildTarget": "bet-portal-admin:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

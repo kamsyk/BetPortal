@@ -1,11 +1,12 @@
 import { CanActivateFn, Router } from '@angular/router';
 import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { AuthService } from 'ks-ag-controls';
+//import { AuthService } from 'ks-ag-controls';
 import { SsrCookieService } from 'ngx-cookie-service-ssr';
 import { AUTH_SERVER_TOKEN } from '../../core/tokens';
 import { catchError } from 'rxjs/internal/operators/catchError';
 import { map, of } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 
 interface GlobalWithRequest {
   __request__?: {
