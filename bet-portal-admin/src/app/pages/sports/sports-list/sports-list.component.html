@@ -1,1 +1,7 @@
 <p>sports-list works!</p>
+
+<button (click)="testSessionFromCookie()"
+          [disabled]="loading"
+          class="btn btn-primary">
+    {{ loading ? 'Testing...' : 'Test Session From Cookie' }}
+  </button>

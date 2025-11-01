@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using BetPortalWebApi.Services;
 using BetPortalWebApi.Services.Interfaces;
 using BpDbLayer;
@@ -91,17 +91,17 @@ builder.Services.AddCors(options =>
     {
         if (allowedOrigins.Length > 0)
         {
-            policy.WithOrigins(allowedOrigins)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
+            policy.WithOrigins("http://localhost:4200") // ✅ Specific origin, not *
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials(); // ✅ Now this will work
         }
         else
         {
-            // Dev fallback
-            policy.AllowAnyOrigin()
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
+            policy.WithOrigins("http://localhost:4200") // ✅ Specific origin, not *
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials(); // ✅ Now this will work
         }
     });
 });
@@ -118,6 +118,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseAuthentication();
 
 app.UseHttpsRedirection();
 

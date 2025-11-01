@@ -36,5 +36,39 @@ namespace BetPortalWebApi.Controllers
                 TokenType = "Bearer",
             });
         }
+
+        //// TODO: KSY - temp code for testing cookie retrieval
+        [HttpGet("session-from-cookie")]
+        [AllowAnonymous]
+        public IActionResult SessionFromCookie([FromQuery] string name = "auth_token")
+        {
+            if (Request.Cookies.TryGetValue(name, out var value) && !string.IsNullOrWhiteSpace(value))
+            {
+                // Use the cookie value in your logic (e.g., lookup session, etc.)
+                return Ok(new { success = true, name, value });
+            }
+
+            return Unauthorized(new { success = false, message = $"Cookie '{name}' not found or empty." });
+        }
+
+        // Read the Authorization header directly
+        [HttpGet("header-token")]
+        [AllowAnonymous]
+        public IActionResult ReadAuthorizationHeader([FromHeader(Name = "Authorization")] string? authorization)
+        {
+            if (string.IsNullOrWhiteSpace(authorization))
+            {
+                return Unauthorized(new { message = "Missing Authorization header." });
+            }
+
+            const string bearer = "Bearer ";
+            if (authorization.StartsWith(bearer, StringComparison.OrdinalIgnoreCase))
+            {
+                var token = authorization[bearer.Length..].Trim();
+                return Ok(new { scheme = "Bearer", token });
+            }
+
+            return BadRequest(new { message = "Unsupported Authorization scheme." });
+        }
     }
 }
