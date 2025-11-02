@@ -1,6 +1,12 @@
 <p>sports-list works!</p>
 
-<button (click)="testSessionFromCookie()"
+<button (click)="testAuthHeaderFromCookie()"
+          [disabled]="loading"
+          class="btn btn-primary">
+    {{ loading ? 'Testing...' : 'Test Auth Header From Cookie' }}
+  </button>
+
+  <button (click)="testSessionFromCookie()"
           [disabled]="loading"
           class="btn btn-primary">
     {{ loading ? 'Testing...' : 'Test Session From Cookie' }}

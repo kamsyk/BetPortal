@@ -28,7 +28,21 @@ namespace BetPortalWebApi.Controllers
                 return Unauthorized();
             }
 
+            // Set secure HttpOnly cookie
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,                    // No JavaScript access
+                Secure = false,           // HTTPS only (auto-detect)
+                SameSite = SameSiteMode.None,     // CSRF protection
+                MaxAge = TimeSpan.FromDays(7),      // Cookie expiry
+                Path = "/",                         // Available to entire app
+                                                    //// IsEssential = true,                  // GDPR compliance
+            };
+
             (string token, DateTime expiresAt) = JwtToken.CreateJwt(user);
+
+            Response.Cookies.Append("auth_token", token, cookieOptions);
+
             return Ok(new AuthResponse
             {
                 AccessToken = token,

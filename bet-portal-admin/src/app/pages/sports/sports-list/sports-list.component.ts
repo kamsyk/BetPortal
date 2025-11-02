@@ -18,7 +18,7 @@ export class SportsListComponent {
   result: unknown = null;
   error = '';
 
-  testSessionFromCookie() {
+  testAuthHeaderFromCookie() {
     console.log('Testing session from cookie...');
     console.log('API Base URL:', this.apiBase);
     console.log('Full URL:', `${this.apiBase}/auth/session-from-cookie`);
@@ -37,6 +37,35 @@ export class SportsListComponent {
     this.http.get(`${this.apiBase}/auth/header-token`, {
       //withCredentials: true, // Include cookies
       headers: headers
+    }).subscribe({
+      next: (response) => {
+        console.log('✅ Session from cookie success:', response);
+        this.result = response;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('❌ Session from cookie failed:', error);
+        this.error = `${error.status}: ${error.message}`;
+        this.loading = false;
+      }
+    });
+  }
+
+  testSessionFromCookie() {
+    console.log('Testing session from cookie...');
+    console.log('API Base URL:', this.apiBase);
+    console.log('Full URL:', `${this.apiBase}/auth/session-from-cookie`);
+    console.log('Current cookies:', document.cookie);
+
+    this.loading = true;
+    this.result = null;
+    this.error = '';
+
+
+
+    this.http.get(`${this.apiBase}/auth/header-token`, {
+      withCredentials: true, // Include cookies
+      //headers: headers
     }).subscribe({
       next: (response) => {
         console.log('✅ Session from cookie success:', response);
