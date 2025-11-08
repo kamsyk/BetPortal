@@ -1,12 +1,13 @@
-using System.Text;
 using BetPortalWebApi.Services;
 using BetPortalWebApi.Services.Interfaces;
 using BpDbLayer;
 using KsAuthentication.Jwt;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,14 +39,14 @@ builder.Services.AddSwaggerGen(o =>
 
 builder.Services.AddSingleton<IUserService, UserService>();
 
-// Bind JwtOptions used by AuthController
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+//// Bind JwtOptions used by AuthController
+//builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 
-// JWT auth
-var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
-          ?? throw new InvalidOperationException("Jwt configuration is missing.");
+//// JWT auth
+//var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
+//          ?? throw new InvalidOperationException("Jwt configuration is missing.");
 
-builder.Services
+/*builder.Services
     .AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -65,6 +66,21 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
             ClockSkew = TimeSpan.FromMinutes(1),
         };
+    });*/
+
+// Configure Cookie Authentication
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/api/auth/login";
+        options.LogoutPath = "/api/auth/logout";
+        options.AccessDeniedPath = "/api/auth/access-denied";
+        options.Cookie.Name = "AuthCookie";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+        options.SlidingExpiration = true;
     });
 
 builder.Services.AddAuthorization();
@@ -101,7 +117,8 @@ builder.Services.AddCors(options =>
             // Dev fallback
             policy.AllowAnyOrigin()
                   .AllowAnyHeader()
-                  .AllowAnyMethod();
+                  .AllowAnyMethod()
+                  .AllowCredentials();
         }
     });
 });
@@ -119,8 +136,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

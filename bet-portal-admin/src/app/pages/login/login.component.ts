@@ -21,6 +21,7 @@ export class LoginComponent implements OnInit {
   readonly redirectUrl = signal<string>('');
 
   ngOnInit(): void {
+    debugger;
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
     this.redirectUrl.set(returnUrl);
     this.loginUrl.set(`${this.apiBase}/auth/login`);
