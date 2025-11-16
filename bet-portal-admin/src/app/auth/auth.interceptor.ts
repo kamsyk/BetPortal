@@ -1,5 +1,5 @@
 import { HttpInterceptorFn } from '@angular/common/http';
-import { inject, PLATFORM_ID } from '@angular/core';
+import { inject, PLATFORM_ID, REQUEST } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { SsrCookieService } from 'ngx-cookie-service-ssr';
 
@@ -11,17 +11,17 @@ interface GlobalWithRequest {
   };
 }
 
-function getCookieOnServer(name: string): string | null {
+function getCookieOnServer(): string | null {
   //return "fsdfsdsfd";
    try {
      if (typeof window === 'undefined' && typeof global !== 'undefined') {
 
       const req = (global as GlobalWithRequest).__request__;
-      console.log('[getCookieOnServer] Request exists:', !!req);
-      console.log('[getCookieOnServer] Headers exist:', !!(req && req.headers));
-      console.log('[getCookieOnServer] Cookie header:', req?.headers?.cookie || 'NO COOKIE HEADER');
+      // console.log('[getCookieOnServer] Request exists:', !!req);
+      // console.log('[getCookieOnServer] Headers exist:', !!(req && req.headers));
+      // console.log('[getCookieOnServer] Cookie header:', req?.headers?.cookie || 'NO COOKIE HEADER');
 
-      return "fsdfsdsfd";
+      return req?.headers?.cookie || null;
   //     if (req && req.headers && req.headers.cookie) {
   //       return "true";
   //       // const cookies = req.headers.cookie.split(';');
@@ -61,41 +61,43 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
     return next(authReq);
   } else {
-getCookieOnServer('auth_token');
+//       if (typeof window === 'undefined') { // SSR only
+//   const request = inject(REQUEST, { optional: true });
+//   if (request) {
+//     // Forward cookies from the incoming browser request to the API
+//     // const cookies = request.headers.get('cookie');
+//     const cookies = getCookieOnServer();
+//     if (cookies) {
+//       req = req.clone({
+//         setHeaders: { Cookie: cookies },
+//         withCredentials: true
+//       });
+//     }
+//   }
+//   return next(req);
+// }
 
-    console.log('🖥️ [Server] Getting cookies via SsrCookieService');
 
-    const allCookies = cookieService.getAll();
-    console.log('🍪 [Server] All cookies found:', Object.keys(allCookies));
-    console.log('🍪 [Server] Cookie count:', Object.keys(allCookies).length);
 
-    if (Object.keys(allCookies).length > 0) {
-      // ✅ Convert cookies object to cookie header string
-      const cookieString = Object.entries(allCookies)
-        .map(([name, value]) => `${name}=${value}`) // SsrCookieService handles encoding
-        .join('; ');
+      const cookiesString = getCookieOnServer();
 
-      console.log('🍪 [Server] Cookie string length:', cookieString.length);
-      console.log('🍪 [Server] Cookie string preview:', cookieString.substring(0, 100) + '...');
 
-      // Look for specific auth tokens
-      const authToken = allCookies['auth_token'] ||
-                       allCookies['AuthCookie'] ||
-                       allCookies['jwt_token'];
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'Cookie': cookieString // ✅ This is the key - send as string, not object
+        'Cookie': cookiesString ?? '' // ✅ This is the key - send as string, not object
       };
 
-      // If we found an auth token, also add it as Authorization header
-      if (authToken) {
-        console.log('✅ [Server] Auth token found, adding Authorization header');
-        headers['Authorization'] = `Bearer ${authToken}`;
-        headers['X-Auth-Token'] = authToken;
-      } else {
-        console.log('❌ [Server] No auth token found in cookies');
-      }
+      console.log('🍪 [Server] All cookies found:', cookiesString);
+
+      // // If we found an auth token, also add it as Authorization header
+      // if (authToken) {
+      //   console.log('✅ [Server] Auth token found, adding Authorization header');
+      //   headers['Authorization'] = `Bearer ${authToken}`;
+      //   headers['X-Auth-Token'] = authToken;
+      // } else {
+      //   console.log('❌ [Server] No auth token found in cookies');
+      // }
 
       const authReq = req.clone({
         setHeaders: headers,
@@ -103,19 +105,19 @@ getCookieOnServer('auth_token');
       });
 
       return next(authReq);
-    } else {
-      console.log('❌ [Server] No cookies found');
+    // } else {
+    //   console.log('❌ [Server] No cookies found');
 
-      // No cookies available
-      const authReq = req.clone({
-        setHeaders: {
-          'Content-Type': 'application/json'
-        },
-        withCredentials: true,
-      });
+    //   // No cookies available
+    //   const authReq = req.clone({
+    //     setHeaders: {
+    //       'Content-Type': 'application/json'
+    //     },
+    //     withCredentials: true,
+    //   });
 
-      return next(authReq);
-    }
+    //   return next(authReq);
+    // }
    // const allCookies = cookieService.getAll();
 
     // const authReq = req.clone({

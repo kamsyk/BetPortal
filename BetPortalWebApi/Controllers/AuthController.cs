@@ -81,6 +81,65 @@ namespace BetPortalWebApi.Controllers
         [HttpGet("check")]
         public async Task<IActionResult> CheckAuth()
         {
+            Console.WriteLine("=== COOKIE AUTHENTICATION DEBUG ===");
+            Console.WriteLine($"Request Scheme: {Request.Scheme}");
+            Console.WriteLine($"Request Host: {Request.Host}");
+            Console.WriteLine($"Request Path: {Request.Path}");
+
+            // Log all cookies
+            Console.WriteLine("All Cookies:");
+            foreach (var cookie in Request.Cookies)
+            {
+                Console.WriteLine($"  {cookie.Key}: {cookie.Value?.Substring(0, Math.Min(50, cookie.Value.Length))}...");
+            }
+
+            // Log all headers
+            Console.WriteLine("Cookie Header:");
+            if (Request.Headers.ContainsKey("Cookie"))
+            {
+                var cookieHeader = Request.Headers["Cookie"].ToString();
+                Console.WriteLine($"  Raw: {cookieHeader?.Substring(0, Math.Min(100, cookieHeader.Length))}...");
+            }
+            else
+            {
+                Console.WriteLine("  No Cookie header found");
+            }
+
+            // Try authentication and log detailed result
+            Console.WriteLine("\n=== AUTHENTICATION ATTEMPT ===");
+            var result1 = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            Console.WriteLine($"Authentication Succeeded: {result1.Succeeded}");
+            if (result1.Failure != null)
+            {
+                Console.WriteLine($"Authentication Failure: {result1.Failure.Message}");
+                Console.WriteLine($"Failure StackTrace: {result1.Failure.StackTrace}");
+            }
+
+            /* Request.Cookies.TryGetValue("AuthToken", out string? authToken);
+             if (!string.IsNullOrEmpty(authToken))
+             {
+                 //// TODO: Implement your token validation logic here
+                 //// For example, lookup in database, validate JWT, etc.
+                 //var isValid = await ValidateAuthToken(authToken);
+
+                 ////if (isValid)
+                 {
+                     // Token is valid - you can extract user info from it
+                     var userId = ExtractUserIdFromToken(authToken);
+                     var userName = ExtractUserNameFromToken(authToken);
+
+                     return Ok(new
+                     {
+                         isAuthenticated = true,
+                         authenticated = true,
+                         userId = userId,
+                         name = userName,
+                     });
+                 }
+             }*/
+
+
             var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             if (!result.Succeeded || result.Principal is null)
             {
