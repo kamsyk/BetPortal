@@ -1,20 +1,11 @@
 using BetPortalWebApi.Services;
 using BetPortalWebApi.Services.Interfaces;
 using BpDbLayer;
-using KsAuthentication.Jwt;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
-/*builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "dp-keys")))
-    .SetApplicationName("BetPortal"); // Must be consistent across all instances*/
 
 builder.Services.AddControllers();
 
@@ -43,35 +34,6 @@ builder.Services.AddSwaggerGen(o =>
 });
 
 builder.Services.AddSingleton<IUserService, UserService>();
-
-//// Bind JwtOptions used by AuthController
-//builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
-
-//// JWT auth
-//var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
-//          ?? throw new InvalidOperationException("Jwt configuration is missing.");
-
-/*builder.Services
-    .AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        options.RequireHttpsMetadata = true;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwt.Issuer,
-            ValidAudience = jwt.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
-            ClockSkew = TimeSpan.FromMinutes(1),
-        };
-    });*/
 
 // Configure Cookie Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
