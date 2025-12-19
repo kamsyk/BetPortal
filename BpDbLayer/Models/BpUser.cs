@@ -19,6 +19,8 @@ public partial class BpUser
 
     public string? Password { get; set; }
 
+    public bool IsActive { get; set; } = true;
+
     public DateTime CreatedDate { get; set; }
 
     public DateTime ModifiedDate { get; set; }

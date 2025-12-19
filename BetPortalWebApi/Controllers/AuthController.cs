@@ -1,8 +1,10 @@
 ﻿using System.Security.Claims;
+using BpDbLayer;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace BetPortalWebApi.Controllers
 {
@@ -10,9 +12,13 @@ namespace BetPortalWebApi.Controllers
     [Route("api/[controller]")]
     public class AuthController() : BpBaseController
     {
+        private readonly BpDbContext? _dbContext;
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
+            var user = await _dbContext?.BpUsers
+                    .FirstOrDefaultAsync(u => u.UserName == request.Username && u.IsActive);
             // In a real application, you would validate against a database
             if (request.Username == "demo@demo" && request.Password == "password")
             {
