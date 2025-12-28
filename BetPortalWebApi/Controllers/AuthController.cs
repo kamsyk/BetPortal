@@ -10,9 +10,14 @@ namespace BetPortalWebApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController() : BpBaseController
+    public class AuthController : BpBaseController
     {
         private readonly BpDbContext? _dbContext;
+
+        public AuthController(BpDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)

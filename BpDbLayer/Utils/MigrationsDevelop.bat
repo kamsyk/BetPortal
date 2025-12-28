@@ -13,7 +13,7 @@ REM   - BetPortal.MsSql.Development connection string must be configured
 REM ============================================================================
 
 REM Configuration
-set "TOOL_PATH=D:\Develop\CSharpProjects\EfDbTool\bin\Debug\net9.0"
+set "TOOL_PATH=<your path to folder with EfDbTool.exe>"
 set "TOOL_EXE=EfDbTool.exe"
 set "CONNECTION_NAME=BetPortal.MsSql.Development"
 set "MIGRATION_MODE=Migrations"

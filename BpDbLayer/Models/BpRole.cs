@@ -11,5 +11,11 @@ public partial class BpRole
 
     public string RoleName { get; set; } = null!;
 
+    public string Description { get; set; } = null!;
+
+    public DateTime CreatedDate { get; set; }
+
+    public DateTime ModifiedDate { get; set; }
+
     public virtual ICollection<BpUser> BpUsers { get; set; } = new List<BpUser>();
 }
