@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace BpDbLayer.Models;
 
@@ -25,5 +23,5 @@ public partial class BpUser
 
     public DateTime ModifiedDate { get; set; }
 
-    public virtual ICollection<BpRole> BpRoles { get; set; } = new List<BpRole>();
+    public virtual ICollection<BpUser_BpRole> BpUser_BpRole { get; set; } = new List<BpUser_BpRole>();
 }

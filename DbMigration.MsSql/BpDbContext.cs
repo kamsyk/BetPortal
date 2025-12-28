@@ -7,7 +7,7 @@ namespace DbMigration.MsSql
     public class BpDbContext(DbContextOptions<BpDbContext> options)
         : DbContext(options)
     {
-        public DbSet<BpUser> BpUsers { get; set; }
+        /*public DbSet<BpUser> BpUsers { get; set; }
 
         public DbSet<BpRole> BpRoles { get; set; }
 
@@ -26,7 +26,8 @@ namespace DbMigration.MsSql
                    FirstName = "System",
                    Surname = "Administrator",
                    IsActive = true,
-                   CreatedDate = DateTime.Now.ToUniversalTime(),
+                   CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                   ModifiedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                });
 
             modelBuilder.Entity<BpRole>().HasData(
@@ -35,8 +36,8 @@ namespace DbMigration.MsSql
                    Id = 1,
                    RoleName = "Administrator",
                    Description = "System Administrator with full access",
-                   CreatedDate = DateTime.Now.ToUniversalTime(),
-                   ModifiedDate = DateTime.Now.ToUniversalTime(),
+                   CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                   ModifiedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                });
 
             modelBuilder.Entity<BpUser>()
@@ -64,6 +65,6 @@ namespace DbMigration.MsSql
                             new { BpUserId = 1, BpRoleId = 1 } // Assign admin user to Administrator role
                         );
                     });
-        }
+        }*/
     }
 }
