@@ -21,7 +21,8 @@ namespace BpDbLayer.Configurations
                     Id = 1,
                     UserName = "admin",
                     Email = "admin@betportal.com",
-                    ////Password = PasswordHasher.HashPassword("admin"),
+                    ////the password is "admin" hashed using Argon2id
+                    Password = "q4vjB17WZRLQ6SvcWmqcNh2FhijuX8F+7lZo2S9c2tLwATTMEN13M8vJ+0oKeIqE",
                     FirstName = "System",
                     Surname = "Administrator",
                     IsActive = true,

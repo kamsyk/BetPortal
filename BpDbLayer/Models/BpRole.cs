@@ -6,7 +6,6 @@ namespace BpDbLayer.Models;
 
 public partial class BpRole
 {
-    [Key]
     public int Id { get; set; }
 
     public string RoleName { get; set; } = null!;

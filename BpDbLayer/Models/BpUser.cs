@@ -4,7 +4,6 @@ namespace BpDbLayer.Models;
 
 public partial class BpUser
 {
-    [Key]
     public int Id { get; set; }
 
     public string UserName { get; set; } = null!;
