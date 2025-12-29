@@ -24,7 +24,7 @@ namespace DbMigration.MsSql
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(BpDbContext).Assembly);
 
-            modelBuilder.Entity<BpUser>().HasData(
+            /*modelBuilder.Entity<BpUser>().HasData(
                new BpUser
                {
                    Id = 1,
@@ -46,7 +46,7 @@ namespace DbMigration.MsSql
                    Description = "System Administrator with full access",
                    CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                    ModifiedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-               });
+               });*/
         }
 
         /*public DbSet<BpUser> BpUsers { get; set; }
