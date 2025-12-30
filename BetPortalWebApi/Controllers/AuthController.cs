@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using BpDbLayer;
+using BpDbLayer.Utils;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -12,7 +13,7 @@ namespace BetPortalWebApi.Controllers
     [Route("api/[controller]")]
     public class AuthController : BpBaseController
     {
-        private readonly BpDbContext? _dbContext;
+        private readonly BpDbContext _dbContext;
 
         public AuthController(BpDbContext dbContext)
         {
@@ -22,10 +23,15 @@ namespace BetPortalWebApi.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            var user = await _dbContext?.BpUsers
-                    .FirstOrDefaultAsync(u => u.UserName == request.Username && u.IsActive);
-            // In a real application, you would validate against a database
-            if (request.Username == "demo@demo" && request.Password == "password")
+            /*if (_dbContext is null)
+            {
+                return StatusCode(500, new { success = false, message = "Database context is not available." });
+            }*/
+
+            var user = await _dbContext.BpUsers.FirstOrDefaultAsync(u => u.UserName == request.Username && u.IsActive);
+            //// In a real application, you would validate against a database
+            //// if (request.Username == "demo@demo" && request.Password == "password")
+            if (user != null && !string.IsNullOrEmpty(user.Password) && PasswordHasher.VerifyPassword(request.Password, user.Password))
             {
                 var claims = new List<Claim>
                 {
