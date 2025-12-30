@@ -2,12 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace BpDbLayer.ModelConfigurations.DataSeed
+namespace BpDbLayer.ModelConfigurations
 {
-    public class UserDataSeed : IEntityTypeConfiguration<BpUser>
+    public class BpUserConfiguration : IEntityTypeConfiguration<BpUser>
     {
-        private const int AdminUserId = 1;
-        private const int AdminRoleId = 1;
+        public const int AdminUserId = 1;
 
         public void Configure(EntityTypeBuilder<BpUser> builder)
         {
@@ -26,26 +25,6 @@ namespace BpDbLayer.ModelConfigurations.DataSeed
                     CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                     ModifiedByUserId = AdminUserId,
                     ModifiedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                });
-
-            builder.HasData(
-                new BpRole
-                {
-                    Id = AdminRoleId,
-                    RoleName = "Admin",
-                    Description = "Administrator role with full permissions",
-                    IsActive = true,
-                    CreatedByUserId = AdminUserId,
-                    CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                    ModifiedByUserId = AdminUserId,
-                    ModifiedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                });
-
-            builder.HasData(
-                new BpUserBpRole
-                {
-                    UserId = AdminUserId,
-                    RoleId = AdminRoleId,
                 });
         }
     }

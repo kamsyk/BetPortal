@@ -20,6 +20,13 @@ namespace BpDbLayer.ModelConfigurations
                 .WithMany(r => r.BpUser_BpRole)
                 .HasForeignKey(ur => ur.RoleId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasData(
+                new BpUserBpRole
+                {
+                    UserId = BpUserConfiguration.AdminUserId,
+                    RoleId = BpRoleConfiguration.AdminRoleId,
+                });
         }
     }
 }

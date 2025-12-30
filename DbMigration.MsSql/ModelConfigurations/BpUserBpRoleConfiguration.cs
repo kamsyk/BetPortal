@@ -2,9 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace BpDbLayer.Configurations
+namespace BpDbLayer.ModelConfigurations
 {
-    public class BpUser_BpRoleConfiguration : IEntityTypeConfiguration<BpUserBpRole>
+    public class BpUserBpRoleConfiguration : IEntityTypeConfiguration<BpUserBpRole>
     {
         public void Configure(EntityTypeBuilder<BpUserBpRole> builder)
         {
@@ -20,6 +20,13 @@ namespace BpDbLayer.Configurations
                 .WithMany(r => r.BpUser_BpRole)
                 .HasForeignKey(ur => ur.RoleId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasData(
+                new BpUserBpRole
+                {
+                    UserId = BpUserConfiguration.AdminUserId,
+                    RoleId = BpRoleConfiguration.AdminRoleId,
+                });
         }
     }
 }
