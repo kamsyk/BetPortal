@@ -1,5 +1,4 @@
 ﻿using BpDbLayer.Models;
-using BpDbLayer.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -27,7 +26,9 @@ namespace BpDbLayer.Configurations
                     Surname = "Administrator",
                     IsActive = true,
                     CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    CreatedByUserId = 1,
                     ModifiedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    ModifiedByUserId = 1,
                 });
         }
     }

@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BpDbLayer.Configurations
 {
-    public class BpUser_BpRoleConfiguration : IEntityTypeConfiguration<BpUser_BpRole>
+    public class BpUser_BpRoleConfiguration : IEntityTypeConfiguration<BpUserBpRole>
     {
-        public void Configure(EntityTypeBuilder<BpUser_BpRole> builder)
+        public void Configure(EntityTypeBuilder<BpUserBpRole> builder)
         {
             builder.HasKey(ur => new { ur.UserId, ur.RoleId });
 

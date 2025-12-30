@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace BpDbLayer.Configurations
+namespace BpDbLayer.ModelConfigurations
 {
     public class BpRoleConfiguration : IEntityTypeConfiguration<BpRole>
     {

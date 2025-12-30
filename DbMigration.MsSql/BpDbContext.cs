@@ -10,7 +10,7 @@ namespace DbMigration.MsSql
 
         public DbSet<BpRole> BpRoles { get; set; }
 
-        public DbSet<BpUser_BpRole> BpUsers_BpRoles { get; set; }
+        public DbSet<BpUserBpRole> BpUsers_BpRoles { get; set; }
 
         public DbSet<UserToken> UserTokens { get; set; }
 
