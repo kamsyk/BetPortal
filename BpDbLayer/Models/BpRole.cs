@@ -16,6 +16,9 @@ public partial class BpRole : ICreatedFields
     public string Description { get; set; } = null!;
 
     [Required]
+    public bool IsActive { get; set; }
+
+    [Required]
     public DateTime CreatedDate { get; set; }
 
     [Required]
