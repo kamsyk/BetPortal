@@ -32,7 +32,15 @@ export class NavMenuComponent {
   }
 
   logOut() {
-    this.tmpAuthService.logout().subscribe({
+    // this.tmpAuthService.logout().subscribe({
+    //   next: (response) => {
+    //     console.log('Logout response:', response);
+    //     //this.authService.logout();
+    //     this.router.navigateByUrl('/login');
+    //   }
+    // });
+
+    this.authService.logout().subscribe({
       next: (response) => {
         console.log('Logout response:', response);
         //this.authService.logout();
