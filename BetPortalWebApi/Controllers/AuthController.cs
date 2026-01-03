@@ -39,6 +39,8 @@ namespace BetPortalWebApi.Controllers
                     new Claim(ClaimTypes.NameIdentifier, "1"),
                     new Claim("FullName", "Demo User"),
                     new Claim("SessionId", Guid.NewGuid().ToString()),
+                    ////TODO: KSY remove it
+                    new Claim("Permission", "AdminAccess"), // <- add this
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

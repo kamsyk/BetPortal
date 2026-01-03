@@ -5,11 +5,18 @@ namespace BetPortalWebApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class SportController : BpBaseController
     {
         [HttpGet("list")]
-        [Authorize]
         public IActionResult GetSportsList()
+        {
+            return Ok();
+        }
+
+        [HttpPost("add")]
+        [Authorize(Policy = "AdminAccess")]
+        public IActionResult AddNew()
         {
             return Ok();
         }
