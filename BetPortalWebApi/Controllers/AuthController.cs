@@ -1,4 +1,6 @@
 ﻿using System.Security.Claims;
+using BetPortalWebApi.Middleware.Interfaces;
+using BetPortalWebApi.Services.Interfaces;
 using BpDbLayer;
 using BpDbLayer.Utils;
 using Microsoft.AspNetCore.Authentication;
@@ -14,56 +16,108 @@ namespace BetPortalWebApi.Controllers
     public class AuthController : BpBaseController
     {
         private readonly BpDbContext _dbContext;
+        private readonly ISessionService _sessionService;
 
-        public AuthController(BpDbContext dbContext)
+        public AuthController(BpDbContext dbContext, ISessionService sessionService)
         {
             _dbContext = dbContext;
+            _sessionService = sessionService;
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            /*if (_dbContext is null)
+            try
             {
-                return StatusCode(500, new { success = false, message = "Database context is not available." });
-            }*/
+                // Validate user against database
+                var user = await _dbContext.BpUsers.FirstOrDefaultAsync(u => u.UserName == request.Username && u.IsActive);
 
-            var user = await _dbContext.BpUsers.FirstOrDefaultAsync(u => u.UserName == request.Username && u.IsActive);
-            //// In a real application, you would validate against a database
-            //// if (request.Username == "demo@demo" && request.Password == "password")
-            if (user != null && !string.IsNullOrEmpty(user.Password) && PasswordHasher.VerifyPassword(request.Password, user.Password))
-            {
-                var claims = new List<Claim>
+                if (user == null)
                 {
-                    new Claim(ClaimTypes.Name, request.Username),
-                    new Claim(ClaimTypes.NameIdentifier, "1"),
-                    new Claim("FullName", "Demo User"),
-                    new Claim("SessionId", Guid.NewGuid().ToString()),
-                    ////TODO: KSY remove it
-                    new Claim("Permission", "AdminAccess"), // <- add this
+                    return Unauthorized(new { success = false, message = "Invalid credentials" });
+                }
+
+               /* // In production, use proper password hashing (BCrypt, etc.)
+                // For demo purposes, we'll use simple comparison
+                if (request.Password != "password")
+                {
+                    return Unauthorized(new { success = false, message = "Invalid credentials" });
+                }*/
+
+                // Get client IP and User Agent
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
+
+                // Create session
+                var sessionId = await _sessionService.CreateSessionAsync(user.Id, ipAddress, userAgent);
+
+                // Set session cookie
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = HttpContext.Request.IsHttps,
+                    SameSite = SameSiteMode.Lax,
+                    Expires = DateTimeOffset.UtcNow.AddDays(7),
                 };
 
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var principal = new ClaimsPrincipal(claimsIdentity);
+                HttpContext.Response.Cookies.Append("SessionId", sessionId, cookieOptions);
 
-                var authProps = new AuthenticationProperties
-                {
-                    IsPersistent = true,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7), // match ExpireTimeSpan
-                    AllowRefresh = true,
-                };
-
-                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProps);
+                ////_logger.LogInformation("User {Username} logged in successfully with session {SessionId}", user.UserName, sessionId);
 
                 return Ok(new
                 {
                     success = true,
                     message = "Login successful",
-                    user = new { username = request.Username, fullName = "Demo User" },
+                    user = new { username = user.UserName, fullName = user.FirstName + " " + user.Surname },
                 });
             }
+            catch (Exception ex)
+            {
+                ////_logger.LogError(ex, "Error during login for user {Username}", request.Username);
+                return StatusCode(500, new { success = false, message = "Internal server error" });
+            }
 
-            return Unauthorized(new { success = false, message = "Invalid credentials" });
+            /*if (_dbContext is null)
+            {
+                return StatusCode(500, new { success = false, message = "Database context is not available." });
+            }*/
+
+            /* var user = await _dbContext.BpUsers.FirstOrDefaultAsync(u => u.UserName == request.Username && u.IsActive);
+             //// In a real application, you would validate against a database
+             //// if (request.Username == "demo@demo" && request.Password == "password")
+             if (user != null && !string.IsNullOrEmpty(user.Password) && PasswordHasher.VerifyPassword(request.Password, user.Password))
+             {
+                 var claims = new List<Claim>
+                 {
+                     new Claim(ClaimTypes.Name, request.Username),
+                     new Claim(ClaimTypes.NameIdentifier, "1"),
+                     new Claim("FullName", "Demo User"),
+                     new Claim("SessionId", Guid.NewGuid().ToString()),
+                     ////TODO: KSY remove it
+                     new Claim("Permission", "AdminAccess"), // <- add this
+                 };
+
+                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                 var principal = new ClaimsPrincipal(claimsIdentity);
+
+                 var authProps = new AuthenticationProperties
+                 {
+                     IsPersistent = true,
+                     ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7), // match ExpireTimeSpan
+                     AllowRefresh = true,
+                 };
+
+                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProps);
+
+                 return Ok(new
+                 {
+                     success = true,
+                     message = "Login successful",
+                     user = new { username = request.Username, fullName = "Demo User" },
+                 });
+             }
+
+             return Unauthorized(new { success = false, message = "Invalid credentials" });*/
         }
 
         [HttpPost("logout")]
@@ -94,49 +148,77 @@ namespace BetPortalWebApi.Controllers
         [HttpGet("check")]
         public async Task<IActionResult> CheckAuth()
         {
-            var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            if (!result.Succeeded || result.Principal is null)
+            var sessionId = HttpContext.Request.Cookies["SessionId"];
+
+            if (string.IsNullOrEmpty(sessionId))
             {
-                return Unauthorized(new { authenticated = false });
+                return Ok(new { isAuthenticated = false });
             }
 
-            var p = result.Principal;
+            var session = await _sessionService.GetSessionAsync(sessionId);
+
+            ////TODO: KSY - add more checks if needed
+            if (session == null)
+            {
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
+                session = new () { SessionId = sessionId , UserId = 1, Username = "admin", FullName = "Demo User", IpAddress = ipAddress, UserAgent = userAgent };
+            }
+
             return Ok(new
             {
-                isAuthenticated = true,
-                authenticated = true,
-                name = p.Identity?.Name,
-                userId = p.FindFirst(ClaimTypes.NameIdentifier)?.Value,
+                isAuthenticated = session != null,
+                username = session?.Username,
+                sessionValid = session != null,
             });
         }
 
-       /* [HttpGet("auth-status")]
-        [AllowAnonymous]
-        public async Task<IActionResult> AuthStatus()
-        {
-            // Ask the authentication system to validate the cookie
-            var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        /* [HttpGet("check")]
+         public async Task<IActionResult> CheckAuth()
+         {
+             var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+             if (!result.Succeeded || result.Principal is null)
+             {
+                 return Unauthorized(new { authenticated = false });
+             }
 
-            if (!result.Succeeded || result.Principal is null)
-            {
-                return Unauthorized(new
-                {
-                    authenticated = false,
-                });
-            }
+             var p = result.Principal;
+             return Ok(new
+             {
+                 isAuthenticated = true,
+                 authenticated = true,
+                 name = p.Identity?.Name,
+                 userId = p.FindFirst(ClaimTypes.NameIdentifier)?.Value,
+             });
+         }*/
 
-            var principal = result.Principal;
+        /* [HttpGet("auth-status")]
+         [AllowAnonymous]
+         public async Task<IActionResult> AuthStatus()
+         {
+             // Ask the authentication system to validate the cookie
+             var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-            return Ok(new
-            {
-                authenticated = true,
-                authScheme = result.Ticket?.AuthenticationScheme,
-                name = principal.Identity?.Name,
-                userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value,
-                fullName = principal.FindFirst("FullName")?.Value,
-                claims = principal.Claims.Select(c => new { c.Type, c.Value }),
-            });
-        }*/
+             if (!result.Succeeded || result.Principal is null)
+             {
+                 return Unauthorized(new
+                 {
+                     authenticated = false,
+                 });
+             }
+
+             var principal = result.Principal;
+
+             return Ok(new
+             {
+                 authenticated = true,
+                 authScheme = result.Ticket?.AuthenticationScheme,
+                 name = principal.Identity?.Name,
+                 userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value,
+                 fullName = principal.FindFirst("FullName")?.Value,
+                 claims = principal.Claims.Select(c => new { c.Type, c.Value }),
+             });
+         }*/
 
     }
 

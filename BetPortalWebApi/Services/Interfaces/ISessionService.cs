@@ -1,4 +1,6 @@
-﻿namespace BetPortalWebApi.Middleware.Interfaces
+﻿using BetPortalWebApi.Middleware;
+
+namespace BetPortalWebApi.Services.Interfaces
 {
     public interface ISessionService
     {

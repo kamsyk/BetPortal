@@ -3,6 +3,7 @@ using BetPortalWebApi.Services.Interfaces;
 using BpDbLayer;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +35,9 @@ builder.Services.AddSwaggerGen(o =>
 });
 
 builder.Services.AddSingleton<IUserService, UserService>();
+builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<IMemoryCache, MemoryCache>();
+
 
 // Configure Cookie Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

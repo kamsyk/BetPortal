@@ -11,13 +11,13 @@ namespace BetPortalWebApi.Middleware
 {
     public class SessionAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
-        private readonly ISessionService _sessionService;
+        private readonly ISessionServiceTmp _sessionService;
 
         public SessionAuthenticationHandler(
             IOptionsMonitor<AuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
-            ISessionService sessionService)
+            ISessionServiceTmp sessionService)
             : base(options, logger, encoder)
         {
             _sessionService = sessionService;
