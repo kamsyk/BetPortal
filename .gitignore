@@ -48,3 +48,5 @@ bin/
 BpDbLayer/Secrets/DbSecrets.txt
 App.Development.config
 appsettings.Development.json
+MigrationsDevelopLocal.bat
+UpdateDevelopLocal.bat

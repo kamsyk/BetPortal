@@ -1,15 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using BpDbLayer.Models.Interfaces;
 
 namespace BpDbLayer.Models;
 
-public partial class BpRole
+public partial class BpRole : ICreatedFields
 {
     [Key]
     public int Id { get; set; }
 
+    [Required]
+    [StringLength(100)]
     public string RoleName { get; set; } = null!;
 
-    public virtual ICollection<BpUser> BpUsers { get; set; } = new List<BpUser>();
+    [StringLength(255)]
+    public string Description { get; set; } = null!;
+
+    [Required]
+    public bool IsActive { get; set; }
+
+    [Required]
+    public DateTime CreatedDate { get; set; }
+
+    [Required]
+    public int CreatedByUserId { get; set; }
+
+    [Required]
+    public DateTime ModifiedDate { get; set; }
+
+    [Required]
+    public int ModifiedByUserId { get; set; }
+
+    public virtual ICollection<BpUserBpRole> BpUser_BpRole { get; set; } = new List<BpUserBpRole>();
 }

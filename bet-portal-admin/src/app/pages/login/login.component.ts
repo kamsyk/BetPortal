@@ -26,7 +26,7 @@ export class LoginComponent implements OnInit {
     this.loginUrl.set(`${this.apiBase}/auth/login`);
   }
 
-  onLoginSuccess(event: { email: string }) {
+  onLoginSuccess(event: { username: string }) {
     console.log('Login successful!', event);
   }
 }

@@ -4,6 +4,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
 import { AuthService } from 'ks-ag-controls';
 import { Router } from '@angular/router';
+import { TmpAuthService } from '../../../services/tmp-auth.service';
 
 @Component({
   selector: 'app-nav-menu',
@@ -15,6 +16,7 @@ import { Router } from '@angular/router';
 export class NavMenuComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private tmpAuthService = inject(TmpAuthService);
 
   isMobile = false;
 
@@ -30,7 +32,20 @@ export class NavMenuComponent {
   }
 
   logOut() {
-    this.authService.logout();
-    this.router.navigateByUrl('/login');
+    // this.tmpAuthService.logout().subscribe({
+    //   next: (response) => {
+    //     console.log('Logout response:', response);
+    //     //this.authService.logout();
+    //     this.router.navigateByUrl('/login');
+    //   }
+    // });
+
+    this.authService.logout().subscribe({
+      next: (response) => {
+        console.log('Logout response:', response);
+        this.authService.logout();
+        this.router.navigateByUrl('/login');
+      }
+    });
   }
 }

@@ -30,13 +30,47 @@ namespace DbMigration.MsSql.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ModifiedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("RoleName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
                     b.ToTable("BpRoles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedByUserId = 1,
+                            CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Administrator role with full permissions",
+                            IsActive = true,
+                            ModifiedByUserId = 1,
+                            ModifiedDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            RoleName = "Admin"
+                        });
                 });
 
             modelBuilder.Entity("BpDbLayer.Models.BpUser", b =>
@@ -47,15 +81,26 @@ namespace DbMigration.MsSql.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("FirstName")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ModifiedByUserId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("ModifiedDate")
                         .HasColumnType("datetime2");
@@ -64,15 +109,55 @@ namespace DbMigration.MsSql.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Surname")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("UserName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
                     b.ToTable("BpUsers");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedByUserId = 1,
+                            CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "admin@betportal.com",
+                            FirstName = "System",
+                            IsActive = true,
+                            ModifiedByUserId = 1,
+                            ModifiedDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Password = "q4vjB17WZRLQ6SvcWmqcNh2FhijuX8F+7lZo2S9c2tLwATTMEN13M8vJ+0oKeIqE",
+                            Surname = "Administrator",
+                            UserName = "admin"
+                        });
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.BpUserBpRole", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("BpUsers_BpRoles");
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = 1,
+                            RoleId = 1
+                        });
                 });
 
             modelBuilder.Entity("BpDbLayer.Models.UserToken", b =>
@@ -93,45 +178,46 @@ namespace DbMigration.MsSql.Migrations
                     b.ToTable("UserTokens");
                 });
 
-            modelBuilder.Entity("BpRoleBpUser", b =>
+            modelBuilder.Entity("BpDbLayer.Models.BpUserBpRole", b =>
                 {
-                    b.Property<int>("BpRolesId")
-                        .HasColumnType("int");
+                    b.HasOne("BpDbLayer.Models.BpRole", "Role")
+                        .WithMany("BpUser_BpRole")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Property<int>("BpUsersId")
-                        .HasColumnType("int");
+                    b.HasOne("BpDbLayer.Models.BpUser", "User")
+                        .WithMany("BpUser_BpRole")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.HasKey("BpRolesId", "BpUsersId");
+                    b.Navigation("Role");
 
-                    b.HasIndex("BpUsersId");
-
-                    b.ToTable("BpRoleBpUser");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("BpDbLayer.Models.UserToken", b =>
                 {
                     b.HasOne("BpDbLayer.Models.BpUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
+                        .WithOne("UserToken")
+                        .HasForeignKey("BpDbLayer.Models.UserToken", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BpRoleBpUser", b =>
+            modelBuilder.Entity("BpDbLayer.Models.BpRole", b =>
                 {
-                    b.HasOne("BpDbLayer.Models.BpRole", null)
-                        .WithMany()
-                        .HasForeignKey("BpRolesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("BpUser_BpRole");
+                });
 
-                    b.HasOne("BpDbLayer.Models.BpUser", null)
-                        .WithMany()
-                        .HasForeignKey("BpUsersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            modelBuilder.Entity("BpDbLayer.Models.BpUser", b =>
+                {
+                    b.Navigation("BpUser_BpRole");
+
+                    b.Navigation("UserToken");
                 });
 #pragma warning restore 612, 618
         }

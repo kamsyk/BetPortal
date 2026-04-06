@@ -1,4 +1,4 @@
-﻿using BpDbLayer.Models;
+using BpDbLayer.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace DbMigration.MsSql
@@ -10,6 +10,15 @@ namespace DbMigration.MsSql
 
         public DbSet<BpRole> BpRoles { get; set; }
 
+        public DbSet<BpUserBpRole> BpUsers_BpRoles { get; set; }
+
         public DbSet<UserToken> UserTokens { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(BpDbContext).Assembly);
+        }
     }
 }
