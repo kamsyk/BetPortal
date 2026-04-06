@@ -180,19 +180,16 @@ namespace BetPortalWebApi.Controllers
 
             var session = await _sessionService.GetSessionAsync(sessionId);
 
-            ////TODO: KSY - add more checks if needed
             if (session == null)
             {
-                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-                var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
-                session = new () { SessionId = sessionId, UserId = 1, Username = "admin", FullName = "Demo User", IpAddress = ipAddress, UserAgent = userAgent };
+                return Ok(new { isAuthenticated = false });
             }
 
             return Ok(new
             {
-                isAuthenticated = session != null,
-                username = session?.Username,
-                sessionValid = session != null,
+                isAuthenticated = true,
+                username = session.Username,
+                sessionValid = true,
             });
         }
 
