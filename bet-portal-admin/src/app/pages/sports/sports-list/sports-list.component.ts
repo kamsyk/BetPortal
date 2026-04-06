@@ -23,9 +23,16 @@ export class SportsListComponent implements OnInit {
   readonly modules = [AllCommunityModule];
 
   readonly columnDefs: ColDef<Sport>[] = [
-    { field: 'id', headerName: 'ID', width: 100, sortable: true },
-    { field: 'name', headerName: 'Sport', flex: 1, sortable: true, filter: true },
-    { field: 'active', headerName: 'Active', width: 120, sortable: true },
+    { field: 'id', headerName: 'ID', width: 90, sortable: true },
+    { field: 'name', headerName: 'Sport', flex: 1, minWidth: 160, sortable: true, filter: true },
+    {
+      field: 'active',
+      headerName: 'Active',
+      width: 110,
+      sortable: true,
+      filter: true,
+      valueFormatter: (p) => (p.value ? 'Yes' : 'No'),
+    },
   ];
 
   readonly defaultColDef: ColDef = {
