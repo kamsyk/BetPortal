@@ -1,9 +1,7 @@
 ﻿using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text.Encodings.Web;
-using BetPortalWebApi.Middleware.Interfaces;
+using BetPortalWebApi.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -11,13 +9,13 @@ namespace BetPortalWebApi.Middleware
 {
     public class SessionAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
-        private readonly ISessionServiceTmp _sessionService;
+        private readonly ISessionService _sessionService;
 
         public SessionAuthenticationHandler(
             IOptionsMonitor<AuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
-            ISessionServiceTmp sessionService)
+            ISessionService sessionService)
             : base(options, logger, encoder)
         {
             _sessionService = sessionService;
@@ -36,9 +34,9 @@ namespace BetPortalWebApi.Middleware
             // Validate session
             var session = await _sessionService.GetSessionAsync(sessionId);
 
-            if (session != null)
+            if (session == null)
             {
-                // Invalid session, clear cookie
+                // Invalid or expired session, clear cookie
                 Context.Response.Cookies.Delete("SessionId");
                 return AuthenticateResult.Fail("Invalid session");
             }
@@ -46,16 +44,16 @@ namespace BetPortalWebApi.Middleware
             // Create claims from session
             var claims = new List<Claim>
             {
-               /* new Claim(ClaimTypes.NameIdentifier, session.UserId.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, session.UserId.ToString()),
                 new Claim(ClaimTypes.Name, session.Username),
                 new Claim("FullName", session.FullName),
-                new Claim("SessionId", session.SessionId)*/
+                new Claim("SessionId", session.SessionId),
             };
 
             // Add permission claims
-            foreach (var permission in session?.Permissions ?? Enumerable.Empty<string>())
+            foreach (var permission in session.Permissions ?? Enumerable.Empty<string>())
             {
-                ////claims.Add(new Claim("Permission", permission));
+                claims.Add(new Claim("Permission", permission));
             }
 
             var identity = new ClaimsIdentity(claims, Scheme.Name);

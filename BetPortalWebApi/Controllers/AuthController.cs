@@ -1,10 +1,7 @@
 ﻿using System.Security.Claims;
-using BetPortalWebApi.Middleware.Interfaces;
 using BetPortalWebApi.Services.Interfaces;
 using BpDbLayer;
 using BpDbLayer.Utils;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -37,12 +34,10 @@ namespace BetPortalWebApi.Controllers
                     return Unauthorized(new { success = false, message = "Invalid credentials" });
                 }
 
-               /* // In production, use proper password hashing (BCrypt, etc.)
-                // For demo purposes, we'll use simple comparison
-                if (request.Password != "password")
+                if (string.IsNullOrEmpty(user.Password) || !PasswordHasher.VerifyPassword(request.Password, user.Password))
                 {
                     return Unauthorized(new { success = false, message = "Invalid credentials" });
-                }*/
+                }
 
                 // Get client IP and User Agent
                 var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -71,9 +66,9 @@ namespace BetPortalWebApi.Controllers
                     user = new { username = user.UserName, fullName = user.FirstName + " " + user.Surname },
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                ////_logger.LogError(ex, "Error during login for user {Username}", request.Username);
+                // _logger.LogError(ex, "Error during login for user {Username}", request.Username);
                 return StatusCode(500, new { success = false, message = "Internal server error" });
             }
 
@@ -124,8 +119,36 @@ namespace BetPortalWebApi.Controllers
         [Authorize]
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return Ok(new { success = true, message = "Logout successful" });
+            try
+            {
+                // Get the session ID from the cookie
+                var sessionId = HttpContext.Request.Cookies["SessionId"];
+
+                // Revoke the session if it exists
+                if (!string.IsNullOrEmpty(sessionId))
+                {
+                    await _sessionService.RevokeSessionAsync(sessionId);
+                }
+
+                // Delete the SessionId cookie by setting it to expire
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = HttpContext.Request.IsHttps,
+                    SameSite = SameSiteMode.Lax,
+                    Expires = DateTimeOffset.UtcNow.AddDays(-1),
+                };
+
+                HttpContext.Response.Cookies.Append("SessionId", string.Empty, cookieOptions);
+
+                return Ok(new { success = true, message = "Logout successful" });
+            }
+            catch (Exception)
+            {
+                // Log the error but still return success to prevent information disclosure
+                // _logger.LogError(ex, "Error during logout");
+                return Ok(new { success = true, message = "Logout successful" });
+            }
         }
 
         [HttpGet("me")]
@@ -162,7 +185,7 @@ namespace BetPortalWebApi.Controllers
             {
                 var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
                 var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
-                session = new () { SessionId = sessionId , UserId = 1, Username = "admin", FullName = "Demo User", IpAddress = ipAddress, UserAgent = userAgent };
+                session = new () { SessionId = sessionId, UserId = 1, Username = "admin", FullName = "Demo User", IpAddress = ipAddress, UserAgent = userAgent };
             }
 
             return Ok(new
@@ -219,13 +242,5 @@ namespace BetPortalWebApi.Controllers
                  claims = principal.Claims.Select(c => new { c.Type, c.Value }),
              });
          }*/
-
-    }
-
-    public class LoginRequest
-    {
-        public string Username { get; set; } = string.Empty;
-
-        public string Password { get; set; } = string.Empty;
     }
 }

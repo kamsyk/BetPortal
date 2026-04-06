@@ -1,9 +1,9 @@
+using BetPortalWebApi.Middleware;
 using BetPortalWebApi.Services;
 using BetPortalWebApi.Services.Interfaces;
 using BpDbLayer;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,22 +36,44 @@ builder.Services.AddSwaggerGen(o =>
 
 builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
-builder.Services.AddScoped<IMemoryCache, MemoryCache>();
+builder.Services.AddMemoryCache();
 
-
-// Configure Cookie Authentication
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+// Configure Session-based Authentication
+builder.Services.AddAuthentication("SessionAuth")
+    .AddScheme<AuthenticationSchemeOptions, SessionAuthenticationHandler>("SessionAuth", null)
     .AddCookie(options =>
     {
-        options.LoginPath = "/api/auth/login";
-        options.LogoutPath = "/api/auth/logout";
-        options.AccessDeniedPath = "/api/auth/access-denied";
         options.Cookie.Name = "AuthCookie";
         options.Cookie.HttpOnly = true;
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.ExpireTimeSpan = TimeSpan.FromDays(7);
         options.SlidingExpiration = true;
+
+        // Handle API requests with status codes instead of redirects
+        options.Events.OnRedirectToLogin = context =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api"))
+            {
+                context.Response.StatusCode = 401;
+                return Task.CompletedTask;
+            }
+
+            context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
+
+        options.Events.OnRedirectToAccessDenied = context =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api"))
+            {
+                context.Response.StatusCode = 403;
+                return Task.CompletedTask;
+            }
+
+            context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
     });
 
 builder.Services.AddAuthorization(options =>
@@ -92,8 +114,8 @@ builder.Services.AddCors(options =>
         }
         else
         {
-            // Dev fallback
-            policy.AllowAnyOrigin()
+            // Dev fallback - allow common development ports
+            policy.WithOrigins("http://localhost:4200", "http://localhost:3000", "http://localhost:5173")
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
