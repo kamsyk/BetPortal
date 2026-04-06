@@ -1,11 +1,72 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { AgGridAngular } from 'ag-grid-angular';
+import { AllCommunityModule, ColDef, ModuleRegistry } from 'ag-grid-community';
+import { Sport, SportService } from '../../../services/sport.service';
+
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 @Component({
   selector: 'app-sports-list',
-  imports: [],
+  imports: [CommonModule, AgGridAngular],
   templateUrl: './sports-list.component.html',
   styleUrl: './sports-list.component.scss'
 })
-export class SportsListComponent {
+export class SportsListComponent implements OnInit {
+  private readonly sportService = inject(SportService);
+  private readonly platformId = inject(PLATFORM_ID);
 
+  sports: Sport[] = [];
+  loading = false;
+  error = '';
+  readonly isBrowser = isPlatformBrowser(this.platformId);
+  readonly modules = [AllCommunityModule];
+
+  readonly columnDefs: ColDef<Sport>[] = [
+    { field: 'id', headerName: 'ID', width: 100, sortable: true },
+    { field: 'name', headerName: 'Sport', flex: 1, sortable: true, filter: true },
+    { field: 'active', headerName: 'Active', width: 120, sortable: true },
+  ];
+
+  readonly defaultColDef: ColDef = {
+    resizable: true,
+  };
+
+  ngOnInit(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    this.loadSports();
+  }
+
+  loadSports(): void {
+    this.loading = true;
+    this.error = '';
+
+    this.sportService.getSports().subscribe({
+      next: (sports) => {
+        this.sports = sports;
+        this.loading = false;
+      },
+      error: () => {
+        this.error = 'Failed to load sports.';
+        this.loading = false;
+      },
+    });
+  }
+
+  onNewSportClick(): void {
+    const name = window.prompt('Enter sport name');
+    if (!name || !name.trim()) {
+      return;
+    }
+
+    this.sportService.createSport({ name: name.trim(), active: true }).subscribe({
+      next: () => this.loadSports(),
+      error: () => {
+        this.error = 'Failed to create sport.';
+      },
+    });
+  }
 }
