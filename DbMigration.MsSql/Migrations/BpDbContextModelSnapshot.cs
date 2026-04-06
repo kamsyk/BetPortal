@@ -160,6 +160,35 @@ namespace DbMigration.MsSql.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BpDbLayer.Models.Sport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ModifiedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModifiedByUserId");
+
+                    b.ToTable("Sports");
+                });
+
             modelBuilder.Entity("BpDbLayer.Models.UserToken", b =>
                 {
                     b.Property<int>("UserId")
@@ -195,6 +224,17 @@ namespace DbMigration.MsSql.Migrations
                     b.Navigation("Role");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.Sport", b =>
+                {
+                    b.HasOne("BpDbLayer.Models.BpUser", "ModifiedByUser")
+                        .WithMany()
+                        .HasForeignKey("ModifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ModifiedByUser");
                 });
 
             modelBuilder.Entity("BpDbLayer.Models.UserToken", b =>
