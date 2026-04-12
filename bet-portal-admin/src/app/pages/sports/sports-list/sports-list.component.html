@@ -14,7 +14,8 @@
     <div class="card shadow-sm mt-3 sports-grid-card">
       <div class="card-body p-0">
         <ag-grid-angular
-          class="ag-theme-alpine sports-grid"
+          class="sports-grid"
+          [theme]="theme"
           style="width: 100%; min-height: 280px;"
           [modules]="modules"
           [rowData]="sports"

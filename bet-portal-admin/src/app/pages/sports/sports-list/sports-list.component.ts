@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
-import { AllCommunityModule, ColDef, ModuleRegistry } from 'ag-grid-community';
+import { AllCommunityModule, ColDef, ModuleRegistry, themeAlpine } from 'ag-grid-community';
 import { Sport, SportService } from '../../../services/sport.service';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -21,6 +21,7 @@ export class SportsListComponent implements OnInit {
   error = '';
   readonly isBrowser = isPlatformBrowser(this.platformId);
   readonly modules = [AllCommunityModule];
+  readonly theme = themeAlpine;
 
   readonly columnDefs: ColDef<Sport>[] = [
     { field: 'id', headerName: 'ID', width: 90, sortable: true },

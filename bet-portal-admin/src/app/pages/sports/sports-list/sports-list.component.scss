@@ -20,7 +20,3 @@
   width: 100%;
 }
 
-/* Ensure AG Grid body/viewport can grow (fixes collapsed row area with some global CSS). */
-:host ::ng-deep .ag-theme-alpine .ag-root-wrapper-body.ag-layout-auto-height {
-  min-height: 120px;
-}
