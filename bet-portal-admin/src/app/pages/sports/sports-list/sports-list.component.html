@@ -32,4 +32,19 @@
   } @else {
     <div class="mt-3 text-muted">Loading sports page...</div>
   }
+
+  @if (isBrowser) {
+    <div class="card shadow-sm mt-3 sports-grid-card">
+      <div class="card-body p-0">
+        <lib-ks-ag-grid
+          [rowData]="sports"
+          [columnDefs]="columnDefs">
+
+        </lib-ks-ag-grid>
+
+      </div>
+    </div>
+  } @else {
+    <div class="mt-3 text-muted">Loading sports page...</div>
+  }
 </div>

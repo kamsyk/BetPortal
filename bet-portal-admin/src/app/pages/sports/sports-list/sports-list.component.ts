@@ -2,13 +2,15 @@ import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
 import { AllCommunityModule, ColDef, ModuleRegistry, themeAlpine } from 'ag-grid-community';
+import { KsAgGridModule } from 'ks-ag-controls';
 import { Sport, SportService } from '../../../services/sport.service';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 @Component({
   selector: 'app-sports-list',
-  imports: [CommonModule, AgGridAngular],
+  standalone: true,
+  imports: [CommonModule, AgGridAngular, KsAgGridModule],
   templateUrl: './sports-list.component.html',
   styleUrl: './sports-list.component.scss'
 })
