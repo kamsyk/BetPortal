@@ -37,9 +37,11 @@
     <div class="card shadow-sm mt-3 sports-grid-card">
       <div class="card-body p-0">
         <lib-ks-ag-grid
-          [rowData]="sports"
-          [columnDefs]="columnDefs">
-
+          [columnDefs]="columnDefs"
+          [useServerSideData]="true"
+          [pageSize]="25"
+          [fetchServerRows]="fetchServerRows">
+          <!-- (cellClicked)="onCellClicked($event)" -->
         </lib-ks-ag-grid>
 
       </div>

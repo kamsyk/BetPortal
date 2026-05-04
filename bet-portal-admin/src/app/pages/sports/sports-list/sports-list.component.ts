@@ -2,8 +2,9 @@ import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
 import { AllCommunityModule, ColDef, ModuleRegistry, themeAlpine } from 'ag-grid-community';
-import { KsAgGridModule } from 'ks-ag-controls';
+import { KsAgGridModule, KsAgGridServerRequest, KsAgGridServerRowsFetcher } from 'ks-ag-controls';
 import { Sport, SportService } from '../../../services/sport.service';
+import { map } from 'rxjs';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -64,6 +65,15 @@ export class SportsListComponent implements OnInit {
       },
     });
   }
+
+  readonly fetchServerRows: KsAgGridServerRowsFetcher<Sport> = (request: KsAgGridServerRequest) => {
+    return this.sportService.getSports().pipe(
+      map((sports) => ({
+        rows: sports.slice(request.startRow, request.endRow),
+        lastRow: sports.length,
+      }))
+    );
+  };
 
   onNewSportClick(): void {
     const name = window.prompt('Enter sport name');
