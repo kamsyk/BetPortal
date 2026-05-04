@@ -26,7 +26,6 @@ export class SportsListComponent implements OnInit {
   readonly theme = themeAlpine;
 
   readonly columnDefs: ColDef<Sport>[] = [
-    //{ field: 'id', headerName: 'ID', width: 90, sortable: true },
     { field: 'name', headerName: 'Sport', flex: 20, minWidth: 160, sortable: true, filter: true },
     {
       field: 'active',
