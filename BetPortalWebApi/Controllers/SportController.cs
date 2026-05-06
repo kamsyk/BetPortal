@@ -1,6 +1,8 @@
 ﻿using System.Security.Claims;
 using BpDbLayer;
 using BpDbLayer.Models;
+using BetPortalWebApi.Contracts.List;
+using BetPortalWebApi.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +14,35 @@ namespace BetPortalWebApi.Controllers
     [Authorize]
     public class SportController : BpBaseController
     {
+        private static readonly IReadOnlyDictionary<string, Func<IQueryable<Sport>, string, IQueryable<Sport>>> FilterHandlers =
+            new Dictionary<string, Func<IQueryable<Sport>, string, IQueryable<Sport>>>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["name"] = static (query, value) =>
+                {
+                    var trimmedName = value.Trim();
+                    return query.Where(s => EF.Functions.Like(s.Name, $"%{trimmedName}%"));
+                },
+                ["active"] = static (query, value) =>
+                {
+                    return bool.TryParse(value, out var parsed)
+                        ? query.Where(s => s.Active == parsed)
+                        : query;
+                },
+            };
+
+        private static readonly IReadOnlyDictionary<string, Func<IQueryable<Sport>, bool, IQueryable<Sport>>> SortHandlers =
+            new Dictionary<string, Func<IQueryable<Sport>, bool, IQueryable<Sport>>>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["id"] = static (query, isDescending) =>
+                    isDescending ? query.OrderByDescending(s => s.Id) : query.OrderBy(s => s.Id),
+                ["name"] = static (query, isDescending) =>
+                    isDescending ? query.OrderByDescending(s => s.Name) : query.OrderBy(s => s.Name),
+                ["active"] = static (query, isDescending) =>
+                    isDescending
+                        ? query.OrderByDescending(s => s.Active).ThenBy(s => s.Name)
+                        : query.OrderBy(s => s.Active).ThenBy(s => s.Name),
+            };
+
         private readonly BpDbContext _dbContext;
 
         public SportController(BpDbContext dbContext)
@@ -20,11 +51,12 @@ namespace BetPortalWebApi.Controllers
         }
 
         [HttpGet("list")]
-        public async Task<IActionResult> GetSportsList()
+        public async Task<IActionResult> GetSportsList([FromQuery] ListQueryRequest request)
         {
-            var sports = await _dbContext.Sports
-                .AsNoTracking()
-                .OrderBy(s => s.Name)
+            IQueryable<Sport> query = _dbContext.Sports.AsNoTracking();
+            query = ListQueryProcessor.Apply(query, request, HttpContext.Request.Query, FilterHandlers, SortHandlers, defaultSortKey: "name");
+
+            var sports = await query
                 .Select(s => new SportDto
                 {
                     Id = s.Id,

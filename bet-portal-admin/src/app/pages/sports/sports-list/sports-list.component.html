@@ -13,29 +13,6 @@
   @if (isBrowser) {
     <div class="card shadow-sm mt-3 sports-grid-card">
       <div class="card-body p-0">
-        <ag-grid-angular
-          class="sports-grid"
-          [theme]="theme"
-          style="width: 100%; min-height: 280px;"
-          [modules]="modules"
-          [rowData]="sports"
-          [columnDefs]="columnDefs"
-          [defaultColDef]="defaultColDef"
-          domLayout="autoHeight"
-          [pagination]="true"
-          [paginationPageSize]="25"
-          [animateRows]="true"
-          [loading]="loading">
-        </ag-grid-angular>
-      </div>
-    </div>
-  } @else {
-    <div class="mt-3 text-muted">Loading sports page...</div>
-  }
-
-  @if (isBrowser) {
-    <div class="card shadow-sm mt-3 sports-grid-card">
-      <div class="card-body p-0">
         <lib-ks-ag-grid
           [columnDefs]="columnDefs"
           [useServerSideData]="true"
