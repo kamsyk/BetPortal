@@ -8,8 +8,8 @@
       <a mat-button routerLink="/">Home</a>
 
       <button mat-button [matMenuTriggerFor]="adminMenu">
-        Administration
-        <mat-icon>arrow_drop_down</mat-icon>
+        <span>Administration</span>
+        <span class="desktop-arrow" aria-hidden="true">&#9662;</span>
       </button>
 
       <a mat-button routerLink="/about">About</a>
@@ -18,7 +18,7 @@
     </div>
   } @else {
     <button mat-icon-button [matMenuTriggerFor]="mobileMenu" aria-label="Open navigation menu">
-      <mat-icon>menu</mat-icon>
+      <span class="menu-glyph" aria-hidden="true">&#9776;</span>
     </button>
   }
 </mat-toolbar>

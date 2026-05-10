@@ -3,14 +3,13 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Router, RouterLink } from '@angular/router';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { AuthService } from 'ks-ag-controls';
 
 @Component({
   selector: 'app-nav-menu',
   standalone: true,
-  imports: [RouterLink, MatMenuModule, MatButtonModule, MatIconModule, MatToolbarModule],
+  imports: [RouterLink, MatMenuModule, MatButtonModule, MatToolbarModule],
   templateUrl: './nav-menu.component.html',
   styleUrls: ['./nav-menu.component.scss'],
 })
