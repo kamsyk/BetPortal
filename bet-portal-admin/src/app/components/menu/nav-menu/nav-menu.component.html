@@ -1,36 +1,42 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand" routerLink="/">My Angular App</a>
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#navbarNav"
-    >
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/about">About</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/contact">Contact</a>
-        </li>
-        <li class="nav-item">
-          <a
-            class="nav-link"
-            (click)="logOut()"
-            (keyup.enter)="logOut()"
-            tabindex="0"
-            role="button"
-            >Logout</a
-          >
-        </li>
-      </ul>
+<mat-toolbar color="primary" class="nav-toolbar">
+  <a class="brand-link" routerLink="/">My Angular App</a>
+
+  <span class="spacer"></span>
+
+  @if (!isMobile) {
+    <div class="desktop-actions">
+      <a mat-button routerLink="/">Home</a>
+
+      <button mat-button [matMenuTriggerFor]="adminMenu">
+        Administration
+        <mat-icon>arrow_drop_down</mat-icon>
+      </button>
+
+      <a mat-button routerLink="/about">About</a>
+      <a mat-button routerLink="/contact">Contact</a>
+      <button mat-button type="button" (click)="logOut()">Logout</button>
     </div>
-  </div>
-</nav>
+  } @else {
+    <button mat-icon-button [matMenuTriggerFor]="mobileMenu" aria-label="Open navigation menu">
+      <mat-icon>menu</mat-icon>
+    </button>
+  }
+</mat-toolbar>
+
+<mat-menu #adminMenu="matMenu">
+  <button mat-menu-item routerLink="/sports-list">Sports</button>
+  <button mat-menu-item routerLink="/countries-list">Countries</button>
+</mat-menu>
+
+<mat-menu #mobileMenu="matMenu">
+  <button mat-menu-item routerLink="/">Home</button>
+  <button mat-menu-item [matMenuTriggerFor]="mobileAdminMenu">Administration</button>
+  <button mat-menu-item routerLink="/about">About</button>
+  <button mat-menu-item routerLink="/contact">Contact</button>
+  <button mat-menu-item type="button" (click)="logOut()">Logout</button>
+</mat-menu>
+
+<mat-menu #mobileAdminMenu="matMenu">
+  <button mat-menu-item routerLink="/sports-list">Sports</button>
+  <button mat-menu-item routerLink="/countries-list">Countries</button>
+</mat-menu>
