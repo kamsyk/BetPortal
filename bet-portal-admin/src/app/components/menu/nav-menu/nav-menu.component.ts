@@ -29,6 +29,10 @@ export class NavMenuComponent {
       });
   }
 
+  isLoggedIn(): boolean {
+    return this.authService.isAuthenticated();
+  }
+
   logOut() {
     this.authService.logout().subscribe({
       next: (response) => {

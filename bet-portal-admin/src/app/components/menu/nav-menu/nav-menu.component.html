@@ -5,16 +5,18 @@
 
   @if (!isMobile) {
     <div class="desktop-actions">
-      <a mat-button routerLink="/">Home</a>
+      @if (isLoggedIn()) {
+        <a mat-button routerLink="/">Home</a>
 
-      <button mat-button [matMenuTriggerFor]="adminMenu">
-        <span>Administration</span>
-        <span class="desktop-arrow" aria-hidden="true">&#9662;</span>
-      </button>
+        <button mat-button [matMenuTriggerFor]="adminMenu">
+          <span>Administration</span>
+          <span class="desktop-arrow" aria-hidden="true">&#9662;</span>
+        </button>
 
-      <a mat-button routerLink="/about">About</a>
-      <a mat-button routerLink="/contact">Contact</a>
-      <button mat-button type="button" (click)="logOut()">Logout</button>
+        <a mat-button routerLink="/about">About</a>
+        <a mat-button routerLink="/contact">Contact</a>
+        <button mat-button type="button" (click)="logOut()">Logout</button>
+      }
     </div>
   } @else {
     <button mat-icon-button [matMenuTriggerFor]="mobileMenu" aria-label="Open navigation menu">
@@ -29,11 +31,13 @@
 </mat-menu>
 
 <mat-menu #mobileMenu="matMenu">
-  <button mat-menu-item routerLink="/">Home</button>
-  <button mat-menu-item [matMenuTriggerFor]="mobileAdminMenu">Administration</button>
-  <button mat-menu-item routerLink="/about">About</button>
-  <button mat-menu-item routerLink="/contact">Contact</button>
-  <button mat-menu-item type="button" (click)="logOut()">Logout</button>
+  @if (isLoggedIn()) {
+    <button mat-menu-item routerLink="/">Home</button>
+    <button mat-menu-item [matMenuTriggerFor]="mobileAdminMenu">Administration</button>
+    <button mat-menu-item routerLink="/about">About</button>
+    <button mat-menu-item routerLink="/contact">Contact</button>
+    <button mat-menu-item type="button" (click)="logOut()">Logout</button>
+  }
 </mat-menu>
 
 <mat-menu #mobileAdminMenu="matMenu">
