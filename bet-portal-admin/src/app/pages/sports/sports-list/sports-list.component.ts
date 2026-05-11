@@ -1,9 +1,8 @@
 import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { AllCommunityModule, ColDef, ModuleRegistry, themeAlpine } from 'ag-grid-community';
-import { KsAgGridModule, KsAgGridServerRequest, KsAgGridServerRowsFetcher } from 'ks-ag-controls';
+import { AllCommunityModule, ColDef, IDatasource, IGetRowsParams, ModuleRegistry, themeAlpine } from 'ag-grid-community';
+import { KsAgGridModule, KsAgGridServerRequest } from 'ks-ag-controls';
 import { Sport, SportListQuery, SportService } from '../../../services/sport.service';
-import { map } from 'rxjs';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -18,8 +17,6 @@ export class SportsListComponent implements OnInit {
   private readonly sportService = inject(SportService);
   private readonly platformId = inject(PLATFORM_ID);
 
-  sports: Sport[] = [];
-  loading = false;
   error = '';
   readonly isBrowser = isPlatformBrowser(this.platformId);
   readonly modules = [AllCommunityModule];
@@ -41,40 +38,42 @@ export class SportsListComponent implements OnInit {
     resizable: true,
   };
 
+  serverDataSource: IDatasource = this.createServerDataSource();
+
   ngOnInit(): void {
     if (!this.isBrowser) {
       return;
     }
-
-    this.loadSports();
   }
 
-  loadSports(): void {
-    this.loading = true;
-    this.error = '';
+  private createServerDataSource(): IDatasource {
+    return {
+      getRows: (params: IGetRowsParams) => {
+        const request: KsAgGridServerRequest = {
+          startRow: params.startRow,
+          endRow: params.endRow,
+          sortModel: params.sortModel,
+          filterModel: params.filterModel,
+        };
 
-    this.sportService.getSports().subscribe({
-      next: (sports) => {
-        this.sports = sports;
-        this.loading = false;
+        const query = this.buildQueryFromRequest(request);
+
+        this.sportService.getSports(query).subscribe({
+          next: (sports) => {
+            params.successCallback(sports.slice(request.startRow, request.endRow), sports.length);
+          },
+          error: () => {
+            this.error = 'Failed to load sports.';
+            params.failCallback();
+          },
+        });
       },
-      error: () => {
-        this.error = 'Failed to load sports.';
-        this.loading = false;
-      },
-    });
+    };
   }
 
-  readonly fetchServerRows: KsAgGridServerRowsFetcher<Sport> = (request: KsAgGridServerRequest) => {
-    const query = this.buildQueryFromRequest(request);
-
-    return this.sportService.getSports(query).pipe(
-      map((sports) => ({
-        rows: sports.slice(request.startRow, request.endRow),
-        lastRow: sports.length,
-      }))
-    );
-  };
+  private refreshServerDataSource(): void {
+    this.serverDataSource = this.createServerDataSource();
+  }
 
   private buildQueryFromRequest(request: KsAgGridServerRequest): SportListQuery {
     const sort = request.sortModel?.[0];
@@ -133,7 +132,7 @@ export class SportsListComponent implements OnInit {
     }
 
     this.sportService.createSport({ name: name.trim(), active: true }).subscribe({
-      next: () => this.loadSports(),
+      next: () => this.refreshServerDataSource(),
       error: () => {
         this.error = 'Failed to create sport.';
       },
