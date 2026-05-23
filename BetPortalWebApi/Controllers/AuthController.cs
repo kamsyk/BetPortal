@@ -168,8 +168,6 @@ namespace BetPortalWebApi.Controllers
             }
             catch (Exception)
             {
-                // Log the error but still return success to prevent information disclosure
-                // _logger.LogError(ex, "Error during logout");
                 return Ok(new { success = true, message = "Logout successful" });
             }
         }
