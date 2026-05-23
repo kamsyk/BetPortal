@@ -1,0 +1,42 @@
+<section class="chat-shell">
+  <header class="chat-header">
+    <h1>BetPortal Advisor</h1>
+    <p>Local LLM + Sports data from your DB</p>
+    <div class="tools">
+      <button type="button" class="secondary" (click)="runReindex()" [disabled]="reindexing()">
+        {{ reindexing() ? 'Reindexing...' : 'Reindex Vector Data' }}
+      </button>
+      @if (reindexStatus()) {
+        <p class="status">{{ reindexStatus() }}</p>
+      }
+    </div>
+  </header>
+
+  <div class="chat-log">
+    @for (message of messages(); track $index) {
+      <article class="message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'">
+        <div class="bubble">{{ message.text }}</div>
+        @if (message.sources?.length) {
+          <div class="sources">Sources: {{ message.sources?.join(', ') }}</div>
+        }
+      </article>
+    }
+
+    @if (loading()) {
+      <article class="message assistant">
+        <div class="bubble">Thinking...</div>
+      </article>
+    }
+  </div>
+
+  <form class="chat-input" (ngSubmit)="sendMessage()">
+    <textarea
+      name="draft"
+      [(ngModel)]="draft"
+      [ngModelOptions]="{ standalone: true }"
+      rows="3"
+      placeholder="Ask a question about sports or active entries..."
+    ></textarea>
+    <button type="submit" [disabled]="loading() || !draft().trim()">Send</button>
+  </form>
+</section>

@@ -19,5 +19,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/sports/sports-list/sports-list.component').then((m) => m.SportsListComponent),
   },
+  {
+    path: 'chatbot',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/chatbot/chatbot.component').then((m) => m.ChatbotComponent),
+  },
   { path: '**', redirectTo: '' },
 ];

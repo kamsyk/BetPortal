@@ -14,6 +14,7 @@
         </button>
 
         <a mat-button routerLink="/about">About</a>
+        <a mat-button routerLink="/chatbot">Advisor</a>
         <a mat-button routerLink="/contact">Contact</a>
         <button mat-button type="button" (click)="logOut()">Logout</button>
       }
@@ -34,6 +35,7 @@
   @if (isLoggedIn()) {
     <button mat-menu-item routerLink="/">Home</button>
     <button mat-menu-item [matMenuTriggerFor]="mobileAdminMenu">Administration</button>
+    <button mat-menu-item routerLink="/chatbot">Advisor</button>
     <button mat-menu-item routerLink="/about">About</button>
     <button mat-menu-item routerLink="/contact">Contact</button>
     <button mat-menu-item type="button" (click)="logOut()">Logout</button>

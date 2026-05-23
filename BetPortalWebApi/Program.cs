@@ -36,6 +36,22 @@ builder.Services.AddSwaggerGen(o =>
 
 builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddHttpClient<IChatbotService, ChatbotService>((provider, client) =>
+{
+    var configuration = provider.GetRequiredService<IConfiguration>();
+    var baseUrl = configuration["Llm:BaseUrl"] ?? "http://localhost:11434/";
+
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(90);
+});
+builder.Services.AddHttpClient("Qdrant", (provider, client) =>
+{
+    var configuration = provider.GetRequiredService<IConfiguration>();
+    var baseUrl = configuration["VectorStore:BaseUrl"] ?? "http://localhost:6333/";
+
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 builder.Services.AddMemoryCache();
 
 // Configure Session-based Authentication
