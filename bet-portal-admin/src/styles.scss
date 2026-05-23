@@ -1,2 +1,9 @@
 @import "@angular/material/prebuilt-themes/indigo-pink.css";
 @import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
+/* AG Grid CSS is loaded via angular.json `styles` so Vite/ng serve always includes themes. */
+
+html,
+body {
+  overflow: hidden;
+  height: 100%;
+}

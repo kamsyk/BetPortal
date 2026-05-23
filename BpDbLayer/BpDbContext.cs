@@ -14,6 +14,8 @@ namespace BpDbLayer
 
         public DbSet<UserToken> UserTokens { get; set; }
 
+        public DbSet<Sport> Sports { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

@@ -1,8 +1,33 @@
-mat-sidenav-container {
-  height: 100vh;
-}
-mat-toolbar {
+.nav-toolbar {
   position: sticky;
   top: 0;
   z-index: 2;
 }
+
+.brand-link {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.desktop-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.desktop-arrow {
+  margin-left: 0.35rem;
+  font-size: 1.2rem;
+  opacity: 0.8;
+}
+
+.menu-glyph {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+

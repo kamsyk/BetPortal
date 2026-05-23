@@ -2,6 +2,8 @@
 using BetPortalWebApi.Services.Interfaces;
 using BpDbLayer;
 using BpDbLayer.Utils;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -56,6 +58,26 @@ namespace BetPortalWebApi.Controllers
                 };
 
                 HttpContext.Response.Cookies.Append("SessionId", sessionId, cookieOptions);
+
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.Name, user.UserName),
+                    new Claim("FullName", user.FirstName + " " + user.Surname),
+                    new Claim("Permission", "AdminAccess"),
+                };
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(claimsIdentity);
+
+                var authProps = new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7),
+                    AllowRefresh = true,
+                };
+
+                await HttpContext.SignInAsync("CookieAuth", principal, authProps);
 
                 ////_logger.LogInformation("User {Username} logged in successfully with session {SessionId}", user.UserName, sessionId);
 
@@ -140,13 +162,12 @@ namespace BetPortalWebApi.Controllers
                 };
 
                 HttpContext.Response.Cookies.Append("SessionId", string.Empty, cookieOptions);
+                await HttpContext.SignOutAsync("CookieAuth");
 
                 return Ok(new { success = true, message = "Logout successful" });
             }
             catch (Exception)
             {
-                // Log the error but still return success to prevent information disclosure
-                // _logger.LogError(ex, "Error during logout");
                 return Ok(new { success = true, message = "Logout successful" });
             }
         }
@@ -182,8 +203,43 @@ namespace BetPortalWebApi.Controllers
 
             if (session == null)
             {
-                return Ok(new { isAuthenticated = false });
+                var cookieAuth = await HttpContext.AuthenticateAsync("CookieAuth");
+                if (!cookieAuth.Succeeded || cookieAuth.Principal == null)
+                {
+                    return Ok(new { isAuthenticated = false });
+                }
+
+                var username = cookieAuth.Principal.Identity?.Name;
+                return Ok(new
+                {
+                    isAuthenticated = true,
+                    username = username,
+                    sessionValid = false,
+                    cookieValid = true,
+                });
             }
+
+            var sessionClaims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, session.UserId.ToString()),
+                new Claim(ClaimTypes.Name, session.Username),
+                new Claim("FullName", session.FullName),
+            };
+
+            foreach (var permission in session.Permissions ?? [])
+            {
+                sessionClaims.Add(new Claim("Permission", permission));
+            }
+
+            var sessionIdentity = new ClaimsIdentity(sessionClaims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var sessionPrincipal = new ClaimsPrincipal(sessionIdentity);
+            var sessionAuthProps = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7),
+                AllowRefresh = true,
+            };
+            await HttpContext.SignInAsync("CookieAuth", sessionPrincipal, sessionAuthProps);
 
             return Ok(new
             {
