@@ -17,6 +17,7 @@ namespace BetPortalWebApi.Services
         private readonly ILogger<ChatbotService> _logger;
         private readonly string _model;
         private readonly string _embeddingModel;
+        private readonly int? _numGpu;
         private readonly string _vectorCollection;
         private readonly int _vectorSize;
         private readonly int _topK;
@@ -34,6 +35,7 @@ namespace BetPortalWebApi.Services
             _logger = logger;
             _model = configuration["Llm:Model"] ?? "qwen2.5:7b-instruct";
             _embeddingModel = configuration["Llm:EmbeddingModel"] ?? "nomic-embed-text";
+            _numGpu = int.TryParse(configuration["Llm:NumGpu"], out var numGpu) ? numGpu : null;
             _vectorCollection = configuration["VectorStore:Collection"] ?? "betportal_sports";
             _vectorSize = int.TryParse(configuration["VectorStore:VectorSize"], out var vectorSize) ? vectorSize : 768;
             _topK = int.TryParse(configuration["VectorStore:TopK"], out var topK) ? topK : 6;
@@ -45,16 +47,28 @@ namespace BetPortalWebApi.Services
             var contextRows = await BuildContextAsync(trimmedQuestion, cancellationToken);
             var prompt = BuildPrompt(trimmedQuestion, contextRows);
 
-            var request = new
-            {
-                model = _model,
-                prompt,
-                stream = false,
-                options = new
+            var request = _numGpu.HasValue
+                ? (object)new
                 {
-                    temperature = 0.2,
-                },
-            };
+                    model = _model,
+                    prompt,
+                    stream = false,
+                    options = new
+                    {
+                        temperature = 0.2,
+                        num_gpu = _numGpu.Value,
+                    },
+                }
+                : new
+                {
+                    model = _model,
+                    prompt,
+                    stream = false,
+                    options = new
+                    {
+                        temperature = 0.2,
+                    },
+                };
 
             try
             {
@@ -69,9 +83,12 @@ namespace BetPortalWebApi.Services
 
                 return new ChatAskResponse
                 {
+                    Success = true,
                     Answer = string.IsNullOrWhiteSpace(answer)
                         ? "I could not generate a response from the local model."
                         : answer,
+                    Message = "OK",
+                    ErrorCode = string.Empty,
                     Sources = contextRows.Select(c => c.SourceLabel).ToList(),
                 };
             }
@@ -80,7 +97,10 @@ namespace BetPortalWebApi.Services
                 _logger.LogError(ex, "Chat model request failed");
                 return new ChatAskResponse
                 {
+                    Success = false,
                     Answer = "Local LLM is unavailable right now. Verify Ollama is running and the model is pulled.",
+                    Message = "Chat generation failed in Ollama. If GPU crashes, set Llm:NumGpu to 0 in development settings.",
+                    ErrorCode = "OllamaUnavailable",
                     Sources = contextRows.Select(c => c.SourceLabel).ToList(),
                 };
             }
@@ -112,6 +132,7 @@ namespace BetPortalWebApi.Services
                     Success = true,
                     IndexedItems = indexed,
                     Message = $"Indexed {indexed} sports into vector store '{_vectorCollection}'.",
+                    ErrorCode = string.Empty,
                 };
             }
             catch (Exception ex)
@@ -122,6 +143,7 @@ namespace BetPortalWebApi.Services
                     Success = false,
                     IndexedItems = 0,
                     Message = "Reindex failed. Verify Ollama and Qdrant are available.",
+                    ErrorCode = "VectorReindexFailed",
                 };
             }
         }
@@ -288,11 +310,21 @@ namespace BetPortalWebApi.Services
 
         private async Task<List<float>> GenerateEmbeddingAsync(string input, CancellationToken cancellationToken)
         {
-            var request = new
-            {
-                model = _embeddingModel,
-                prompt = input,
-            };
+            var request = _numGpu.HasValue
+                ? (object)new
+                {
+                    model = _embeddingModel,
+                    prompt = input,
+                    options = new
+                    {
+                        num_gpu = _numGpu.Value,
+                    },
+                }
+                : new
+                {
+                    model = _embeddingModel,
+                    prompt = input,
+                };
 
             using var response = await _httpClient.PostAsJsonAsync("api/embeddings", request, cancellationToken);
             if (!response.IsSuccessStatusCode)

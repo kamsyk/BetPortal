@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ChatbotService } from '../../services/chatbot.service';
 
@@ -42,27 +43,56 @@ export class ChatbotComponent {
 
     this.chatbotService.ask(question).subscribe({
       next: (response) => {
+        const answerText = response.success
+          ? response.answer
+          : response.message || response.answer || 'Chat request failed.';
+
         this.messages.update((items) => [
           ...items,
           {
             role: 'assistant',
-            text: response.answer,
+            text: answerText,
             sources: response.sources,
           },
         ]);
         this.loading.set(false);
       },
-      error: () => {
+      error: (error: unknown) => {
         this.messages.update((items) => [
           ...items,
           {
             role: 'assistant',
-            text: 'The chatbot is unavailable. Verify API and Ollama are running.',
+            text: this.mapChatErrorMessage(error),
           },
         ]);
         this.loading.set(false);
       },
     });
+  }
+
+  private mapChatErrorMessage(error: unknown): string {
+    if (!(error instanceof HttpErrorResponse)) {
+      return 'The chatbot is unavailable due to an unexpected client error.';
+    }
+
+    if (error.status === 401) {
+      return 'Your session expired. Please log in again and retry.';
+    }
+
+    if (error.status === 403) {
+      return 'Access denied for chatbot request. Verify your user permissions.';
+    }
+
+    if (error.status === 0) {
+      return 'API is unreachable. Verify BetPortalWebApi is running.';
+    }
+
+    const message = (error.error as { message?: string } | null)?.message;
+    if (typeof message === 'string' && message.trim().length > 0) {
+      return message;
+    }
+
+    return `Chat request failed with HTTP ${error.status}.`;
   }
 
   runReindex(): void {
@@ -75,13 +105,42 @@ export class ChatbotComponent {
 
     this.chatbotService.reindex().subscribe({
       next: (response) => {
-        this.reindexStatus.set(response.message);
+        const statusText = response.success
+          ? response.message
+          : response.message || 'Reindex failed.';
+
+        this.reindexStatus.set(statusText);
         this.reindexing.set(false);
       },
-      error: () => {
-        this.reindexStatus.set('Reindex failed. Verify Qdrant/Ollama and AdminAccess policy.');
+      error: (error: unknown) => {
+        this.reindexStatus.set(this.mapReindexErrorMessage(error));
         this.reindexing.set(false);
       },
     });
+  }
+
+  private mapReindexErrorMessage(error: unknown): string {
+    if (!(error instanceof HttpErrorResponse)) {
+      return 'Reindex failed due to an unexpected client error.';
+    }
+
+    if (error.status === 401) {
+      return 'Your session expired. Please log in again, then retry reindex.';
+    }
+
+    if (error.status === 403) {
+      return 'Access denied. Reindex requires AdminAccess permission.';
+    }
+
+    if (error.status === 0) {
+      return 'API is unreachable. Verify BetPortalWebApi is running.';
+    }
+
+    const message = (error.error as { message?: string } | null)?.message;
+    if (typeof message === 'string' && message.trim().length > 0) {
+      return message;
+    }
+
+    return `Reindex failed with HTTP ${error.status}.`;
   }
 }

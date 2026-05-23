@@ -4,7 +4,10 @@ import { API_BASE_URL } from '../../core/tokens';
 import { Observable } from 'rxjs';
 
 export interface ChatAskResponse {
+  success: boolean;
   answer: string;
+  message: string;
+  errorCode: string;
   sources: string[];
 }
 
@@ -12,6 +15,7 @@ export interface ChatReindexResponse {
   success: boolean;
   indexedItems: number;
   message: string;
+  errorCode: string;
 }
 
 @Injectable({
