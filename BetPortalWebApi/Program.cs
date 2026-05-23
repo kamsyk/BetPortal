@@ -39,9 +39,30 @@ builder.Services.AddScoped<ISessionService, SessionService>();
 builder.Services.AddMemoryCache();
 
 // Configure Session-based Authentication
-builder.Services.AddAuthentication("SessionAuth")
-    .AddScheme<AuthenticationSchemeOptions, SessionAuthenticationHandler>("SessionAuth", null)
-    .AddCookie(options =>
+const string SessionAuthScheme = "SessionAuth";
+const string CookieAuthScheme = "CookieAuth";
+const string DynamicAuthScheme = "DynamicAuth";
+
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = DynamicAuthScheme;
+        options.DefaultChallengeScheme = DynamicAuthScheme;
+    })
+    .AddPolicyScheme(DynamicAuthScheme, DynamicAuthScheme, options =>
+    {
+        options.ForwardDefaultSelector = context =>
+        {
+            // Prefer durable auth cookie when present; fallback to legacy SessionId flow.
+            if (context.Request.Cookies.ContainsKey("AuthCookie"))
+            {
+                return CookieAuthScheme;
+            }
+
+            return SessionAuthScheme;
+        };
+    })
+    .AddScheme<AuthenticationSchemeOptions, SessionAuthenticationHandler>(SessionAuthScheme, null)
+    .AddCookie(CookieAuthScheme, options =>
     {
         options.Cookie.Name = "AuthCookie";
         options.Cookie.HttpOnly = true;

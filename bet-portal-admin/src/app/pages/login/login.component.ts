@@ -1,7 +1,9 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { API_BASE_URL } from '../../../core/tokens';
-import { KsLoginComponent } from 'ks-ag-controls';
+import { AuthService, KsLoginComponent } from 'ks-ag-controls';
+import { Router } from '@angular/router';
+import { take } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -13,7 +15,9 @@ import { KsLoginComponent } from 'ks-ag-controls';
 
 export class LoginComponent implements OnInit {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private apiBase = inject(API_BASE_URL);
+  private authService = inject(AuthService);
 
   loading = false;
   error = '';
@@ -24,6 +28,15 @@ export class LoginComponent implements OnInit {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
     this.redirectUrl.set(returnUrl);
     this.loginUrl.set(`${this.apiBase}/auth/login`);
+
+    this.authService
+      .checkAuthStatus()
+      .pipe(take(1))
+      .subscribe((response) => {
+        if (response.isAuthenticated) {
+          this.router.navigateByUrl(returnUrl, { replaceUrl: true });
+        }
+      });
   }
 
   onLoginSuccess(event: { username: string }) {
