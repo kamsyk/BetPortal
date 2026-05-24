@@ -1,8 +1,9 @@
-import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { Component, inject, OnInit, PLATFORM_ID, NO_ERRORS_SCHEMA } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { AllCommunityModule, ColDef, IDatasource, IGetRowsParams, ModuleRegistry, themeAlpine } from 'ag-grid-community';
 import { KsAgGridModule, KsAgGridServerRequest } from 'ks-ag-controls';
 import { Sport, SportListQuery, SportService } from '../../../services/sport.service';
+import { ThemeService } from '../../../services/theme.service';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -10,12 +11,14 @@ ModuleRegistry.registerModules([AllCommunityModule]);
   selector: 'app-sports-list',
   standalone: true,
   imports: [CommonModule, KsAgGridModule],
+  schemas: [NO_ERRORS_SCHEMA],
   templateUrl: './sports-list.component.html',
   styleUrl: './sports-list.component.scss'
 })
 export class SportsListComponent implements OnInit {
   private readonly sportService = inject(SportService);
   private readonly platformId = inject(PLATFORM_ID);
+  readonly themeService = inject(ThemeService);
 
   error = '';
   readonly isBrowser = isPlatformBrowser(this.platformId);

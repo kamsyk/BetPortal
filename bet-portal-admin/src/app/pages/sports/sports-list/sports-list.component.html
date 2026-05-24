@@ -17,7 +17,8 @@
           [columnDefs]="columnDefs"
           [useServerSideData]="true"
           [pageSize]="25"
-          [serverDataSource]="serverDataSource">
+          [serverDataSource]="serverDataSource"
+          [themeMode]="themeService.isDarkMode() ? 'dark' : 'light'">
           <!-- (cellClicked)="onCellClicked($event)" -->
         </lib-ks-ag-grid>
 
