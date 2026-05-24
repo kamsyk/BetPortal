@@ -36,6 +36,9 @@ builder.Services.AddSwaggerGen(o =>
 
 builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IDbQueryService, DbQueryService>();
+builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
 
 // Configure Session-based Authentication

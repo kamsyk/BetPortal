@@ -19,5 +19,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/sports/sports-list/sports-list.component').then((m) => m.SportsListComponent),
   },
+  {
+    path: 'advisor',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/advisor/advisor.component').then((m) => m.AdvisorComponent),
+  },
   { path: '**', redirectTo: '' },
 ];
