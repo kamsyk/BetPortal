@@ -4,18 +4,21 @@ import { Router, RouterLink } from '@angular/router';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from 'ks-ag-controls';
+import { ThemeService } from '../../../services/theme.service';
 
 @Component({
   selector: 'app-nav-menu',
   standalone: true,
-  imports: [RouterLink, MatMenuModule, MatButtonModule, MatToolbarModule],
+  imports: [RouterLink, MatMenuModule, MatButtonModule, MatToolbarModule, MatIconModule],
   templateUrl: './nav-menu.component.html',
   styleUrls: ['./nav-menu.component.scss'],
 })
 export class NavMenuComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  themeService = inject(ThemeService);
 
   isMobile = false;
 
@@ -41,5 +44,9 @@ export class NavMenuComponent {
         this.router.navigateByUrl('/login');
       },
     });
+  }
+
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
   }
 }
