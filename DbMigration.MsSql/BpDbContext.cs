@@ -16,6 +16,8 @@ namespace DbMigration.MsSql
 
         public DbSet<Sport> Sports { get; set; }
 
+        public DbSet<UserGridSettings> UserGridSettings { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

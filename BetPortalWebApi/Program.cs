@@ -38,6 +38,7 @@ builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IDbQueryService, DbQueryService>();
+builder.Services.AddScoped<IGridSettingsService, GridSettingsService>();
 builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
 

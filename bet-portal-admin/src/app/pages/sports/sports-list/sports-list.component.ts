@@ -1,9 +1,11 @@
 import { Component, inject, OnInit, PLATFORM_ID, NO_ERRORS_SCHEMA } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { AllCommunityModule, ColDef, IDatasource, IGetRowsParams, ModuleRegistry, themeAlpine } from 'ag-grid-community';
+import { AllCommunityModule, ColDef, GridApi, IDatasource, IGetRowsParams, ModuleRegistry, themeAlpine } from 'ag-grid-community';
 import { KsAgGridModule, KsAgGridServerRequest } from 'ks-ag-controls';
 import { Sport, SportListQuery, SportService } from '../../../services/sport.service';
 import { ThemeService } from '../../../services/theme.service';
+import { GridSettingsService, GridSettingsData } from '../../../services/grid-settings.service';
+import { debounceTime, Subject } from 'rxjs';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -18,7 +20,14 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 export class SportsListComponent implements OnInit {
   private readonly sportService = inject(SportService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly gridSettingsService = inject(GridSettingsService);
   readonly themeService = inject(ThemeService);
+
+  private gridApi?: GridApi;
+  private gridInitialized = false;
+  private readonly pageIdentifier = 'sports-list';
+  private readonly settingsChange$ = new Subject<void>();
+  initialPageSize = 25;
 
   error = '';
   readonly isBrowser = isPlatformBrowser(this.platformId);
@@ -47,11 +56,81 @@ export class SportsListComponent implements OnInit {
     if (!this.isBrowser) {
       return;
     }
+
+    // Load saved settings
+    this.loadGridSettings();
+
+    // Setup debounced settings save
+    this.settingsChange$.pipe(debounceTime(1000)).subscribe(() => {
+      this.saveGridSettings();
+    });
+  }
+
+  private loadGridSettings(): void {
+    this.gridSettingsService.getSettings(this.pageIdentifier).subscribe({
+      next: (response) => {
+        if (response.settingsJson) {
+          const settings: GridSettingsData = JSON.parse(response.settingsJson);
+          if (settings.pageSize) {
+            this.initialPageSize = settings.pageSize;
+          }
+        }
+      },
+      error: () => {
+        // Settings not found or error loading - use defaults
+      },
+    });
+  }
+
+  private applyGridSettings(): void {
+    if (!this.gridApi) {
+      return;
+    }
+
+    const cachedSettings = this.gridSettingsService.getCachedSettings(this.pageIdentifier);
+    if (!cachedSettings) {
+      return;
+    }
+
+    // Apply column state (includes visibility, order, width, etc.)
+    if (cachedSettings.columnState && cachedSettings.columnState.length > 0) {
+      this.gridApi.applyColumnState({ state: cachedSettings.columnState, applyOrder: true });
+    }
+
+    // Apply filter model
+    if (cachedSettings.filterModel) {
+      this.gridApi.setFilterModel(cachedSettings.filterModel);
+    }
+  }
+
+  private saveGridSettings(): void {
+    if (!this.gridApi) {
+      return;
+    }
+
+    const settings: GridSettingsData = {
+      pageSize: this.gridApi.paginationGetPageSize(),
+      filterModel: this.gridApi.getFilterModel(),
+      columnState: this.gridApi.getColumnState(),
+    };
+
+    this.gridSettingsService.saveSettings(this.pageIdentifier, settings).subscribe({
+      error: () => {
+        console.error('Failed to save grid settings');
+      },
+    });
   }
 
   private createServerDataSource(): IDatasource {
     return {
       getRows: (params: IGetRowsParams) => {
+        // Initialize grid API on first call
+        if (!this.gridInitialized && (params as any).api) {
+          this.gridApi = (params as any).api;
+          this.initializeGridSettings();
+          this.gridInitialized = true;
+        }
+
         const request: KsAgGridServerRequest = {
           startRow: params.startRow,
           endRow: params.endRow,
@@ -72,6 +151,22 @@ export class SportsListComponent implements OnInit {
         });
       },
     };
+  }
+
+  private initializeGridSettings(): void {
+    if (!this.gridApi) {
+      return;
+    }
+
+    this.applyGridSettings();
+
+    // Listen to state changes
+    this.gridApi.addEventListener('columnResized', () => this.settingsChange$.next());
+    this.gridApi.addEventListener('columnMoved', () => this.settingsChange$.next());
+    this.gridApi.addEventListener('columnVisible', () => this.settingsChange$.next());
+    this.gridApi.addEventListener('sortChanged', () => this.settingsChange$.next());
+    this.gridApi.addEventListener('filterChanged', () => this.settingsChange$.next());
+    this.gridApi.addEventListener('paginationChanged', () => this.settingsChange$.next());
   }
 
   private refreshServerDataSource(): void {
