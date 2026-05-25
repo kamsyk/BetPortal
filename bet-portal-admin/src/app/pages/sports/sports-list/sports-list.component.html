@@ -19,10 +19,10 @@
           [useServerSideData]="true"
           [pageSize]="initialPageSize"
           [serverDataSource]="serverDataSource"
-          [themeMode]="themeService.isDarkMode() ? 'dark' : 'light'">
+          [themeMode]="themeService.isDarkMode() ? 'dark' : 'light'"
+          [enableSettingsPersistence]="true">
           <!-- (cellClicked)="onCellClicked($event)" -->
         </lib-ks-ag-grid>
-
       </div>
     </div>
   } @else {
