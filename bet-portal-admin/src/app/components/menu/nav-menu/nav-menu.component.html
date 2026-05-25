@@ -16,6 +16,11 @@
         <a mat-button routerLink="/advisor">Advisor</a>
         <a mat-button routerLink="/about">About</a>
         <a mat-button routerLink="/contact">Contact</a>
+
+        <button mat-icon-button (click)="toggleTheme()" [title]="themeService.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+          <mat-icon>{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
+
         <button mat-button type="button" (click)="logOut()">Logout</button>
       }
     </div>
@@ -38,6 +43,10 @@
     <button mat-menu-item routerLink="/advisor">Advisor</button>
     <button mat-menu-item routerLink="/about">About</button>
     <button mat-menu-item routerLink="/contact">Contact</button>
+    <button mat-menu-item (click)="toggleTheme()">
+      <mat-icon>{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      <span>{{ themeService.isDarkMode() ? 'Light Mode' : 'Dark Mode' }}</span>
+    </button>
     <button mat-menu-item type="button" (click)="logOut()">Logout</button>
   }
 </mat-menu>
