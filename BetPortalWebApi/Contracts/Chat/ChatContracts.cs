@@ -2,20 +2,24 @@ namespace BetPortalWebApi.Contracts.Chat
 {
     public class ChatMessage
     {
-        public required string Role { get; set; }
-        public required string Content { get; set; }
+        required public string Role { get; set; }
+
+        required public string Content { get; set; }
+
         public DateTime Timestamp { get; set; }
     }
 
     public class ChatRequest
     {
-        public required string Message { get; set; }
-        public List<ChatMessage> ConversationHistory { get; set; } = new();
+        required public string Message { get; set; }
+
+        public List<ChatMessage> ConversationHistory { get; set; } = [];
     }
 
     public class ChatResponse
     {
-        public required string Content { get; set; }
+        required public string Content { get; set; }
+
         public DateTime Timestamp { get; set; }
     }
 }
