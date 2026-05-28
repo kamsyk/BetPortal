@@ -20,7 +20,10 @@
           [pageSize]="initialPageSize"
           [serverDataSource]="serverDataSource"
           [themeMode]="themeService.isDarkMode() ? 'dark' : 'light'"
-          [enableSettingsPersistence]="true">
+          [enableSettingsPersistence]="true"
+          [autoRestoreSettings]="false"
+          (settingsSaved)="onSettingsSaved($event)"
+          (settingsCleared)="onSettingsCleared()">
           <!-- (cellClicked)="onCellClicked($event)" -->
         </lib-ks-ag-grid>
       </div>
