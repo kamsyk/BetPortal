@@ -1,0 +1,57 @@
+<mat-toolbar color="primary" class="nav-toolbar">
+  <a class="brand-link" routerLink="/">My Angular App</a>
+
+  <span class="spacer"></span>
+
+  @if (!isMobile) {
+    <div class="desktop-actions">
+      @if (isLoggedIn()) {
+        <a mat-button routerLink="/">Home</a>
+
+        <button mat-button [matMenuTriggerFor]="adminMenu">
+          <span>Administration</span>
+          <span class="desktop-arrow" aria-hidden="true">&#9662;</span>
+        </button>
+
+        <a mat-button routerLink="/advisor">Advisor</a>
+        <a mat-button routerLink="/about">About</a>
+        <a mat-button routerLink="/contact">Contact</a>
+
+        <button mat-icon-button (click)="toggleTheme()" [title]="themeService.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+          <mat-icon>{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
+
+        <button mat-button type="button" (click)="logOut()">Logout</button>
+      }
+    </div>
+  } @else {
+    <button mat-icon-button [matMenuTriggerFor]="mobileMenu" aria-label="Open navigation menu">
+      <span class="menu-glyph" aria-hidden="true">&#9776;</span>
+    </button>
+  }
+</mat-toolbar>
+
+<mat-menu #adminMenu="matMenu">
+  <button mat-menu-item routerLink="/sports-list">Sports</button>
+  <button mat-menu-item routerLink="/countries-list">Countries</button>
+</mat-menu>
+
+<mat-menu #mobileMenu="matMenu">
+  @if (isLoggedIn()) {
+    <button mat-menu-item routerLink="/">Home</button>
+    <button mat-menu-item [matMenuTriggerFor]="mobileAdminMenu">Administration</button>
+    <button mat-menu-item routerLink="/advisor">Advisor</button>
+    <button mat-menu-item routerLink="/about">About</button>
+    <button mat-menu-item routerLink="/contact">Contact</button>
+    <button mat-menu-item (click)="toggleTheme()">
+      <mat-icon>{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      <span>{{ themeService.isDarkMode() ? 'Light Mode' : 'Dark Mode' }}</span>
+    </button>
+    <button mat-menu-item type="button" (click)="logOut()">Logout</button>
+  }
+</mat-menu>
+
+<mat-menu #mobileAdminMenu="matMenu">
+  <button mat-menu-item routerLink="/sports-list">Sports</button>
+  <button mat-menu-item routerLink="/countries-list">Countries</button>
+</mat-menu>
