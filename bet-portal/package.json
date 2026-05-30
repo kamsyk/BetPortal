@@ -1,5 +1,5 @@
 {
-  "name": "bet-portal-admin",
+  "name": "bet-portal",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
@@ -7,7 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:bet-portal-admin": "node dist/bet-portal-admin/server/server.mjs",
+    "serve:ssr:bet-portal": "node dist/bet-portal/server/server.mjs",
     "lint": "ng lint"
   },
   "private": true,

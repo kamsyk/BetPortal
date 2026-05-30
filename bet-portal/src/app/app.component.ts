@@ -12,7 +12,7 @@ import { ThemeService } from './services/theme.service';
   styleUrl: './app.component.scss',
 })
 export class AppComponent {
-  title = 'bet-portal-admin';
+  title = 'bet-portal';
 
   // Inject ThemeService to initialize it on app startup
   private themeService = inject(ThemeService);

@@ -18,7 +18,7 @@ RUN rm -rf /usr/share/nginx/html/*
 
 # Copy built Angular app from previous stage
 COPY --from=build /app/dist/browser /usr/share/nginx/html
-#COPY --from=build /app/dist/bet-portal-admin /usr/share/nginx/html
+#COPY --from=build /app/dist/bet-portal /usr/share/nginx/html
 
 EXPOSE 80
 

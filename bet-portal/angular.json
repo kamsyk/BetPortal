@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "bet-portal-admin": {
+    "bet-portal": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -17,7 +17,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/bet-portal-admin",
+            "outputPath": "dist/bet-portal",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": ["zone.js"],
@@ -75,10 +75,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "bet-portal-admin:build:production"
+              "buildTarget": "bet-portal:build:production"
             },
             "development": {
-              "buildTarget": "bet-portal-admin:build:development"
+              "buildTarget": "bet-portal:build:development"
             }
           },
           "defaultConfiguration": "development"

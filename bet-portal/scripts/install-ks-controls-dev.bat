@@ -8,7 +8,7 @@ cd /d "D:\Develop\Angular\ks-ag-controls\ks-ag-controls-workspace\dist\ks-ag-con
 call npm pack
 
 echo Starting installation...
-cd /d "D:\Develop\CSharpProjects\BetPortal\bet-portal-admin"
+cd /d "D:\Develop\CSharpProjects\BetPortal\bet-portal"
 
 call npm uninstall ks-ag-controls
 if errorlevel 1 (

@@ -1,1 +1,1 @@
-docker build -t bet-portal-admin .
+docker build -t bet-portal .
