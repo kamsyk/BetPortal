@@ -40,7 +40,6 @@
   @if (isLoggedIn()) {
     <button mat-menu-item routerLink="/">Home</button>
     <button mat-menu-item [matMenuTriggerFor]="mobileAdminMenu">Administration</button>
-    <button mat-menu-item routerLink="/advisor">Advisor</button>
     <button mat-menu-item routerLink="/about">About</button>
     <button mat-menu-item routerLink="/contact">Contact</button>
     <button mat-menu-item (click)="toggleTheme()">
