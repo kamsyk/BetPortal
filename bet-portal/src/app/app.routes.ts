@@ -14,12 +14,6 @@ export const routes: Routes = [
       import('./pages/home/home.component').then((m) => m.HomeComponent),
   },
   {
-    path: 'sports-list',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./pages/sports/sports-list/sports-list.component').then((m) => m.SportsListComponent),
-  },
-  {
     path: 'advisor',
     canActivate: [authGuard],
     loadComponent: () =>

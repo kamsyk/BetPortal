@@ -8,11 +8,6 @@
       @if (isLoggedIn()) {
         <a mat-button routerLink="/">Home</a>
 
-        <button mat-button [matMenuTriggerFor]="adminMenu">
-          <span>Administration</span>
-          <span class="desktop-arrow" aria-hidden="true">&#9662;</span>
-        </button>
-
         <a mat-button routerLink="/advisor">Advisor</a>
         <a mat-button routerLink="/about">About</a>
         <a mat-button routerLink="/contact">Contact</a>
@@ -31,15 +26,9 @@
   }
 </mat-toolbar>
 
-<mat-menu #adminMenu="matMenu">
-  <button mat-menu-item routerLink="/sports-list">Sports</button>
-  <button mat-menu-item routerLink="/countries-list">Countries</button>
-</mat-menu>
-
 <mat-menu #mobileMenu="matMenu">
   @if (isLoggedIn()) {
     <button mat-menu-item routerLink="/">Home</button>
-    <button mat-menu-item [matMenuTriggerFor]="mobileAdminMenu">Administration</button>
     <button mat-menu-item routerLink="/about">About</button>
     <button mat-menu-item routerLink="/contact">Contact</button>
     <button mat-menu-item (click)="toggleTheme()">
@@ -48,9 +37,4 @@
     </button>
     <button mat-menu-item type="button" (click)="logOut()">Logout</button>
   }
-</mat-menu>
-
-<mat-menu #mobileAdminMenu="matMenu">
-  <button mat-menu-item routerLink="/sports-list">Sports</button>
-  <button mat-menu-item routerLink="/countries-list">Countries</button>
 </mat-menu>
