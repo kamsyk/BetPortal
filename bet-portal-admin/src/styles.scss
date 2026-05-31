@@ -1,6 +1,7 @@
 @import "@angular/material/prebuilt-themes/indigo-pink.css";
 @import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
-/* AG Grid CSS is loaded via angular.json `styles` so Vite/ng serve always includes themes. */
+/* AG Grid 35.x uses the Theming API (CSS-in-JS). The theme is applied via the
+   `[theme]` input on <ag-grid-angular>, so no AG Grid CSS files are imported here. */
 
 // Theme Variables
 :root {
