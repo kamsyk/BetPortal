@@ -189,6 +189,45 @@ namespace DbMigration.MsSql.Migrations
                     b.ToTable("Sports");
                 });
 
+            modelBuilder.Entity("BpDbLayer.Models.UserGridSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ModifiedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PageIdentifier")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SettingsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "PageIdentifier")
+                        .IsUnique();
+
+                    b.ToTable("UserGridSettings");
+                });
+
             modelBuilder.Entity("BpDbLayer.Models.UserToken", b =>
                 {
                     b.Property<int>("UserId")
@@ -235,6 +274,17 @@ namespace DbMigration.MsSql.Migrations
                         .IsRequired();
 
                     b.Navigation("ModifiedByUser");
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.UserGridSettings", b =>
+                {
+                    b.HasOne("BpDbLayer.Models.BpUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("BpDbLayer.Models.UserToken", b =>

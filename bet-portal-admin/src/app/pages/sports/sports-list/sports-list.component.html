@@ -14,15 +14,18 @@
     <div class="card shadow-sm mt-3 sports-grid-card">
       <div class="card-body p-0">
         <lib-ks-ag-grid
+          #agGrid
           [columnDefs]="columnDefs"
           [useServerSideData]="true"
-          [pageSize]="25"
+          [pageSize]="initialPageSize"
           [serverDataSource]="serverDataSource"
           [themeMode]="themeService.isDarkMode() ? 'dark' : 'light'"
-          [enableSettingsPersistence]="true">
+          [enableSettingsPersistence]="true"
+          [autoRestoreSettings]="true"
+          (settingsSaved)="onSettingsSaved($event)"
+          (settingsCleared)="onSettingsCleared()">
           <!-- (cellClicked)="onCellClicked($event)" -->
         </lib-ks-ag-grid>
-
       </div>
     </div>
   } @else {
