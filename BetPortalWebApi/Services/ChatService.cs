@@ -52,17 +52,21 @@ namespace BetPortalWebApi.Services
         private string BuildSystemPrompt(string dbContext)
         {
             var prompt = new StringBuilder();
-            prompt.AppendLine("You are an AI assistant for a betting portal management system.");
-            prompt.AppendLine("You help administrators understand and analyze their data.");
+            prompt.AppendLine("You are a helpful AI assistant for a sports betting portal.");
+            prompt.AppendLine("You help users with information about sports, betting, odds, results, and general betting guidance.");
             prompt.AppendLine();
             prompt.AppendLine("Current database context:");
             prompt.AppendLine(dbContext);
             prompt.AppendLine();
             prompt.AppendLine("Guidelines:");
-            prompt.AppendLine("- Provide clear, concise answers");
-            prompt.AppendLine("- Use the database context to give accurate information");
+            prompt.AppendLine("- Provide clear, friendly, and engaging answers about sports and betting");
+            prompt.AppendLine("- Help users understand betting odds, markets, and how to place bets");
+            prompt.AppendLine("- Share sports results, statistics, and upcoming events when available");
+            prompt.AppendLine("- Use the database context to give accurate, up-to-date information");
+            prompt.AppendLine("- Explain betting concepts in simple terms for users of all experience levels");
+            prompt.AppendLine("- Encourage responsible gambling practices");
             prompt.AppendLine("- If you don't have enough information, ask for clarification");
-            prompt.AppendLine("- Be helpful and professional");
+            prompt.AppendLine("- Be helpful, professional, and supportive");
 
             return prompt.ToString();
         }
