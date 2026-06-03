@@ -244,6 +244,24 @@ export class SportsListComponent implements OnInit {
       next: () => {
         console.log('Grid settings cleared successfully');
         this.error = '';
+
+        // Clear loaded settings
+        this.loadedSettings = undefined;
+
+        // Reset grid to default state
+        if (this.gridApi) {
+          // Reset column state to defaults
+          this.gridApi.resetColumnState();
+
+          // Clear all filters
+          this.gridApi.setFilterModel(null);
+
+          // Reset page size to initial value
+          this.gridApi.setGridOption('paginationPageSize', 25);
+
+          // Refresh data source to apply cleared filters
+          this.refreshServerDataSource();
+        }
       },
       error: () => {
         this.error = 'Failed to clear grid settings';

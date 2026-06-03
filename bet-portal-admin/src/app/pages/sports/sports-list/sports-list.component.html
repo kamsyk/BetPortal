@@ -21,7 +21,7 @@
           [serverDataSource]="serverDataSource"
           [themeMode]="themeService.isDarkMode() ? 'dark' : 'light'"
           [enableSettingsPersistence]="true"
-          [autoRestoreSettings]="false"
+          [autoRestoreSettings]="true"
           (settingsSaved)="onSettingsSaved($event)"
           (settingsCleared)="onSettingsCleared()">
           <!-- (cellClicked)="onCellClicked($event)" -->
