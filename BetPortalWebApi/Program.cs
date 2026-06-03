@@ -140,7 +140,7 @@ builder.Services.AddCors(options =>
         else
         {
             // Dev fallback - allow common development ports
-            policy.WithOrigins("http://localhost:4200", "http://localhost:3000", "http://localhost:5173")
+            policy.WithOrigins("http://localhost:4200", "http://localhost:4210", "http://localhost:3000", "http://localhost:5173")
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
