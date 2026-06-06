@@ -8,6 +8,9 @@ namespace BpDbLayer.ModelConfigurations
     {
         public void Configure(EntityTypeBuilder<Sport> builder)
         {
+            builder.HasIndex(s => s.Name)
+                .IsUnique();
+
             builder.HasOne(s => s.ModifiedByUser)
                 .WithMany()
                 .HasForeignKey(s => s.ModifiedByUserId)

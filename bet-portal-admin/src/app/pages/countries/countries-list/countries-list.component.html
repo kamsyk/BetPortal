@@ -1,0 +1,33 @@
+<div class="countries-list-page">
+  <div class="page-header">
+    <h2 class="m-0">Countries</h2>
+    <button type="button" class="btn btn-primary" (click)="onNewCountryClick()">
+      New Country
+    </button>
+  </div>
+
+  @if (error) {
+    <div class="alert alert-danger mt-3 mb-0">{{ error }}</div>
+  }
+
+  @if (isBrowser) {
+    <div class="card shadow-sm mt-3 countries-grid-card">
+      <div class="card-body p-0">
+        <lib-ks-ag-grid
+          #agGrid
+          [columnDefs]="columnDefs"
+          [useServerSideData]="true"
+          [pageSize]="initialPageSize"
+          [serverDataSource]="serverDataSource"
+          [themeMode]="themeService.isDarkMode() ? 'dark' : 'light'"
+          [enableSettingsPersistence]="true"
+          [autoRestoreSettings]="true"
+          (settingsSaved)="onSettingsSaved($event)"
+          (settingsCleared)="onSettingsCleared()">
+        </lib-ks-ag-grid>
+      </div>
+    </div>
+  } @else {
+    <div class="mt-3 text-muted">Loading countries page...</div>
+  }
+</div>

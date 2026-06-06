@@ -16,6 +16,8 @@ namespace BpDbLayer
 
         public DbSet<Sport> Sports { get; set; }
 
+        public DbSet<Country> Countries { get; set; }
+
         public DbSet<UserGridSettings> UserGridSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
