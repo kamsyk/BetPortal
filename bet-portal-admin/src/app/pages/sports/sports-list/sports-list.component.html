@@ -22,9 +22,12 @@
           [themeMode]="themeService.isDarkMode() ? 'dark' : 'light'"
           [enableSettingsPersistence]="true"
           [autoRestoreSettings]="true"
+          [enableActionButtons]="true"
           (settingsSaved)="onSettingsSaved($event)"
-          (settingsCleared)="onSettingsCleared()">
-          <!-- (cellClicked)="onCellClicked($event)" -->
+          (settingsCleared)="onSettingsCleared()"
+          (rowSaved)="handleRowSaved($event)"
+          (rowDeleted)="handleRowDeleted($event)"
+          (cellValueChanged)="handleCellChanged($event)">
         </lib-ks-ag-grid>
       </div>
     </div>

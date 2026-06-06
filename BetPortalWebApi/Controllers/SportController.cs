@@ -106,11 +106,74 @@ namespace BetPortalWebApi.Controllers
             });
         }
 
+        [HttpPut("{id}")]
+        [Authorize(Policy = "AdminAccess")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateSportRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                return BadRequest(new { message = "Sport name is required." });
+            }
+
+            var sport = await _dbContext.Sports.FindAsync(id);
+            if (sport == null)
+            {
+                return NotFound(new { message = "Sport not found." });
+            }
+
+            var normalizedName = request.Name.Trim();
+            var duplicateExists = await _dbContext.Sports.AnyAsync(s => s.Name == normalizedName && s.Id != id);
+            if (duplicateExists)
+            {
+                return Conflict(new { message = "Another sport with this name already exists." });
+            }
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var modifiedByUserId = int.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : 1;
+
+            sport.Name = normalizedName;
+            sport.Active = request.Active;
+            sport.ModifiedDate = DateTime.UtcNow;
+            sport.ModifiedByUserId = modifiedByUserId;
+
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new SportDto
+            {
+                Id = sport.Id,
+                Name = sport.Name,
+                Active = sport.Active,
+            });
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminAccess")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var sport = await _dbContext.Sports.FindAsync(id);
+            if (sport == null)
+            {
+                return NotFound(new { message = "Sport not found." });
+            }
+
+            _dbContext.Sports.Remove(sport);
+            await _dbContext.SaveChangesAsync();
+
+            return NoContent();
+        }
+
         public class AddSportRequest
         {
             public string Name { get; set; } = string.Empty;
 
             public bool Active { get; set; } = true;
+        }
+
+        public class UpdateSportRequest
+        {
+            public string Name { get; set; } = string.Empty;
+
+            public bool Active { get; set; }
         }
 
         public class SportDto

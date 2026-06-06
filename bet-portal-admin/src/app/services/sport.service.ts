@@ -14,6 +14,11 @@ interface CreateSportRequest {
   active: boolean;
 }
 
+interface UpdateSportRequest {
+  name: string;
+  active: boolean;
+}
+
 export interface SportListQuery {
   name?: string;
   active?: boolean;
@@ -52,5 +57,13 @@ export class SportService {
 
   createSport(payload: CreateSportRequest): Observable<Sport> {
     return this.http.post<Sport>(`${this.apiBase}/sport/add`, payload);
+  }
+
+  updateSport(id: number, payload: UpdateSportRequest): Observable<Sport> {
+    return this.http.put<Sport>(`${this.apiBase}/sport/${id}`, payload);
+  }
+
+  deleteSport(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiBase}/sport/${id}`);
   }
 }

@@ -36,13 +36,18 @@ export class CountriesListComponent implements OnInit {
   readonly theme = themeAlpine;
 
   readonly columnDefs: ColDef<Country>[] = [
-    { field: 'name', headerName: 'Country', flex: 20, minWidth: 160, sortable: true, filter: true },
+    { field: 'name', headerName: 'Country', flex: 20, minWidth: 160, sortable: true, filter: true, editable: true },
     {
       field: 'active',
       headerName: 'Active',
       width: 110,
       sortable: true,
       filter: true,
+      editable: true,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: {
+        values: [true, false],
+      },
       valueFormatter: (p) => (p.value ? 'Yes' : 'No'),
     },
   ];
@@ -258,5 +263,64 @@ export class CountriesListComponent implements OnInit {
         this.error = 'Failed to clear grid settings';
       },
     });
+  }
+
+  handleRowSaved(event: any): void {
+    const country = event.data as Country;
+
+    if (!country.id) {
+      // New row - create
+      this.countryService.createCountry({ name: country.name, active: country.active }).subscribe({
+        next: (createdCountry) => {
+          console.log('Country created:', createdCountry);
+          this.error = '';
+          this.refreshServerDataSource();
+        },
+        error: (err) => {
+          console.error('Failed to create country:', err);
+          this.error = 'Failed to create country.';
+        },
+      });
+    } else {
+      // Existing row - update
+      this.countryService.updateCountry(country.id, { name: country.name, active: country.active }).subscribe({
+        next: (updatedCountry) => {
+          console.log('Country updated:', updatedCountry);
+          this.error = '';
+          this.refreshServerDataSource();
+        },
+        error: (err) => {
+          console.error('Failed to update country:', err);
+          this.error = 'Failed to update country.';
+        },
+      });
+    }
+  }
+
+  handleRowDeleted(event: any): void {
+    const country = event.data as Country;
+
+    if (!country.id) {
+      console.log('Cannot delete unsaved row');
+      return;
+    }
+
+    this.countryService.deleteCountry(country.id).subscribe({
+      next: () => {
+        console.log('Country deleted:', country.id);
+        this.error = '';
+        this.refreshServerDataSource();
+      },
+      error: (err) => {
+        console.error('Failed to delete country:', err);
+        this.error = 'Failed to delete country.';
+      },
+    });
+  }
+
+  handleCellChanged(event: any): void {
+    console.log('Cell value changed:', event);
+    // Cell changes are handled automatically by the grid
+    // This event is for additional logic if needed
   }
 }

@@ -36,13 +36,18 @@ export class SportsListComponent implements OnInit {
   readonly theme = themeAlpine;
 
   readonly columnDefs: ColDef<Sport>[] = [
-    { field: 'name', headerName: 'Sport', flex: 20, minWidth: 160, sortable: true, filter: true },
+    { field: 'name', headerName: 'Sport', flex: 20, minWidth: 160, sortable: true, filter: true, editable: true },
     {
       field: 'active',
       headerName: 'Active',
       width: 110,
       sortable: true,
       filter: true,
+      editable: true,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: {
+        values: [true, false],
+      },
       valueFormatter: (p) => (p.value ? 'Yes' : 'No'),
     },
   ];
@@ -267,5 +272,64 @@ export class SportsListComponent implements OnInit {
         this.error = 'Failed to clear grid settings';
       },
     });
+  }
+
+  handleRowSaved(event: any): void {
+    const sport = event.data as Sport;
+
+    if (!sport.id) {
+      // New row - create
+      this.sportService.createSport({ name: sport.name, active: sport.active }).subscribe({
+        next: (createdSport) => {
+          console.log('Sport created:', createdSport);
+          this.error = '';
+          this.refreshServerDataSource();
+        },
+        error: (err) => {
+          console.error('Failed to create sport:', err);
+          this.error = 'Failed to create sport.';
+        },
+      });
+    } else {
+      // Existing row - update
+      this.sportService.updateSport(sport.id, { name: sport.name, active: sport.active }).subscribe({
+        next: (updatedSport) => {
+          console.log('Sport updated:', updatedSport);
+          this.error = '';
+          this.refreshServerDataSource();
+        },
+        error: (err) => {
+          console.error('Failed to update sport:', err);
+          this.error = 'Failed to update sport.';
+        },
+      });
+    }
+  }
+
+  handleRowDeleted(event: any): void {
+    const sport = event.data as Sport;
+
+    if (!sport.id) {
+      console.log('Cannot delete unsaved row');
+      return;
+    }
+
+    this.sportService.deleteSport(sport.id).subscribe({
+      next: () => {
+        console.log('Sport deleted:', sport.id);
+        this.error = '';
+        this.refreshServerDataSource();
+      },
+      error: (err) => {
+        console.error('Failed to delete sport:', err);
+        this.error = 'Failed to delete sport.';
+      },
+    });
+  }
+
+  handleCellChanged(event: any): void {
+    console.log('Cell value changed:', event);
+    // Cell changes are handled automatically by the grid
+    // This event is for additional logic if needed
   }
 }

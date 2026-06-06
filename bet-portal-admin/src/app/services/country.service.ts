@@ -14,6 +14,11 @@ interface CreateCountryRequest {
   active: boolean;
 }
 
+interface UpdateCountryRequest {
+  name: string;
+  active: boolean;
+}
+
 export interface CountryListQuery {
   name?: string;
   active?: boolean;
@@ -52,5 +57,13 @@ export class CountryService {
 
   createCountry(payload: CreateCountryRequest): Observable<Country> {
     return this.http.post<Country>(`${this.apiBase}/country/add`, payload);
+  }
+
+  updateCountry(id: number, payload: UpdateCountryRequest): Observable<Country> {
+    return this.http.put<Country>(`${this.apiBase}/country/${id}`, payload);
+  }
+
+  deleteCountry(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiBase}/country/${id}`);
   }
 }

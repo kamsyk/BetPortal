@@ -106,11 +106,74 @@ namespace BetPortalWebApi.Controllers
             });
         }
 
+        [HttpPut("{id}")]
+        [Authorize(Policy = "AdminAccess")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateCountryRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                return BadRequest(new { message = "Country name is required." });
+            }
+
+            var country = await _dbContext.Countries.FindAsync(id);
+            if (country == null)
+            {
+                return NotFound(new { message = "Country not found." });
+            }
+
+            var normalizedName = request.Name.Trim();
+            var duplicateExists = await _dbContext.Countries.AnyAsync(c => c.Name == normalizedName && c.Id != id);
+            if (duplicateExists)
+            {
+                return Conflict(new { message = "Another country with this name already exists." });
+            }
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var modifiedByUserId = int.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : 1;
+
+            country.Name = normalizedName;
+            country.Active = request.Active;
+            country.ModifiedDate = DateTime.UtcNow;
+            country.ModifiedByUserId = modifiedByUserId;
+
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new CountryDto
+            {
+                Id = country.Id,
+                Name = country.Name,
+                Active = country.Active,
+            });
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminAccess")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var country = await _dbContext.Countries.FindAsync(id);
+            if (country == null)
+            {
+                return NotFound(new { message = "Country not found." });
+            }
+
+            _dbContext.Countries.Remove(country);
+            await _dbContext.SaveChangesAsync();
+
+            return NoContent();
+        }
+
         public class AddCountryRequest
         {
             public string Name { get; set; } = string.Empty;
 
             public bool Active { get; set; } = true;
+        }
+
+        public class UpdateCountryRequest
+        {
+            public string Name { get; set; } = string.Empty;
+
+            public bool Active { get; set; }
         }
 
         public class CountryDto
