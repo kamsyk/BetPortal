@@ -26,12 +26,13 @@ namespace BetPortalWebApi.Services
 
                 // Analyze the message to determine what data to fetch
                 var needsSports = ContainsKeywords(messageLower, "sport", "sports", "game", "games");
+                var needsCountries = ContainsKeywords(messageLower, "country", "countries", "nation", "nations", "location", "locations");
                 var needsUsers = ContainsKeywords(messageLower, "user", "users", "account", "accounts", "administrator", "admin");
                 var needsRoles = ContainsKeywords(messageLower, "role", "roles", "permission", "permissions");
                 var needsStats = ContainsKeywords(messageLower, "statistic", "statistics", "stat", "stats", "count", "total", "how many");
 
                 // If no specific keywords, provide general overview
-                if (!needsSports && !needsUsers && !needsRoles && !needsStats)
+                if (!needsSports && !needsCountries && !needsUsers && !needsRoles && !needsStats)
                 {
                     needsStats = true; // Default to showing stats
                 }
@@ -46,7 +47,7 @@ namespace BetPortalWebApi.Services
                     context.AppendLine("=== Sports Data ===");
                     context.AppendLine($"Total sports: {sports.Count}");
                     context.AppendLine($"Active sports: {sports.Count(s => s.Active)}");
-                    
+
                     if (needsSports && sports.Any())
                     {
                         context.AppendLine("\nSports list:");
@@ -54,10 +55,38 @@ namespace BetPortalWebApi.Services
                         {
                             context.AppendLine($"- {sport.Name} (ID: {sport.Id}, Active: {sport.Active})");
                         }
-                        
+
                         if (sports.Count > 20)
                         {
                             context.AppendLine($"... and {sports.Count - 20} more sports");
+                        }
+                    }
+
+                    context.AppendLine();
+                }
+
+                // Fetch countries data if needed
+                if (needsCountries || needsStats)
+                {
+                    var countries = await _dbContext.Countries
+                        .OrderBy(c => c.Name)
+                        .ToListAsync();
+
+                    context.AppendLine("=== Countries Data ===");
+                    context.AppendLine($"Total countries: {countries.Count}");
+                    context.AppendLine($"Active countries: {countries.Count(c => c.Active)}");
+
+                    if (needsCountries && countries.Any())
+                    {
+                        context.AppendLine("\nCountries list:");
+                        foreach (var country in countries.Take(50)) // Show up to 50 countries
+                        {
+                            context.AppendLine($"- {country.Name} (ID: {country.Id}, Active: {country.Active})");
+                        }
+
+                        if (countries.Count > 50)
+                        {
+                            context.AppendLine($"... and {countries.Count - 50} more countries");
                         }
                     }
 
@@ -73,7 +102,7 @@ namespace BetPortalWebApi.Services
                     context.AppendLine("=== Users Data ===");
                     context.AppendLine($"Total users: {usersCount}");
                     context.AppendLine($"Active users: {activeUsers}");
-                    
+
                     if (needsUsers && usersCount > 0)
                     {
                         var recentUsers = await _dbContext.BpUsers
@@ -101,7 +130,7 @@ namespace BetPortalWebApi.Services
                     context.AppendLine("=== Roles Data ===");
                     context.AppendLine($"Total roles: {roles.Count}");
                     context.AppendLine($"Total role assignments: {userRoleAssignments}");
-                    
+
                     if (needsRoles && roles.Any())
                     {
                         context.AppendLine("\nAvailable roles:");

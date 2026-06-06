@@ -53,14 +53,15 @@ namespace BetPortalWebApi.Services
         {
             var prompt = new StringBuilder();
             prompt.AppendLine("You are a helpful AI assistant for a sports betting portal.");
-            prompt.AppendLine("You help users with information about sports, betting, odds, results, and general betting guidance.");
+            prompt.AppendLine("You help users with information about sports, countries, betting, odds, results, and general betting guidance.");
             prompt.AppendLine();
             prompt.AppendLine("Current database context:");
             prompt.AppendLine(dbContext);
             prompt.AppendLine();
             prompt.AppendLine("Guidelines:");
-            prompt.AppendLine("- Provide clear, friendly, and engaging answers about sports and betting");
+            prompt.AppendLine("- Provide clear, friendly, and engaging answers about sports, countries, and betting");
             prompt.AppendLine("- Help users understand betting odds, markets, and how to place bets");
+            prompt.AppendLine("- Share information about available sports and countries in the system");
             prompt.AppendLine("- Share sports results, statistics, and upcoming events when available");
             prompt.AppendLine("- Use the database context to give accurate, up-to-date information");
             prompt.AppendLine("- Explain betting concepts in simple terms for users of all experience levels");
@@ -81,7 +82,7 @@ namespace BetPortalWebApi.Services
                 messages.Add(new
                 {
                     role = msg.Role,
-                    content = msg.Content
+                    content = msg.Content,
                 });
             }
 
@@ -89,7 +90,7 @@ namespace BetPortalWebApi.Services
             messages.Add(new
             {
                 role = "user",
-                content = currentMessage
+                content = currentMessage,
             });
 
             return messages;
@@ -112,7 +113,7 @@ namespace BetPortalWebApi.Services
                 model = _configuration["Claude:Model"] ?? "claude-3-5-sonnet-20241022",
                 max_tokens = int.Parse(_configuration["Claude:MaxTokens"] ?? "1024"),
                 system = systemPrompt,
-                messages
+                messages,
             };
 
             var content = new StringContent(
@@ -131,16 +132,16 @@ namespace BetPortalWebApi.Services
 
             var responseContent = await response.Content.ReadAsStringAsync();
             _logger.LogInformation("Claude API Response: {Response}", responseContent);
-            
+
             var options = new JsonSerializerOptions
             {
-                PropertyNameCaseInsensitive = true
+                PropertyNameCaseInsensitive = true,
             };
             var claudeResponse = JsonSerializer.Deserialize<ClaudeApiResponse>(responseContent, options);
 
             var result = claudeResponse?.Content?.FirstOrDefault()?.Text ?? "I'm sorry, I couldn't generate a response.";
             _logger.LogInformation("Parsed response text: {Text}", result);
-            
+
             return result;
         }
 
@@ -151,6 +152,7 @@ namespace BetPortalWebApi.Services
             public class ContentBlock
             {
                 public string? Type { get; set; }
+
                 public string? Text { get; set; }
             }
         }

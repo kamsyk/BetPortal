@@ -34,7 +34,7 @@ namespace BetPortalWebApi.Controllers
                 return Ok(new ChatResponse
                 {
                     Content = response,
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = DateTime.UtcNow,
                 });
             }
             catch (Exception ex)
