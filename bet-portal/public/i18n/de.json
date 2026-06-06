@@ -1,0 +1,40 @@
+{
+  "app": {
+    "title": "Wettportal"
+  },
+  "nav": {
+    "brand": "Wettportal",
+    "home": "Startseite",
+    "advisor": "Berater",
+    "about": "Über uns",
+    "contact": "Kontakt",
+    "logout": "Abmelden",
+    "openMenu": "Navigationsmenü öffnen",
+    "switchToLightMode": "Zum hellen Modus wechseln",
+    "switchToDarkMode": "Zum dunklen Modus wechseln",
+    "lightMode": "Heller Modus",
+    "darkMode": "Dunkler Modus",
+    "language": "Sprache"
+  },
+  "languages": {
+    "en": "Englisch",
+    "cs": "Tschechisch",
+    "de": "Deutsch"
+  },
+  "advisor": {
+    "title": "KI-Berater",
+    "subtitle": "Fragen Sie mich alles über Ihre Wettportal-Daten",
+    "clearChat": "Chat löschen",
+    "welcomeTitle": "Willkommen beim KI-Berater",
+    "welcomeBody1": "Ich kann Ihnen mit Informationen aus Ihrer Datenbank helfen, einschließlich Sportarten, Ländern, Benutzern und mehr.",
+    "welcomeBody2": "Stellen Sie eine Frage, um loszulegen!",
+    "thinking": "Denke nach...",
+    "messageLabel": "Geben Sie Ihre Nachricht ein...",
+    "messagePlaceholder": "Fragen Sie nach Sportarten, Ländern oder anderen Daten im System...",
+    "send": "Senden",
+    "errorMessage": "Entschuldigung, es ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
+  },
+  "home": {
+    "works": "Startseite funktioniert!"
+  }
+}

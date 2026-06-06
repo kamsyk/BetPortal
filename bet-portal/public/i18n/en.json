@@ -1,0 +1,40 @@
+{
+  "app": {
+    "title": "Bet Portal"
+  },
+  "nav": {
+    "brand": "Bet Portal",
+    "home": "Home",
+    "advisor": "Advisor",
+    "about": "About",
+    "contact": "Contact",
+    "logout": "Logout",
+    "openMenu": "Open navigation menu",
+    "switchToLightMode": "Switch to Light Mode",
+    "switchToDarkMode": "Switch to Dark Mode",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "language": "Language"
+  },
+  "languages": {
+    "en": "English",
+    "cs": "Czech",
+    "de": "German"
+  },
+  "advisor": {
+    "title": "AI Advisor",
+    "subtitle": "Ask me anything about your betting portal data",
+    "clearChat": "Clear chat",
+    "welcomeTitle": "Welcome to AI Advisor",
+    "welcomeBody1": "I can help you with information from your database including sports, countries, users, and more.",
+    "welcomeBody2": "Ask me a question to get started!",
+    "thinking": "Thinking...",
+    "messageLabel": "Type your message...",
+    "messagePlaceholder": "Ask about sports, countries, or any data in the system...",
+    "send": "Send",
+    "errorMessage": "Sorry, I encountered an error. Please try again."
+  },
+  "home": {
+    "works": "home works!"
+  }
+}

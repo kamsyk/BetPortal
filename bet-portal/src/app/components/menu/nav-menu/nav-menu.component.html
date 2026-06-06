@@ -1,26 +1,42 @@
 <mat-toolbar color="primary" class="nav-toolbar">
-  <a class="brand-link" routerLink="/">My Angular App</a>
+  <a class="brand-link" routerLink="/">{{ 'nav.brand' | translate }}</a>
 
   <span class="spacer"></span>
 
   @if (!isMobile) {
     <div class="desktop-actions">
       @if (isLoggedIn()) {
-        <a mat-button routerLink="/">Home</a>
+        <a mat-button routerLink="/">{{ 'nav.home' | translate }}</a>
 
-        <a mat-button routerLink="/advisor">Advisor</a>
-        <a mat-button routerLink="/about">About</a>
-        <a mat-button routerLink="/contact">Contact</a>
+        <a mat-button routerLink="/advisor">{{ 'nav.advisor' | translate }}</a>
+        <a mat-button routerLink="/about">{{ 'nav.about' | translate }}</a>
+        <a mat-button routerLink="/contact">{{ 'nav.contact' | translate }}</a>
+      }
 
-        <button mat-icon-button (click)="toggleTheme()" [title]="themeService.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+      <mat-form-field class="language-select" subscriptSizing="dynamic">
+        <mat-label>{{ 'nav.language' | translate }}</mat-label>
+        <mat-select
+          [value]="languageService.currentLanguage()"
+          (selectionChange)="languageService.setLanguage($event.value)">
+          @for (lang of languageService.languages; track lang) {
+            <mat-option [value]="lang">{{ 'languages.' + lang | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (isLoggedIn()) {
+        <button
+          mat-icon-button
+          (click)="toggleTheme()"
+          [title]="(themeService.isDarkMode() ? 'nav.switchToLightMode' : 'nav.switchToDarkMode') | translate">
           <mat-icon>{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
         </button>
 
-        <button mat-button type="button" (click)="logOut()">Logout</button>
+        <button mat-button type="button" (click)="logOut()">{{ 'nav.logout' | translate }}</button>
       }
     </div>
   } @else {
-    <button mat-icon-button [matMenuTriggerFor]="mobileMenu" aria-label="Open navigation menu">
+    <button mat-icon-button [matMenuTriggerFor]="mobileMenu" [attr.aria-label]="'nav.openMenu' | translate">
       <span class="menu-glyph" aria-hidden="true">&#9776;</span>
     </button>
   }
@@ -28,13 +44,25 @@
 
 <mat-menu #mobileMenu="matMenu">
   @if (isLoggedIn()) {
-    <button mat-menu-item routerLink="/">Home</button>
-    <button mat-menu-item routerLink="/about">About</button>
-    <button mat-menu-item routerLink="/contact">Contact</button>
+    <button mat-menu-item routerLink="/">{{ 'nav.home' | translate }}</button>
+    <button mat-menu-item routerLink="/advisor">{{ 'nav.advisor' | translate }}</button>
+    <button mat-menu-item routerLink="/about">{{ 'nav.about' | translate }}</button>
+    <button mat-menu-item routerLink="/contact">{{ 'nav.contact' | translate }}</button>
+  }
+  @for (lang of languageService.languages; track lang) {
+    <button
+      mat-menu-item
+      type="button"
+      (click)="languageService.setLanguage(lang)"
+      [class.active-language]="languageService.currentLanguage() === lang">
+      {{ 'languages.' + lang | translate }}
+    </button>
+  }
+  @if (isLoggedIn()) {
     <button mat-menu-item (click)="toggleTheme()">
       <mat-icon>{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
-      <span>{{ themeService.isDarkMode() ? 'Light Mode' : 'Dark Mode' }}</span>
+      <span>{{ (themeService.isDarkMode() ? 'nav.lightMode' : 'nav.darkMode') | translate }}</span>
     </button>
-    <button mat-menu-item type="button" (click)="logOut()">Logout</button>
+    <button mat-menu-item type="button" (click)="logOut()">{{ 'nav.logout' | translate }}</button>
   }
 </mat-menu>

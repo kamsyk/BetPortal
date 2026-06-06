@@ -20,6 +20,19 @@
   gap: 0.25rem;
 }
 
+.language-select {
+  width: 8.5rem;
+  margin: 0 0.25rem;
+
+  .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+}
+
+.active-language {
+  font-weight: 600;
+}
+
 .desktop-arrow {
   margin-left: 0.35rem;
   font-size: 1.2rem;

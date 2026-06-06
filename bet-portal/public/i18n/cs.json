@@ -1,0 +1,40 @@
+{
+  "app": {
+    "title": "Sázkový portál"
+  },
+  "nav": {
+    "brand": "Sázkový portál",
+    "home": "Domů",
+    "advisor": "Poradce",
+    "about": "O nás",
+    "contact": "Kontakt",
+    "logout": "Odhlásit se",
+    "openMenu": "Otevřít navigační menu",
+    "switchToLightMode": "Přepnout na světlý režim",
+    "switchToDarkMode": "Přepnout na tmavý režim",
+    "lightMode": "Světlý režim",
+    "darkMode": "Tmavý režim",
+    "language": "Jazyk"
+  },
+  "languages": {
+    "en": "Angličtina",
+    "cs": "Čeština",
+    "de": "Němčina"
+  },
+  "advisor": {
+    "title": "AI Poradce",
+    "subtitle": "Zeptejte se na cokoli ohledně dat vašeho sázkového portálu",
+    "clearChat": "Vymazat chat",
+    "welcomeTitle": "Vítejte v AI Poradci",
+    "welcomeBody1": "Mohu vám pomoci s informacemi z vaší databáze včetně sportů, zemí, uživatelů a dalších.",
+    "welcomeBody2": "Položte otázku a můžeme začít!",
+    "thinking": "Přemýšlím...",
+    "messageLabel": "Napište svou zprávu...",
+    "messagePlaceholder": "Zeptejte se na sporty, země nebo jakákoli data v systému...",
+    "send": "Odeslat",
+    "errorMessage": "Omlouvám se, došlo k chybě. Zkuste to prosím znovu."
+  },
+  "home": {
+    "works": "domů funguje!"
+  }
+}
