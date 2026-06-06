@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { NavMenuComponent } from './components/menu/nav-menu/nav-menu.component';
 import { ThemeService } from './services/theme.service';
+import { LanguageService } from './services/language.service';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +15,10 @@ import { ThemeService } from './services/theme.service';
 export class AppComponent {
   title = 'bet-portal';
 
-  // Inject ThemeService to initialize it on app startup
   private themeService = inject(ThemeService);
+  private languageService = inject(LanguageService);
+
+  constructor() {
+    this.languageService.init();
+  }
 }

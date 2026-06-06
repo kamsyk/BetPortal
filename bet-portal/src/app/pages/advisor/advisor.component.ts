@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ChatService, ChatMessage } from '../../services/chat.service';
 
 @Component({
@@ -20,13 +21,15 @@ import { ChatService, ChatMessage } from '../../services/chat.service';
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    TranslatePipe,
   ],
   templateUrl: './advisor.component.html',
   styleUrls: ['./advisor.component.scss']
 })
 export class AdvisorComponent implements AfterViewChecked {
   private readonly chatService = inject(ChatService);
+  private readonly translate = inject(TranslateService);
 
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
@@ -76,7 +79,7 @@ export class AdvisorComponent implements AfterViewChecked {
         console.error('Error sending message:', error);
         const errorMessage: ChatMessage = {
           role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again.',
+          content: this.translate.instant('advisor.errorMessage'),
           timestamp: new Date()
         };
         this.messages.update(msgs => [...msgs, errorMessage]);

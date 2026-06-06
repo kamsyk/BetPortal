@@ -3,13 +3,13 @@
     <mat-card-header>
       <mat-card-title>
         <div class="header-content">
-          <span>AI Advisor</span>
-          <button mat-icon-button (click)="clearChat()" title="Clear chat">
+          <span>{{ 'advisor.title' | translate }}</span>
+          <button mat-icon-button (click)="clearChat()" [title]="'advisor.clearChat' | translate">
             <mat-icon>delete_outline</mat-icon>
           </button>
         </div>
       </mat-card-title>
-      <mat-card-subtitle>Ask me anything about your betting portal data</mat-card-subtitle>
+      <mat-card-subtitle>{{ 'advisor.subtitle' | translate }}</mat-card-subtitle>
     </mat-card-header>
 
     <mat-card-content>
@@ -17,9 +17,9 @@
         @if (messages().length === 0) {
           <div class="welcome-message">
             <mat-icon>chat</mat-icon>
-            <h2>Welcome to AI Advisor</h2>
-            <p>I can help you with information from your database including sports, countries, users, and more.</p>
-            <p>Ask me a question to get started!</p>
+            <h2>{{ 'advisor.welcomeTitle' | translate }}</h2>
+            <p>{{ 'advisor.welcomeBody1' | translate }}</p>
+            <p>{{ 'advisor.welcomeBody2' | translate }}</p>
           </div>
         }
 
@@ -43,7 +43,7 @@
             <div class="message-content">
               <div class="typing-indicator">
                 <mat-spinner diameter="20"></mat-spinner>
-                <span>Thinking...</span>
+                <span>{{ 'advisor.thinking' | translate }}</span>
               </div>
             </div>
           </div>
@@ -52,14 +52,14 @@
 
       <div class="input-container">
         <mat-form-field appearance="outline" class="message-input">
-          <mat-label>Type your message...</mat-label>
+          <mat-label>{{ 'advisor.messageLabel' | translate }}</mat-label>
           <textarea
             matInput
             [(ngModel)]="userInput"
             (keypress)="onKeyPress($event)"
             [disabled]="isLoading()"
             rows="2"
-            placeholder="Ask about sports, countries, or any data in the system...">
+            [placeholder]="'advisor.messagePlaceholder' | translate">
           </textarea>
         </mat-form-field>
         <button
@@ -68,7 +68,7 @@
           (click)="sendMessage()"
           [disabled]="!userInput().trim() || isLoading()">
           <mat-icon>send</mat-icon>
-          Send
+          {{ 'advisor.send' | translate }}
         </button>
       </div>
     </mat-card-content>
