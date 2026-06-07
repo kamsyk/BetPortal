@@ -94,8 +94,6 @@ export class SportsListComponent implements OnInit {
       return;
     }
 
-    console.log('Applying grid settings:', this.loadedSettings);
-
     // Apply column state (includes visibility, order, width, etc.)
     if (this.loadedSettings.columnState && this.loadedSettings.columnState.length > 0) {
       this.gridApi.applyColumnState({ state: this.loadedSettings.columnState, applyOrder: true });
@@ -124,9 +122,6 @@ export class SportsListComponent implements OnInit {
     };
 
     this.gridSettingsService.saveSettings(this.pageIdentifier, settings).subscribe({
-      next: () => {
-        console.log('Grid settings saved successfully');
-      },
       error: () => {
         this.error = 'Failed to save grid settings';
       },
@@ -245,7 +240,6 @@ export class SportsListComponent implements OnInit {
   onAddNewItem(): void {
     // If there's already a new row being added, don't add another
     if (this.newRowBeingAdded) {
-      console.log('A new row is already being added');
       return;
     }
 
@@ -293,7 +287,6 @@ export class SportsListComponent implements OnInit {
   onSettingsCleared(): void {
     this.gridSettingsService.deleteSettings(this.pageIdentifier).subscribe({
       next: () => {
-        console.log('Grid settings cleared successfully');
         this.error = '';
 
         // Clear loaded settings
@@ -321,21 +314,17 @@ export class SportsListComponent implements OnInit {
   }
 
   handleRowSaved(sport: Sport): void {
-    console.log('handleRowSaved called with:', sport);
-
     // Apply any tracked cell changes to the sport object
     const sportId = sport.id || 'new';
     const changes = this.cellChanges.get(sportId);
     if (changes) {
       Object.assign(sport, changes);
-      console.log('Applied changes:', changes, 'Final sport:', sport);
     }
 
     if (!sport.id) {
       // New row - create
       this.sportService.createSport({ name: sport.name, active: sport.active }).subscribe({
-        next: (createdSport) => {
-          console.log('Sport created:', createdSport);
+        next: () => {
           this.error = '';
 
           // Clear tracked changes
@@ -349,16 +338,14 @@ export class SportsListComponent implements OnInit {
 
           this.refreshServerDataSource();
         },
-        error: (err) => {
-          console.error('Failed to create sport:', err);
+        error: () => {
           this.error = 'Failed to create sport.';
         },
       });
     } else {
       // Existing row - update
       this.sportService.updateSport(sport.id, { name: sport.name, active: sport.active }).subscribe({
-        next: (updatedSport) => {
-          console.log('Sport updated:', updatedSport);
+        next: () => {
           this.error = '';
 
           // Clear tracked changes for this row
@@ -366,8 +353,7 @@ export class SportsListComponent implements OnInit {
 
           this.refreshServerDataSource();
         },
-        error: (err) => {
-          console.error('Failed to update sport:', err);
+        error: () => {
           this.error = 'Failed to update sport.';
         },
       });
@@ -375,11 +361,7 @@ export class SportsListComponent implements OnInit {
   }
 
   handleRowDeleted(sport: Sport): void {
-    console.log('handleRowDeleted called with:', sport);
-
     if (!sport.id) {
-      console.log('Deleting unsaved row (removing from pinned rows)');
-
       // If this is the new row being added, clear it from pinned rows
       if (this.newRowBeingAdded) {
         this.gridApi?.setGridOption('pinnedBottomRowData', []);
@@ -391,20 +373,17 @@ export class SportsListComponent implements OnInit {
 
     this.sportService.deleteSport(sport.id).subscribe({
       next: () => {
-        console.log('Sport deleted:', sport.id);
         this.error = '';
         this.refreshServerDataSource();
       },
-      error: (err) => {
-        console.error('Failed to delete sport:', err);
+      error: () => {
+        this.error = 'Failed to delete sport.';
         this.error = 'Failed to delete sport.';
       },
     });
   }
 
   handleCellChanged(event: any): void {
-    console.log('Cell value changed:', event);
-
     if (!event?.data || !event?.field) {
       return;
     }
@@ -414,7 +393,5 @@ export class SportsListComponent implements OnInit {
     const changes = this.cellChanges.get(sportId) || {};
     (changes as any)[event.field] = event.newValue;
     this.cellChanges.set(sportId, changes);
-
-    console.log('Tracked changes:', this.cellChanges);
   }
 }
