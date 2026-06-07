@@ -29,6 +29,7 @@ export class SportsListComponent implements OnInit {
   private readonly pageIdentifier = 'sports-list';
   private loadedSettings?: GridSettingsData;
   initialPageSize = 25;
+  private newRowBeingAdded: Partial<Sport> | null = null;
 
   error = '';
   readonly isBrowser = isPlatformBrowser(this.platformId);
@@ -240,6 +241,50 @@ export class SportsListComponent implements OnInit {
     });
   }
 
+  onAddNewItem(): void {
+    // If there's already a new row being added, don't add another
+    if (this.newRowBeingAdded) {
+      console.log('A new row is already being added');
+      return;
+    }
+
+    // Create a new blank sport object (no id means it's a new row)
+    const newSport: Partial<Sport> = {
+      name: '',
+      active: true,
+    };
+
+    this.newRowBeingAdded = newSport;
+
+    // Get the grid API
+    const gridApi = this.agGridComponent?.agGrid?.api;
+    if (!gridApi) {
+      console.warn('Grid API not available');
+      return;
+    }
+
+    // Add the new row as a pinned bottom row (works with server-side data)
+    gridApi.setGridOption('pinnedBottomRowData', [newSport]);
+
+    // Enter edit mode for the new row
+    if (this.agGridComponent) {
+      this.agGridComponent.enterEditMode(newSport as Sport);
+    }
+
+    // Focus on the first cell after a short delay
+    setTimeout(() => {
+      const firstEditableCol = this.columnDefs.find(col => col.editable);
+      if (firstEditableCol && firstEditableCol.field) {
+        gridApi.setFocusedCell(0, firstEditableCol.field, 'bottom');
+        gridApi.startEditingCell({
+          rowIndex: 0,
+          colKey: firstEditableCol.field,
+          rowPinned: 'bottom',
+        });
+      }
+    }, 100);
+  }
+
   onSettingsSaved(gridState: any): void {
     this.saveGridSettings(gridState);
   }
@@ -283,6 +328,13 @@ export class SportsListComponent implements OnInit {
         next: (createdSport) => {
           console.log('Sport created:', createdSport);
           this.error = '';
+
+          // Clear the pinned row if this was a new row being added
+          if (this.newRowBeingAdded) {
+            this.gridApi?.setGridOption('pinnedBottomRowData', []);
+            this.newRowBeingAdded = null;
+          }
+
           this.refreshServerDataSource();
         },
         error: (err) => {
@@ -310,7 +362,14 @@ export class SportsListComponent implements OnInit {
     const sport = event.data as Sport;
 
     if (!sport.id) {
-      console.log('Cannot delete unsaved row');
+      console.log('Deleting unsaved row (removing from pinned rows)');
+
+      // If this is the new row being added, clear it from pinned rows
+      if (this.newRowBeingAdded) {
+        this.gridApi?.setGridOption('pinnedBottomRowData', []);
+        this.newRowBeingAdded = null;
+      }
+
       return;
     }
 
