@@ -29,6 +29,7 @@ export class CountriesListComponent implements OnInit {
   private readonly pageIdentifier = 'countries-list';
   private loadedSettings?: GridSettingsData;
   initialPageSize = 25;
+  private cellChanges = new Map<number | string, Partial<Country>>();
 
   error = '';
   readonly isBrowser = isPlatformBrowser(this.platformId);
@@ -265,8 +266,16 @@ export class CountriesListComponent implements OnInit {
     });
   }
 
-  handleRowSaved(event: any): void {
-    const country = event.data as Country;
+  handleRowSaved(country: Country): void {
+    console.log('handleRowSaved called with:', country);
+
+    // Apply any tracked cell changes to the country object
+    const countryId: number | string = country.id || 'new';
+    const changes = this.cellChanges.get(countryId);
+    if (changes) {
+      Object.assign(country, changes);
+      console.log('Applied changes:', changes, 'Final country:', country);
+    }
 
     if (!country.id) {
       // New row - create
@@ -274,6 +283,10 @@ export class CountriesListComponent implements OnInit {
         next: (createdCountry) => {
           console.log('Country created:', createdCountry);
           this.error = '';
+
+          // Clear tracked changes
+          this.cellChanges.delete('new');
+
           this.refreshServerDataSource();
         },
         error: (err) => {
@@ -287,6 +300,10 @@ export class CountriesListComponent implements OnInit {
         next: (updatedCountry) => {
           console.log('Country updated:', updatedCountry);
           this.error = '';
+
+          // Clear tracked changes for this row
+          this.cellChanges.delete(country.id);
+
           this.refreshServerDataSource();
         },
         error: (err) => {
@@ -297,8 +314,8 @@ export class CountriesListComponent implements OnInit {
     }
   }
 
-  handleRowDeleted(event: any): void {
-    const country = event.data as Country;
+  handleRowDeleted(country: Country): void {
+    console.log('handleRowDeleted called with:', country);
 
     if (!country.id) {
       console.log('Cannot delete unsaved row');
@@ -320,7 +337,17 @@ export class CountriesListComponent implements OnInit {
 
   handleCellChanged(event: any): void {
     console.log('Cell value changed:', event);
-    // Cell changes are handled automatically by the grid
-    // This event is for additional logic if needed
+
+    if (!event?.data || !event?.field) {
+      return;
+    }
+
+    // Track changes for this row
+    const countryId: number | string = event.data.id || 'new';
+    const changes = this.cellChanges.get(countryId) || {};
+    (changes as any)[event.field] = event.newValue;
+    this.cellChanges.set(countryId, changes);
+
+    console.log('Tracked changes:', this.cellChanges);
   }
 }

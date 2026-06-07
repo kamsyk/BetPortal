@@ -30,6 +30,7 @@ export class SportsListComponent implements OnInit {
   private loadedSettings?: GridSettingsData;
   initialPageSize = 25;
   private newRowBeingAdded: Partial<Sport> | null = null;
+  private cellChanges = new Map<number | string, Partial<Sport>>();
 
   error = '';
   readonly isBrowser = isPlatformBrowser(this.platformId);
@@ -319,8 +320,16 @@ export class SportsListComponent implements OnInit {
     });
   }
 
-  handleRowSaved(event: any): void {
-    const sport = event.data as Sport;
+  handleRowSaved(sport: Sport): void {
+    console.log('handleRowSaved called with:', sport);
+
+    // Apply any tracked cell changes to the sport object
+    const sportId = sport.id || 'new';
+    const changes = this.cellChanges.get(sportId);
+    if (changes) {
+      Object.assign(sport, changes);
+      console.log('Applied changes:', changes, 'Final sport:', sport);
+    }
 
     if (!sport.id) {
       // New row - create
@@ -328,6 +337,9 @@ export class SportsListComponent implements OnInit {
         next: (createdSport) => {
           console.log('Sport created:', createdSport);
           this.error = '';
+
+          // Clear tracked changes
+          this.cellChanges.delete('new');
 
           // Clear the pinned row if this was a new row being added
           if (this.newRowBeingAdded) {
@@ -348,6 +360,10 @@ export class SportsListComponent implements OnInit {
         next: (updatedSport) => {
           console.log('Sport updated:', updatedSport);
           this.error = '';
+
+          // Clear tracked changes for this row
+          this.cellChanges.delete(sport.id);
+
           this.refreshServerDataSource();
         },
         error: (err) => {
@@ -358,8 +374,8 @@ export class SportsListComponent implements OnInit {
     }
   }
 
-  handleRowDeleted(event: any): void {
-    const sport = event.data as Sport;
+  handleRowDeleted(sport: Sport): void {
+    console.log('handleRowDeleted called with:', sport);
 
     if (!sport.id) {
       console.log('Deleting unsaved row (removing from pinned rows)');
@@ -388,7 +404,17 @@ export class SportsListComponent implements OnInit {
 
   handleCellChanged(event: any): void {
     console.log('Cell value changed:', event);
-    // Cell changes are handled automatically by the grid
-    // This event is for additional logic if needed
+
+    if (!event?.data || !event?.field) {
+      return;
+    }
+
+    // Track changes for this row
+    const sportId: number | string = event.data.id || 'new';
+    const changes = this.cellChanges.get(sportId) || {};
+    (changes as any)[event.field] = event.newValue;
+    this.cellChanges.set(sportId, changes);
+
+    console.log('Tracked changes:', this.cellChanges);
   }
 }
