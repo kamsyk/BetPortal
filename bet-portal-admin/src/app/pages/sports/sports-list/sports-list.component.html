@@ -21,6 +21,7 @@
           [serverDataSource]="serverDataSource"
           [themeMode]="themeService.isDarkMode() ? 'dark' : 'light'"
           [enableSettingsPersistence]="true"
+          [settingsStorageKey]="'sports-list'"
           [autoRestoreSettings]="true"
           [enableActionButtons]="true"
           (settingsSaved)="onSettingsSaved($event)"
