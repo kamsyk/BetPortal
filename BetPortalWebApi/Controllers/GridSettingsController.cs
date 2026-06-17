@@ -38,8 +38,18 @@ namespace BetPortalWebApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SaveSettings([FromBody] SaveGridSettingsRequest request)
+        public async Task<IActionResult> SaveSettings([FromBody] SaveGridSettingsRequest? request)
         {
+            if (request == null)
+            {
+                return BadRequest(new { message = "Request body is required." });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             if (string.IsNullOrWhiteSpace(request.PageIdentifier))
             {
                 return BadRequest(new { message = "Page identifier is required." });
@@ -73,12 +83,8 @@ namespace BetPortalWebApi.Controllers
                 return Unauthorized(new { message = "Invalid user ID." });
             }
 
-            var deleted = await _gridSettingsService.DeleteUserGridSettingsAsync(userId, pageIdentifier);
-
-            if (!deleted)
-            {
-                return NotFound();
-            }
+            // DELETE should be idempotent - return success even if settings don't exist
+            await _gridSettingsService.DeleteUserGridSettingsAsync(userId, pageIdentifier);
 
             return NoContent();
         }
