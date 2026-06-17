@@ -29,6 +29,7 @@ export class CountriesListComponent implements OnInit {
   private readonly pageIdentifier = 'countries-list';
   private loadedSettings?: GridSettingsData;
   initialPageSize = 25;
+  private newRowBeingAdded: Partial<Country> | null = null;
   private cellChanges = new Map<number | string, Partial<Country>>();
 
   error = '';
@@ -227,18 +228,47 @@ export class CountriesListComponent implements OnInit {
     return undefined;
   }
 
-  onNewCountryClick(): void {
-    const name = window.prompt('Enter country name');
-    if (!name || !name.trim()) {
+  onAddNewItem(): void {
+    // If there's already a new row being added, don't add another
+    if (this.newRowBeingAdded) {
       return;
     }
 
-    this.countryService.createCountry({ name: name.trim(), active: true }).subscribe({
-      next: () => this.refreshServerDataSource(),
-      error: () => {
-        this.error = 'Failed to create country.';
-      },
-    });
+    // Create a new blank country object (no id means it's a new row)
+    const newCountry: Partial<Country> = {
+      name: '',
+      active: true,
+    };
+
+    this.newRowBeingAdded = newCountry;
+
+    // Get the grid API
+    const gridApi = this.agGridComponent?.agGrid?.api;
+    if (!gridApi) {
+      console.warn('Grid API not available');
+      return;
+    }
+
+    // Add the new row as a pinned bottom row (works with server-side data)
+    gridApi.setGridOption('pinnedBottomRowData', [newCountry]);
+
+    // Enter edit mode for the new row
+    if (this.agGridComponent) {
+      this.agGridComponent.enterEditMode(newCountry as Country);
+    }
+
+    // Focus on the first cell after a short delay
+    setTimeout(() => {
+      const firstEditableCol = this.columnDefs.find(col => col.editable);
+      if (firstEditableCol && firstEditableCol.field) {
+        gridApi.setFocusedCell(0, firstEditableCol.field, 'bottom');
+        gridApi.startEditingCell({
+          rowIndex: 0,
+          colKey: firstEditableCol.field,
+          rowPinned: 'bottom',
+        });
+      }
+    }, 100);
   }
 
   onSettingsSaved(gridState: any): void {
@@ -287,6 +317,12 @@ export class CountriesListComponent implements OnInit {
           // Clear tracked changes
           this.cellChanges.delete('new');
 
+          // Clear the pinned row if this was a new row being added
+          if (this.newRowBeingAdded) {
+            this.gridApi?.setGridOption('pinnedBottomRowData', []);
+            this.newRowBeingAdded = null;
+          }
+
           this.refreshServerDataSource();
         },
         error: (err) => {
@@ -318,6 +354,12 @@ export class CountriesListComponent implements OnInit {
     console.log('handleRowDeleted called with:', country);
 
     if (!country.id) {
+      // If this is the new row being added, clear it from pinned rows
+      if (this.newRowBeingAdded) {
+        this.gridApi?.setGridOption('pinnedBottomRowData', []);
+        this.newRowBeingAdded = null;
+      }
+
       console.log('Cannot delete unsaved row');
       return;
     }

@@ -223,20 +223,6 @@ export class SportsListComponent implements OnInit {
     return undefined;
   }
 
-  onNewSportClick(): void {
-    const name = window.prompt('Enter sport name');
-    if (!name || !name.trim()) {
-      return;
-    }
-
-    this.sportService.createSport({ name: name.trim(), active: true }).subscribe({
-      next: () => this.refreshServerDataSource(),
-      error: () => {
-        this.error = 'Failed to create sport.';
-      },
-    });
-  }
-
   onAddNewItem(): void {
     // If there's already a new row being added, don't add another
     if (this.newRowBeingAdded) {
