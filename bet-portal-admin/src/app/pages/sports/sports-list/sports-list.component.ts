@@ -110,7 +110,7 @@ export class SportsListComponent implements OnInit {
     }
   }
 
-  private saveGridSettings(gridState: any): void {
+  private saveGridSettings(gridState: GridSettingsData): void {
     if (!this.gridApi) {
       return;
     }
@@ -132,11 +132,17 @@ export class SportsListComponent implements OnInit {
     return {
       getRows: (params: IGetRowsParams) => {
         // Initialize grid API on first call
-        if (!this.gridInitialized && (params as any).api) {
-          this.gridApi = (params as any).api;
+        if (!this.gridInitialized && 'api' in params && params.api) {
+          this.gridApi = params.api as GridApi;
           this.initializeGridSettings();
           this.gridInitialized = true;
         }
+
+        // Use ViewChild grid API as fallback if params.api is not available
+        const gridApi = this.gridApi || this.agGridComponent?.agGrid?.api;
+
+        // Show loading overlay
+        gridApi?.setGridOption('loading', true);
 
         const request: KsAgGridServerRequest = {
           startRow: params.startRow,
@@ -150,10 +156,14 @@ export class SportsListComponent implements OnInit {
         this.sportService.getSports(query).subscribe({
           next: (sports) => {
             params.successCallback(sports.slice(request.startRow, request.endRow), sports.length);
+            // Hide loading overlay on success
+            gridApi?.setGridOption('loading', false);
           },
           error: () => {
             this.error = 'Failed to load sports.';
             params.failCallback();
+            // Hide loading overlay on error
+            gridApi?.setGridOption('loading', false);
           },
         });
       },
@@ -170,7 +180,8 @@ export class SportsListComponent implements OnInit {
   }
 
   private refreshServerDataSource(): void {
-    this.serverDataSource = this.createServerDataSource();
+    // Refresh the grid's infinite cache instead of creating a new datasource
+    this.gridApi?.refreshInfiniteCache();
   }
 
   private buildQueryFromRequest(request: KsAgGridServerRequest): SportListQuery {
@@ -266,7 +277,7 @@ export class SportsListComponent implements OnInit {
     }, 100);
   }
 
-  onSettingsSaved(gridState: any): void {
+  onSettingsSaved(gridState: GridSettingsData): void {
     this.saveGridSettings(gridState);
   }
 
@@ -369,7 +380,7 @@ export class SportsListComponent implements OnInit {
     });
   }
 
-  handleCellChanged(event: any): void {
+  handleCellChanged(event: { data?: { id?: number }; field?: string; newValue?: unknown }): void {
     if (!event?.data || !event?.field) {
       return;
     }
@@ -377,7 +388,7 @@ export class SportsListComponent implements OnInit {
     // Track changes for this row
     const sportId: number | string = event.data.id || 'new';
     const changes = this.cellChanges.get(sportId) || {};
-    (changes as any)[event.field] = event.newValue;
+    (changes as Record<string, unknown>)[event.field] = event.newValue;
     this.cellChanges.set(sportId, changes);
   }
 }

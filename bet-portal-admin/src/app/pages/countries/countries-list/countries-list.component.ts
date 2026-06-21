@@ -112,7 +112,7 @@ export class CountriesListComponent implements OnInit {
     }
   }
 
-  private saveGridSettings(gridState: any): void {
+  private saveGridSettings(gridState: GridSettingsData): void {
     if (!this.gridApi) {
       return;
     }
@@ -137,14 +137,17 @@ export class CountriesListComponent implements OnInit {
     return {
       getRows: (params: IGetRowsParams) => {
         // Initialize grid API on first call
-        if (!this.gridInitialized && (params as any).api) {
-          this.gridApi = (params as any).api;
+        if (!this.gridInitialized && 'api' in params && params.api) {
+          this.gridApi = params.api as GridApi;
           this.initializeGridSettings();
           this.gridInitialized = true;
         }
 
+        // Use ViewChild grid API as fallback if params.api is not available
+        const gridApi = this.gridApi || this.agGridComponent?.agGrid?.api;
+
         // Show loading overlay
-        this.gridApi?.setGridOption('loading', true);
+        gridApi?.setGridOption('loading', true);
 
         const request: KsAgGridServerRequest = {
           startRow: params.startRow,
@@ -159,13 +162,13 @@ export class CountriesListComponent implements OnInit {
           next: (countries) => {
             params.successCallback(countries.slice(request.startRow, request.endRow), countries.length);
             // Hide loading overlay on success
-            this.gridApi?.setGridOption('loading', false);
+            gridApi?.setGridOption('loading', false);
           },
           error: () => {
             this.error = 'Failed to load countries.';
             params.failCallback();
             // Hide loading overlay on error
-            this.gridApi?.setGridOption('loading', false);
+            gridApi?.setGridOption('loading', false);
           },
         });
       },
@@ -182,7 +185,8 @@ export class CountriesListComponent implements OnInit {
   }
 
   private refreshServerDataSource(): void {
-    this.serverDataSource = this.createServerDataSource();
+    // Refresh the grid's infinite cache instead of creating a new datasource
+    this.gridApi?.refreshInfiniteCache();
   }
 
   private buildQueryFromRequest(request: KsAgGridServerRequest): CountryListQuery {
@@ -278,7 +282,7 @@ export class CountriesListComponent implements OnInit {
     }, 100);
   }
 
-  onSettingsSaved(gridState: any): void {
+  onSettingsSaved(gridState: GridSettingsData): void {
     this.saveGridSettings(gridState);
   }
 
