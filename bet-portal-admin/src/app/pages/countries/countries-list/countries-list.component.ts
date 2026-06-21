@@ -143,6 +143,9 @@ export class CountriesListComponent implements OnInit {
           this.gridInitialized = true;
         }
 
+        // Show loading overlay
+        this.gridApi?.setGridOption('loading', true);
+
         const request: KsAgGridServerRequest = {
           startRow: params.startRow,
           endRow: params.endRow,
@@ -155,10 +158,14 @@ export class CountriesListComponent implements OnInit {
         this.countryService.getCountries(query).subscribe({
           next: (countries) => {
             params.successCallback(countries.slice(request.startRow, request.endRow), countries.length);
+            // Hide loading overlay on success
+            this.gridApi?.setGridOption('loading', false);
           },
           error: () => {
             this.error = 'Failed to load countries.';
             params.failCallback();
+            // Hide loading overlay on error
+            this.gridApi?.setGridOption('loading', false);
           },
         });
       },

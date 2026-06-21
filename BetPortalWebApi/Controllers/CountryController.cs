@@ -53,6 +53,7 @@ namespace BetPortalWebApi.Controllers
         [HttpGet("list")]
         public async Task<IActionResult> GetCountriesList([FromQuery] ListQueryRequest request)
         {
+            Thread.Sleep(10000); // Simulate a delay for testing purposes
             IQueryable<Country> query = _dbContext.Countries.AsNoTracking();
             query = ListQueryProcessor.Apply(query, request, HttpContext.Request.Query, FilterHandlers, SortHandlers, defaultSortKey: "name");
 
