@@ -53,7 +53,6 @@ namespace BetPortalWebApi.Controllers
         [HttpGet("list")]
         public async Task<IActionResult> GetSportsList([FromQuery] ListQueryRequest request)
         {
-            Thread.Sleep(5000); // Simulate delay for testing loading states on frontend
             IQueryable<Sport> query = _dbContext.Sports.AsNoTracking();
             query = ListQueryProcessor.Apply(query, request, HttpContext.Request.Query, FilterHandlers, SortHandlers, defaultSortKey: "name");
 
