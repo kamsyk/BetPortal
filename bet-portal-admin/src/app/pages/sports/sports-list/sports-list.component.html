@@ -1,9 +1,6 @@
 <div class="sports-list-page">
   <div class="page-header">
     <h2 class="m-0">Sports</h2>
-    <button type="button" class="btn btn-primary" (click)="onNewSportClick()">
-      New Sport
-    </button>
   </div>
 
   @if (error) {
@@ -21,10 +18,15 @@
           [serverDataSource]="serverDataSource"
           [themeMode]="themeService.isDarkMode() ? 'dark' : 'light'"
           [enableSettingsPersistence]="true"
+          [settingsStorageKey]="'sports-list'"
           [autoRestoreSettings]="true"
+          [enableActionButtons]="true"
           (settingsSaved)="onSettingsSaved($event)"
-          (settingsCleared)="onSettingsCleared()">
-          <!-- (cellClicked)="onCellClicked($event)" -->
+          (settingsCleared)="onSettingsCleared()"
+          (addItem)="onAddNewItem()"
+          (rowSaved)="handleRowSaved($event)"
+          (rowDeleted)="handleRowDeleted($event)"
+          (cellValueChanged)="handleCellChanged($event)">
         </lib-ks-ag-grid>
       </div>
     </div>

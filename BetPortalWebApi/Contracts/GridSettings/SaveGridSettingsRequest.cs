@@ -40,6 +40,6 @@ namespace BetPortalWebApi.Contracts.GridSettings
 
         public int? PivotIndex { get; set; }
 
-        public bool? Pinned { get; set; }
+        public string? Pinned { get; set; }
     }
 }

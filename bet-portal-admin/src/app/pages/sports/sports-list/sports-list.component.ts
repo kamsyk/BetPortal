@@ -29,6 +29,8 @@ export class SportsListComponent implements OnInit {
   private readonly pageIdentifier = 'sports-list';
   private loadedSettings?: GridSettingsData;
   initialPageSize = 25;
+  private newRowBeingAdded: Partial<Sport> | null = null;
+  private cellChanges = new Map<number | string, Partial<Sport>>();
 
   error = '';
   readonly isBrowser = isPlatformBrowser(this.platformId);
@@ -36,13 +38,18 @@ export class SportsListComponent implements OnInit {
   readonly theme = themeAlpine;
 
   readonly columnDefs: ColDef<Sport>[] = [
-    { field: 'name', headerName: 'Sport', flex: 20, minWidth: 160, sortable: true, filter: true },
+    { field: 'name', headerName: 'Sport', flex: 20, minWidth: 160, sortable: true, filter: true, editable: true },
     {
       field: 'active',
       headerName: 'Active',
       width: 110,
       sortable: true,
       filter: true,
+      editable: true,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: {
+        values: [true, false],
+      },
       valueFormatter: (p) => (p.value ? 'Yes' : 'No'),
     },
   ];
@@ -87,8 +94,6 @@ export class SportsListComponent implements OnInit {
       return;
     }
 
-    console.log('Applying grid settings:', this.loadedSettings);
-
     // Apply column state (includes visibility, order, width, etc.)
     if (this.loadedSettings.columnState && this.loadedSettings.columnState.length > 0) {
       this.gridApi.applyColumnState({ state: this.loadedSettings.columnState, applyOrder: true });
@@ -105,7 +110,7 @@ export class SportsListComponent implements OnInit {
     }
   }
 
-  private saveGridSettings(gridState: any): void {
+  private saveGridSettings(gridState: GridSettingsData): void {
     if (!this.gridApi) {
       return;
     }
@@ -117,9 +122,6 @@ export class SportsListComponent implements OnInit {
     };
 
     this.gridSettingsService.saveSettings(this.pageIdentifier, settings).subscribe({
-      next: () => {
-        console.log('Grid settings saved successfully');
-      },
       error: () => {
         this.error = 'Failed to save grid settings';
       },
@@ -130,11 +132,17 @@ export class SportsListComponent implements OnInit {
     return {
       getRows: (params: IGetRowsParams) => {
         // Initialize grid API on first call
-        if (!this.gridInitialized && (params as any).api) {
-          this.gridApi = (params as any).api;
+        if (!this.gridInitialized && 'api' in params && params.api) {
+          this.gridApi = params.api as GridApi;
           this.initializeGridSettings();
           this.gridInitialized = true;
         }
+
+        // Use ViewChild grid API as fallback if params.api is not available
+        const gridApi = this.gridApi || this.agGridComponent?.agGrid?.api;
+
+        // Show loading overlay
+        gridApi?.setGridOption('loading', true);
 
         const request: KsAgGridServerRequest = {
           startRow: params.startRow,
@@ -148,10 +156,14 @@ export class SportsListComponent implements OnInit {
         this.sportService.getSports(query).subscribe({
           next: (sports) => {
             params.successCallback(sports.slice(request.startRow, request.endRow), sports.length);
+            // Hide loading overlay on success
+            gridApi?.setGridOption('loading', false);
           },
           error: () => {
             this.error = 'Failed to load sports.';
             params.failCallback();
+            // Hide loading overlay on error
+            gridApi?.setGridOption('loading', false);
           },
         });
       },
@@ -168,7 +180,8 @@ export class SportsListComponent implements OnInit {
   }
 
   private refreshServerDataSource(): void {
-    this.serverDataSource = this.createServerDataSource();
+    // Refresh the grid's infinite cache instead of creating a new datasource
+    this.gridApi?.refreshInfiniteCache();
   }
 
   private buildQueryFromRequest(request: KsAgGridServerRequest): SportListQuery {
@@ -221,28 +234,56 @@ export class SportsListComponent implements OnInit {
     return undefined;
   }
 
-  onNewSportClick(): void {
-    const name = window.prompt('Enter sport name');
-    if (!name || !name.trim()) {
+  onAddNewItem(): void {
+    // If there's already a new row being added, don't add another
+    if (this.newRowBeingAdded) {
       return;
     }
 
-    this.sportService.createSport({ name: name.trim(), active: true }).subscribe({
-      next: () => this.refreshServerDataSource(),
-      error: () => {
-        this.error = 'Failed to create sport.';
-      },
-    });
+    // Create a new blank sport object (no id means it's a new row)
+    const newSport: Partial<Sport> = {
+      name: '',
+      active: true,
+    };
+
+    this.newRowBeingAdded = newSport;
+
+    // Get the grid API
+    const gridApi = this.agGridComponent?.agGrid?.api;
+    if (!gridApi) {
+      console.warn('Grid API not available');
+      return;
+    }
+
+    // Add the new row as a pinned bottom row (works with server-side data)
+    gridApi.setGridOption('pinnedBottomRowData', [newSport]);
+
+    // Enter edit mode for the new row
+    if (this.agGridComponent) {
+      this.agGridComponent.enterEditMode(newSport as Sport);
+    }
+
+    // Focus on the first cell after a short delay
+    setTimeout(() => {
+      const firstEditableCol = this.columnDefs.find(col => col.editable);
+      if (firstEditableCol && firstEditableCol.field) {
+        gridApi.setFocusedCell(0, firstEditableCol.field, 'bottom');
+        gridApi.startEditingCell({
+          rowIndex: 0,
+          colKey: firstEditableCol.field,
+          rowPinned: 'bottom',
+        });
+      }
+    }, 100);
   }
 
-  onSettingsSaved(gridState: any): void {
+  onSettingsSaved(gridState: GridSettingsData): void {
     this.saveGridSettings(gridState);
   }
 
   onSettingsCleared(): void {
     this.gridSettingsService.deleteSettings(this.pageIdentifier).subscribe({
       next: () => {
-        console.log('Grid settings cleared successfully');
         this.error = '';
 
         // Clear loaded settings
@@ -267,5 +308,87 @@ export class SportsListComponent implements OnInit {
         this.error = 'Failed to clear grid settings';
       },
     });
+  }
+
+  handleRowSaved(sport: Sport): void {
+    // Apply any tracked cell changes to the sport object
+    const sportId = sport.id || 'new';
+    const changes = this.cellChanges.get(sportId);
+    if (changes) {
+      Object.assign(sport, changes);
+    }
+
+    if (!sport.id) {
+      // New row - create
+      this.sportService.createSport({ name: sport.name, active: sport.active }).subscribe({
+        next: () => {
+          this.error = '';
+
+          // Clear tracked changes
+          this.cellChanges.delete('new');
+
+          // Clear the pinned row if this was a new row being added
+          if (this.newRowBeingAdded) {
+            this.gridApi?.setGridOption('pinnedBottomRowData', []);
+            this.newRowBeingAdded = null;
+          }
+
+          this.refreshServerDataSource();
+        },
+        error: () => {
+          this.error = 'Failed to create sport.';
+        },
+      });
+    } else {
+      // Existing row - update
+      this.sportService.updateSport(sport.id, { name: sport.name, active: sport.active }).subscribe({
+        next: () => {
+          this.error = '';
+
+          // Clear tracked changes for this row
+          this.cellChanges.delete(sport.id);
+
+          this.refreshServerDataSource();
+        },
+        error: () => {
+          this.error = 'Failed to update sport.';
+        },
+      });
+    }
+  }
+
+  handleRowDeleted(sport: Sport): void {
+    if (!sport.id) {
+      // If this is the new row being added, clear it from pinned rows
+      if (this.newRowBeingAdded) {
+        this.gridApi?.setGridOption('pinnedBottomRowData', []);
+        this.newRowBeingAdded = null;
+      }
+
+      return;
+    }
+
+    this.sportService.deleteSport(sport.id).subscribe({
+      next: () => {
+        this.error = '';
+        this.refreshServerDataSource();
+      },
+      error: () => {
+        this.error = 'Failed to delete sport.';
+        this.error = 'Failed to delete sport.';
+      },
+    });
+  }
+
+  handleCellChanged(event: { data?: { id?: number }; field?: string; newValue?: unknown }): void {
+    if (!event?.data || !event?.field) {
+      return;
+    }
+
+    // Track changes for this row
+    const sportId: number | string = event.data.id || 'new';
+    const changes = this.cellChanges.get(sportId) || {};
+    (changes as Record<string, unknown>)[event.field] = event.newValue;
+    this.cellChanges.set(sportId, changes);
   }
 }

@@ -1,9 +1,6 @@
 <div class="countries-list-page">
   <div class="page-header">
     <h2 class="m-0">Countries</h2>
-    <button type="button" class="btn btn-primary" (click)="onNewCountryClick()">
-      New Country
-    </button>
   </div>
 
   @if (error) {
@@ -21,9 +18,15 @@
           [serverDataSource]="serverDataSource"
           [themeMode]="themeService.isDarkMode() ? 'dark' : 'light'"
           [enableSettingsPersistence]="true"
+          [settingsStorageKey]="'countries-list'"
           [autoRestoreSettings]="true"
+          [enableActionButtons]="true"
           (settingsSaved)="onSettingsSaved($event)"
-          (settingsCleared)="onSettingsCleared()">
+          (settingsCleared)="onSettingsCleared()"
+          (addItem)="onAddNewItem()"
+          (rowSaved)="handleRowSaved($event)"
+          (rowDeleted)="handleRowDeleted($event)"
+          (cellValueChanged)="handleCellChanged($event)">
         </lib-ks-ag-grid>
       </div>
     </div>
