@@ -160,6 +160,42 @@ namespace DbMigration.MsSql.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BpDbLayer.Models.Competition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CountryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ModifiedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("SportId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CountryId");
+
+                    b.HasIndex("ModifiedByUserId");
+
+                    b.HasIndex("SportId");
+
+                    b.ToTable("Competition");
+                });
+
             modelBuilder.Entity("BpDbLayer.Models.Country", b =>
                 {
                     b.Property<int>("Id")
@@ -298,6 +334,33 @@ namespace DbMigration.MsSql.Migrations
                     b.Navigation("Role");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.Competition", b =>
+                {
+                    b.HasOne("BpDbLayer.Models.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BpDbLayer.Models.BpUser", "ModifiedByUser")
+                        .WithMany()
+                        .HasForeignKey("ModifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BpDbLayer.Models.Sport", "Sport")
+                        .WithMany()
+                        .HasForeignKey("SportId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Country");
+
+                    b.Navigation("ModifiedByUser");
+
+                    b.Navigation("Sport");
                 });
 
             modelBuilder.Entity("BpDbLayer.Models.Country", b =>
