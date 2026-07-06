@@ -19,27 +19,46 @@ The AI Advisor is an intelligent chatbot feature integrated into the BetPortal A
 4. Create a new API key
 5. Copy the API key
 
-### 2. Configure API Key
+### 2. Configure Services
 
-#### For Development
-Edit `BetPortalWebApi/appsettings.Development.json`:
+#### Python Claude microservice
+1. Copy `claude-chat-service/.env.example` to `claude-chat-service/.env`
+2. Set your Anthropic API key in `.env`:
+```env
+ANTHROPIC_API_KEY=sk-ant-your-actual-api-key-here
+CLAUDE_MODEL=claude-3-5-sonnet-20241022
+CLAUDE_MAX_TOKENS=1024
+```
+
+#### BetPortal API
+Edit `BetPortalWebApi/appsettings.json` or `appsettings.Development.json`:
 ```json
 {
-  "Claude": {
-    "ApiKey": "sk-ant-your-actual-api-key-here",
+  "ClaudeChatService": {
+    "BaseUrl": "http://localhost:8000",
     "Model": "claude-3-5-sonnet-20241022",
-    "MaxTokens": "1024"
+    "MaxTokens": "1024",
+    "TimeoutSeconds": "120"
   }
 }
 ```
 
-#### For Production
-Edit `BetPortalWebApi/appsettings.json` or use environment variables:
+For production, you can override the service URL with environment variables:
 ```bash
-Claude__ApiKey=sk-ant-your-actual-api-key-here
+ClaudeChatService__BaseUrl=http://claude-chat-service:8000
 ```
 
 ### 3. Build and Run
+
+#### Claude chat microservice (Python)
+```bash
+cd claude-chat-service
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
 #### Backend
 ```bash
@@ -99,9 +118,13 @@ npm start
 
 ### Backend (C#/.NET)
 - **ChatController**: API endpoint for chat requests
-- **ChatService**: Orchestrates Claude API calls and database queries
+- **ChatService**: Builds prompts, fetches DB context, calls Python Claude microservice
 - **DbQueryService**: Intelligently fetches relevant database information
-- **Claude API Integration**: Communicates with Anthropic's API
+
+### Claude Chat Microservice (Python/FastAPI)
+- **FastAPI app**: Exposes `/api/chat` and `/health`
+- **ClaudeService**: Calls Anthropic Claude Messages API
+- **Configuration**: API key and model settings in `.env`
 
 ## API Endpoints
 
@@ -135,10 +158,13 @@ Response:
 
 ## Configuration Options
 
-### Claude Settings
-- **ApiKey**: Your Anthropic API key (required)
+### Claude Chat Service Settings
+- **BaseUrl**: URL of the Python microservice (default: `http://localhost:8000`)
 - **Model**: Claude model to use (default: claude-3-5-sonnet-20241022)
 - **MaxTokens**: Maximum response length (default: 1024)
+- **TimeoutSeconds**: HTTP timeout for chat requests (default: 120)
+
+Anthropic API credentials are configured in `claude-chat-service/.env`, not in the .NET API.
 
 ### Customization
 To modify the AI's behavior, edit the system prompt in `ChatService.BuildSystemPrompt()`:
@@ -161,14 +187,15 @@ private string BuildSystemPrompt(string dbContext)
 
 ## Troubleshooting
 
-### "Claude API key is not configured"
-- Ensure you've added the API key to appsettings.json
-- Check the configuration key path: `Claude:ApiKey`
+### "Claude chat service base URL is not configured"
+- Ensure `ClaudeChatService:BaseUrl` is set in appsettings
+- Verify the Python service is running on that URL
 
 ### "Error sending message"
 - Check backend logs for detailed error information
-- Verify Claude API key is valid
-- Check network connectivity to api.anthropic.com
+- Verify the Python microservice is running (`GET /health`)
+- Verify `ANTHROPIC_API_KEY` is set in `claude-chat-service/.env`
+- Check network connectivity between BetPortal API and the Python service
 
 ### Empty responses
 - Check if database has data
