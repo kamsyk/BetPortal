@@ -50,3 +50,7 @@ App.Development.config
 appsettings.Development.json
 MigrationsDevelopLocal.bat
 UpdateDevelopLocal.bat
+claude-chat-service/.env
+claude-chat-service/.venv/
+claude-chat-service/**/__pycache__/
+claude-chat-service/**/*.pyc
