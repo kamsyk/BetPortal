@@ -20,12 +20,10 @@ describe('AppComponent', () => {
     expect(app.title).toEqual('bet-portal-admin');
   });
 
-  it('should render title', () => {
+  it('should render the navigation menu', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain(
-      'Hello, bet-portal-admin',
-    );
+    expect(compiled.querySelector('app-nav-menu')).toBeTruthy();
   });
 });

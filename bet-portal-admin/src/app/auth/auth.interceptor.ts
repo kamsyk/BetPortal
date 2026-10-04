@@ -1,7 +1,6 @@
 import { HttpInterceptorFn } from '@angular/common/http';
-import { inject, PLATFORM_ID, REQUEST } from '@angular/core';
+import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { SsrCookieService } from 'ngx-cookie-service-ssr';
 
 interface GlobalWithRequest {
   __request__?: {
@@ -14,9 +13,9 @@ interface GlobalWithRequest {
 function getCookieOnServer(): string | null {
   //return "fsdfsdsfd";
    try {
-     if (typeof window === 'undefined' && typeof global !== 'undefined') {
+     if (typeof window === 'undefined') {
 
-      const req = (global as GlobalWithRequest).__request__;
+      const req = (globalThis as GlobalWithRequest).__request__;
       // console.log('[getCookieOnServer] Request exists:', !!req);
       // console.log('[getCookieOnServer] Headers exist:', !!(req && req.headers));
       // console.log('[getCookieOnServer] Cookie header:', req?.headers?.cookie || 'NO COOKIE HEADER');
@@ -45,7 +44,6 @@ function getCookieOnServer(): string | null {
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const platformId = inject(PLATFORM_ID);
-  const cookieService = inject(SsrCookieService);
 
   if (isPlatformBrowser(platformId)) {
 
