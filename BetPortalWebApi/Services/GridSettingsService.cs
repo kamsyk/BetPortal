@@ -1,8 +1,8 @@
 using System.Text.Json;
-using BpDbLayer;
-using BpDbLayer.Models;
 using BetPortalWebApi.Contracts.GridSettings;
 using BetPortalWebApi.Services.Interfaces;
+using BpDbLayer;
+using BpDbLayer.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BetPortalWebApi.Services

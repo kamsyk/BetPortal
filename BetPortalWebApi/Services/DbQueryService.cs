@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
-using BpDbLayer;
 using BetPortalWebApi.Services.Interfaces;
+using BpDbLayer;
 using Microsoft.EntityFrameworkCore;
 
 namespace BetPortalWebApi.Services
@@ -51,7 +51,9 @@ namespace BetPortalWebApi.Services
                     if (needsSports && sports.Any())
                     {
                         context.AppendLine("\nSports list:");
-                        foreach (var sport in sports.Take(20)) // Limit to avoid token overflow
+
+                        // Limit to avoid token overflow.
+                        foreach (var sport in sports.Take(20))
                         {
                             context.AppendLine($"- {sport.Name} (ID: {sport.Id}, Active: {sport.Active})");
                         }
@@ -79,7 +81,9 @@ namespace BetPortalWebApi.Services
                     if (needsCountries && countries.Any())
                     {
                         context.AppendLine("\nCountries list:");
-                        foreach (var country in countries.Take(50)) // Show up to 50 countries
+
+                        // Show up to 50 countries.
+                        foreach (var country in countries.Take(50))
                         {
                             context.AppendLine($"- {country.Name} (ID: {country.Id}, Active: {country.Active})");
                         }

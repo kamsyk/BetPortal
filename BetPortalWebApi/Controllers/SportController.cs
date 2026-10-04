@@ -1,8 +1,8 @@
 ﻿using System.Security.Claims;
-using BpDbLayer;
-using BpDbLayer.Models;
 using BetPortalWebApi.Contracts.List;
 using BetPortalWebApi.Utils;
+using BpDbLayer;
+using BpDbLayer.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

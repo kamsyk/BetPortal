@@ -16,19 +16,4 @@ namespace BetPortalWebApi.Contracts.Chat
         [JsonPropertyName("max_tokens")]
         public int? MaxTokens { get; set; }
     }
-
-    public class ClaudeChatServiceMessage
-    {
-        [JsonPropertyName("role")]
-        required public string Role { get; set; }
-
-        [JsonPropertyName("content")]
-        required public string Content { get; set; }
-    }
-
-    public class ClaudeChatServiceResponse
-    {
-        [JsonPropertyName("content")]
-        required public string Content { get; set; }
-    }
 }
