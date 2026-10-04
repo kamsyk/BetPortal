@@ -40,11 +40,17 @@ builder.Services.AddSwaggerGen(o =>
 });
 
 builder.Services.AddSingleton<IUserService, UserService>();
+
 builder.Services.AddScoped<ISessionService, SessionService>();
+
 builder.Services.AddScoped<IChatService, ChatService>();
+
 builder.Services.AddScoped<IDbQueryService, DbQueryService>();
+
 builder.Services.AddScoped<IGridSettingsService, GridSettingsService>();
+
 builder.Services.AddHttpClient();
+
 builder.Services.AddHttpClient("ClaudeChatService", (serviceProvider, client) =>
 {
     var configuration = serviceProvider.GetRequiredService<IConfiguration>();
@@ -56,11 +62,14 @@ builder.Services.AddHttpClient("ClaudeChatService", (serviceProvider, client) =>
             ? timeoutSeconds
             : 120);
 });
+
 builder.Services.AddMemoryCache();
 
 // Configure Session-based Authentication
 const string SessionAuthScheme = "SessionAuth";
+
 const string CookieAuthScheme = "CookieAuth";
+
 const string DynamicAuthScheme = "DynamicAuth";
 
 builder.Services.AddAuthentication(options =>
@@ -142,6 +151,7 @@ builder.Services.AddDbContext<BpDbContext>((provider, options) =>
 });
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DefaultCors", policy =>
@@ -183,6 +193,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllers();
