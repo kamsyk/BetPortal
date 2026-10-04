@@ -45,6 +45,17 @@ builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IDbQueryService, DbQueryService>();
 builder.Services.AddScoped<IGridSettingsService, GridSettingsService>();
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("ClaudeChatService", (serviceProvider, client) =>
+{
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    var baseUrl = configuration["ClaudeChatService:BaseUrl"] ?? "http://localhost:8000";
+
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(
+        int.TryParse(configuration["ClaudeChatService:TimeoutSeconds"], out var timeoutSeconds)
+            ? timeoutSeconds
+            : 120);
+});
 builder.Services.AddMemoryCache();
 
 // Configure Session-based Authentication

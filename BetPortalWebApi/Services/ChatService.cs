@@ -7,6 +7,8 @@ namespace BetPortalWebApi.Services
 {
     public class ChatService : IChatService
     {
+        private const string ClaudeChatHttpClientName = "ClaudeChatService";
+
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IDbQueryService _dbQueryService;
         private readonly IConfiguration _configuration;
@@ -28,17 +30,10 @@ namespace BetPortalWebApi.Services
         {
             try
             {
-                // Get relevant database context based on the user's message
                 var dbContext = await _dbQueryService.GetDatabaseContextAsync(userMessage);
-
-                // Build the system prompt with database context
                 var systemPrompt = BuildSystemPrompt(dbContext);
-
-                // Build the messages for Claude API
                 var messages = BuildClaudeMessages(conversationHistory, userMessage);
-
-                // Call Claude API
-                var response = await CallClaudeApiAsync(systemPrompt, messages);
+                var response = await CallClaudeChatServiceAsync(systemPrompt, messages);
 
                 return response;
             }
@@ -47,6 +42,27 @@ namespace BetPortalWebApi.Services
                 _logger.LogError(ex, "Error getting chat response");
                 throw;
             }
+        }
+
+        private static List<ClaudeChatServiceMessage> BuildClaudeMessages(
+            List<ChatMessage> conversationHistory,
+            string currentMessage)
+        {
+            var messages = conversationHistory
+                .Select(msg => new ClaudeChatServiceMessage
+                {
+                    Role = msg.Role,
+                    Content = msg.Content,
+                })
+                .ToList();
+
+            messages.Add(new ClaudeChatServiceMessage
+            {
+                Role = "user",
+                Content = currentMessage,
+            });
+
+            return messages;
         }
 
         private string BuildSystemPrompt(string dbContext)
@@ -72,89 +88,52 @@ namespace BetPortalWebApi.Services
             return prompt.ToString();
         }
 
-        private List<object> BuildClaudeMessages(List<ChatMessage> conversationHistory, string currentMessage)
+        private async Task<string> CallClaudeChatServiceAsync(
+            string systemPrompt,
+            List<ClaudeChatServiceMessage> messages)
         {
-            var messages = new List<object>();
-
-            // Add conversation history
-            foreach (var msg in conversationHistory)
+            var baseUrl = _configuration["ClaudeChatService:BaseUrl"];
+            if (string.IsNullOrWhiteSpace(baseUrl))
             {
-                messages.Add(new
-                {
-                    role = msg.Role,
-                    content = msg.Content,
-                });
+                throw new InvalidOperationException("Claude chat service base URL is not configured");
             }
 
-            // Add current message
-            messages.Add(new
+            var request = new ClaudeChatServiceRequest
             {
-                role = "user",
-                content = currentMessage,
-            });
-
-            return messages;
-        }
-
-        private async Task<string> CallClaudeApiAsync(string systemPrompt, List<object> messages)
-        {
-            var apiKey = _configuration["Claude:ApiKey"];
-            if (string.IsNullOrEmpty(apiKey))
-            {
-                throw new InvalidOperationException("Claude API key is not configured");
-            }
-
-            var client = _httpClientFactory.CreateClient();
-            client.DefaultRequestHeaders.Add("x-api-key", apiKey);
-            client.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
-
-            var requestBody = new
-            {
-                model = _configuration["Claude:Model"] ?? "claude-3-5-sonnet-20241022",
-                max_tokens = int.Parse(_configuration["Claude:MaxTokens"] ?? "1024"),
-                system = systemPrompt,
-                messages,
+                SystemPrompt = systemPrompt,
+                Messages = messages,
+                Model = _configuration["ClaudeChatService:Model"],
+                MaxTokens = int.TryParse(_configuration["ClaudeChatService:MaxTokens"], out var maxTokens)
+                    ? maxTokens
+                    : null,
             };
 
+            var client = _httpClientFactory.CreateClient(ClaudeChatHttpClientName);
             var content = new StringContent(
-                JsonSerializer.Serialize(requestBody),
+                JsonSerializer.Serialize(request),
                 Encoding.UTF8,
                 "application/json");
 
-            var response = await client.PostAsync("https://api.anthropic.com/v1/messages", content);
+            var response = await client.PostAsync("/api/chat", content);
 
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Claude API error: {StatusCode} - {Content}", response.StatusCode, errorContent);
-                throw new HttpRequestException($"Claude API returned error: {response.StatusCode}");
+                _logger.LogError(
+                    "Claude chat service error: {StatusCode} - {Content}",
+                    response.StatusCode,
+                    errorContent);
+                throw new HttpRequestException($"Claude chat service returned error: {response.StatusCode}");
             }
 
             var responseContent = await response.Content.ReadAsStringAsync();
-            _logger.LogInformation("Claude API Response: {Response}", responseContent);
-
             var options = new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
             };
-            var claudeResponse = JsonSerializer.Deserialize<ClaudeApiResponse>(responseContent, options);
+            var chatResponse = JsonSerializer.Deserialize<ClaudeChatServiceResponse>(responseContent, options);
 
-            var result = claudeResponse?.Content?.FirstOrDefault()?.Text ?? "I'm sorry, I couldn't generate a response.";
-            _logger.LogInformation("Parsed response text: {Text}", result);
-
-            return result;
-        }
-
-        private class ClaudeApiResponse
-        {
-            public List<ContentBlock>? Content { get; set; }
-
-            public class ContentBlock
-            {
-                public string? Type { get; set; }
-
-                public string? Text { get; set; }
-            }
+            return chatResponse?.Content ?? "I'm sorry, I couldn't generate a response.";
         }
     }
 }
