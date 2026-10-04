@@ -64,6 +64,10 @@ Dual-scheme setup in `Program.cs` (see solution-level `CLAUDE.md` for the full p
 
 ### StyleCop
 
-StyleCop.Analyzers is active. Documentation rules are disabled entirely. Key ordering rules enforced:
+For C# development and StyleCop warning fixes, use the [betportal-api-stylecop skill](../.claude/skills/betportal-api-stylecop/SKILL.md).
+
+StyleCop.Analyzers is active. [stylecop.json](./stylecop.json) disables the listed documentation requirements, not every documentation diagnostic. Rules not configured there retain analyzer defaults, subject to severity overrides in [the repository .editorconfig](../.editorconfig). Key ordering rules enforced:
 - `using` directives outside the namespace declaration.
 - `System.*` usings before other usings.
+
+With the current analyzer version, separate adjacent top-level statements in `Program.cs` with blank lines. Missing separators can produce a locationless `CSC : warning SA1516`.

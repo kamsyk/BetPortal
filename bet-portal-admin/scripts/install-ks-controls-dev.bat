@@ -17,7 +17,7 @@ if errorlevel 1 (
 )
 
 echo Installing ks-ag-controls for Development ...
-call npm install D:\Develop\Angular\ks-ag-controls\ks-ag-controls-workspace\dist\ks-ag-controls\ks-ag-controls-0.0.6.tgz
+call npm install D:\Develop\Angular\ks-ag-controls\ks-ag-controls-workspace\dist\ks-ag-controls\ks-ag-controls-0.0.7.tgz
 if errorlevel 1 (
   echo Version update failed!
   exit /b %errorlevel%

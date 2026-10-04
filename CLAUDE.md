@@ -92,6 +92,10 @@ dotnet user-secrets set "Claude:ApiKey" "sk-ant-..."
 ### DB model conventions
 All entities implement `ICreatedFields` / `IModifiedFields` (CreatedDate, CreatedByUserId, ModifiedDate, ModifiedByUserId). EF config lives in `ModelConfigurations/` using `IEntityTypeConfiguration<T>`.
 
+## API C# Coding Rules
+
+When creating, editing, refactoring, or reviewing `BetPortalWebApi` C# code, use the [betportal-api-stylecop skill](.claude/skills/betportal-api-stylecop/SKILL.md). It reflects the API's [stylecop.json](BetPortalWebApi/stylecop.json), the installed analyzer, and repository diagnostic overrides, including the blank-line requirements for top-level statements.
+
 ## Angular Coding Rules
 
 Full rules are in `bet-portal/.claude/CLAUDE.md` and `bet-portal-admin/.claude/CLAUDE.md`. Key non-obvious points:
