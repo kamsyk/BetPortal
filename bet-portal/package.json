@@ -27,6 +27,7 @@
     "@ngx-translate/http-loader": "^17.0.0",
     "bootstrap": "^5.3.8",
     "express": "^5.1.0",
+    "ks-ag-controls": "file:../../../Angular/ks-ag-controls/ks-ag-controls-workspace/dist/ks-ag-controls/ks-ag-controls-0.0.6.tgz",
     "ngx-cookie-service-ssr": "^20.1.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

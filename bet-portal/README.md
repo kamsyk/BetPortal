@@ -2,6 +2,26 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.15.
 
+## Local controls dependency
+
+Before running `npm ci`, ensure the local `ks-ag-controls-0.0.6.tgz` package
+referenced by [package.json](./package.json) exists. Use the Angular 20-compatible
+library source at commit `ab090d0` in the sibling `ks-ag-controls-workspace`
+repository. In a separate checkout of that commit, run:
+
+```powershell
+npm ci
+npm run build:lib:styles
+npx ng build ks-ag-controls --configuration production
+Set-Location .\dist\ks-ag-controls
+npm pack
+```
+
+Copy the resulting tarball to the local path referenced by the dependency.
+The published npm version 0.0.6 does not export `AuthService` or
+`KsLoginComponent`; local version 0.0.7 requires Angular 21 and is not compatible
+with this Angular 20 portal.
+
 ## Development server
 
 To start a local development server, run:
