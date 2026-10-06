@@ -96,6 +96,12 @@ All entities implement `ICreatedFields` / `IModifiedFields` (CreatedDate, Create
 
 When creating, editing, refactoring, or reviewing `BetPortalWebApi` C# code, use the [betportal-api-stylecop skill](.claude/skills/betportal-api-stylecop/SKILL.md). It reflects the API's [stylecop.json](BetPortalWebApi/stylecop.json), the installed analyzer, and repository diagnostic overrides, including the blank-line requirements for top-level statements.
 
+## Test Authoring
+
+When creating or updating unit, integration, regression, or UI tests, use the [code-testing-agent skill](.claude/skills/code-testing-agent/SKILL.md). It covers test selection, deterministic fixtures, safe integration environments, browser automation, and evidence-based validation. Recheck the affected project's configuration: the public portal currently uses Karma/Jasmine, while the admin portal uses Vitest. Ask before introducing backend or browser-test infrastructure when no existing setup applies.
+
+The reusable [BetPortal Test Author agent](.github/agents/test-author.agent.md) specializes this workflow for unit and integration coverage and requires Playwright Test for browser UI/E2E tests. Its definition does not install test infrastructure; when implementing UI coverage, Playwright is the selected runner.
+
 ## Angular Coding Rules
 
 Full rules are in `bet-portal/.claude/CLAUDE.md` and `bet-portal-admin/.claude/CLAUDE.md`. Key non-obvious points:

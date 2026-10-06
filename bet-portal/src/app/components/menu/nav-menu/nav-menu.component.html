@@ -1,68 +1,104 @@
-<mat-toolbar color="primary" class="nav-toolbar">
-  <a class="brand-link" routerLink="/">{{ 'nav.brand' | translate }}</a>
+<mat-toolbar class="nav-toolbar" [class.nav-dark]="themeService.isDarkMode()">
+  <a class="brand-link" routerLink="/">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" focusable="false">
+        <path d="M4 17V11M10 17V7M16 17V4M4 21H21" />
+        <path d="m14 11 4-4 3 3" />
+      </svg>
+    </span>
+    <span>{{ 'nav.brand' | translate }}</span>
+  </a>
 
-  <span class="spacer"></span>
+  <div class="desktop-actions">
+    @if (isLoggedIn()) {
+      <nav class="primary-nav" [attr.aria-label]="'nav.openMenu' | translate">
+        <a mat-button routerLink="/advisor" routerLinkActive="active-link" ariaCurrentWhenActive="page">
+          <mat-icon aria-hidden="true">auto_awesome</mat-icon>
+          {{ 'nav.advisor' | translate }}
+        </a>
+        <a mat-button routerLink="/about" routerLinkActive="active-link" ariaCurrentWhenActive="page">
+          {{ 'nav.about' | translate }}
+        </a>
+        <a mat-button routerLink="/contact" routerLinkActive="active-link" ariaCurrentWhenActive="page">
+          {{ 'nav.contact' | translate }}
+        </a>
+      </nav>
+    }
 
-  @if (!isMobile) {
-    <div class="desktop-actions">
+    <div class="utility-actions">
+      <button mat-button type="button" class="language-button" [matMenuTriggerFor]="languageMenu"
+        [attr.aria-label]="('nav.language' | translate) + ': ' + ('languages.' + languageService.currentLanguage() | translate)">
+        <mat-icon aria-hidden="true">language</mat-icon>
+        <span>{{ 'languages.' + languageService.currentLanguage() | translate }}</span>
+        <span class="select-chevron" aria-hidden="true"></span>
+      </button>
       @if (isLoggedIn()) {
-        <a mat-button routerLink="/">{{ 'nav.home' | translate }}</a>
-
-        <a mat-button routerLink="/advisor">{{ 'nav.advisor' | translate }}</a>
-        <a mat-button routerLink="/about">{{ 'nav.about' | translate }}</a>
-        <a mat-button routerLink="/contact">{{ 'nav.contact' | translate }}</a>
-      }
-
-      <mat-form-field class="language-select" subscriptSizing="dynamic">
-        <mat-label>{{ 'nav.language' | translate }}</mat-label>
-        <mat-select
-          [value]="languageService.currentLanguage()"
-          (selectionChange)="languageService.setLanguage($event.value)">
-          @for (lang of languageService.languages; track lang) {
-            <mat-option [value]="lang">{{ 'languages.' + lang | translate }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      @if (isLoggedIn()) {
-        <button
-          mat-icon-button
-          (click)="toggleTheme()"
+        <button mat-icon-button type="button" class="theme-button" (click)="toggleTheme()"
+          [attr.aria-label]="(themeService.isDarkMode() ? 'nav.switchToLightMode' : 'nav.switchToDarkMode') | translate"
           [title]="(themeService.isDarkMode() ? 'nav.switchToLightMode' : 'nav.switchToDarkMode') | translate">
-          <mat-icon>{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+          <mat-icon aria-hidden="true">{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
         </button>
-
-        <button mat-button type="button" (click)="logOut()">{{ 'nav.logout' | translate }}</button>
+        <button mat-button type="button" class="logout-button" (click)="logOut()">
+          <mat-icon aria-hidden="true">logout</mat-icon>
+          {{ 'nav.logout' | translate }}
+        </button>
       }
     </div>
-  } @else {
-    <button mat-icon-button [matMenuTriggerFor]="mobileMenu" [attr.aria-label]="'nav.openMenu' | translate">
-      <span class="menu-glyph" aria-hidden="true">&#9776;</span>
+  </div>
+
+  <button mat-icon-button type="button" class="mobile-menu-button" [matMenuTriggerFor]="mobileMenu"
+    [attr.aria-label]="'nav.openMenu' | translate">
+    <mat-icon aria-hidden="true">menu</mat-icon>
+  </button>
+</mat-toolbar>
+
+<mat-menu #languageMenu="matMenu">
+  @for (lang of languageService.languages; track lang) {
+    <button mat-menu-item type="button" (click)="languageService.setLanguage(lang)"
+      [class.active-language]="languageService.currentLanguage() === lang">
+      <mat-icon aria-hidden="true">{{ languageService.currentLanguage() === lang ? 'check' : 'language' }}</mat-icon>
+      <span>{{ 'languages.' + lang | translate }}</span>
     </button>
   }
-</mat-toolbar>
+</mat-menu>
 
 <mat-menu #mobileMenu="matMenu">
   @if (isLoggedIn()) {
-    <button mat-menu-item routerLink="/">{{ 'nav.home' | translate }}</button>
-    <button mat-menu-item routerLink="/advisor">{{ 'nav.advisor' | translate }}</button>
-    <button mat-menu-item routerLink="/about">{{ 'nav.about' | translate }}</button>
-    <button mat-menu-item routerLink="/contact">{{ 'nav.contact' | translate }}</button>
+    <a mat-menu-item routerLink="/" routerLinkActive="active-link"
+      [routerLinkActiveOptions]="{ exact: true }" ariaCurrentWhenActive="page">
+      <mat-icon aria-hidden="true">home</mat-icon>
+      <span>{{ 'nav.home' | translate }}</span>
+    </a>
+    <a mat-menu-item routerLink="/advisor" routerLinkActive="active-link" ariaCurrentWhenActive="page">
+      <mat-icon aria-hidden="true">auto_awesome</mat-icon>
+      <span>{{ 'nav.advisor' | translate }}</span>
+    </a>
+    <a mat-menu-item routerLink="/about" routerLinkActive="active-link" ariaCurrentWhenActive="page">
+      <mat-icon aria-hidden="true">info</mat-icon>
+      <span>{{ 'nav.about' | translate }}</span>
+    </a>
+    <a mat-menu-item routerLink="/contact" routerLinkActive="active-link" ariaCurrentWhenActive="page">
+      <mat-icon aria-hidden="true">mail_outline</mat-icon>
+      <span>{{ 'nav.contact' | translate }}</span>
+    </a>
+    <div class="menu-divider" role="separator"></div>
   }
   @for (lang of languageService.languages; track lang) {
-    <button
-      mat-menu-item
-      type="button"
-      (click)="languageService.setLanguage(lang)"
+    <button mat-menu-item type="button" (click)="languageService.setLanguage(lang)"
       [class.active-language]="languageService.currentLanguage() === lang">
-      {{ 'languages.' + lang | translate }}
+      <mat-icon aria-hidden="true">{{ languageService.currentLanguage() === lang ? 'check' : 'language' }}</mat-icon>
+      <span>{{ 'languages.' + lang | translate }}</span>
     </button>
   }
   @if (isLoggedIn()) {
-    <button mat-menu-item (click)="toggleTheme()">
-      <mat-icon>{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+    <div class="menu-divider" role="separator"></div>
+    <button mat-menu-item type="button" (click)="toggleTheme()">
+      <mat-icon aria-hidden="true">{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
       <span>{{ (themeService.isDarkMode() ? 'nav.lightMode' : 'nav.darkMode') | translate }}</span>
     </button>
-    <button mat-menu-item type="button" (click)="logOut()">{{ 'nav.logout' | translate }}</button>
+    <button mat-menu-item type="button" (click)="logOut()">
+      <mat-icon aria-hidden="true">logout</mat-icon>
+      <span>{{ 'nav.logout' | translate }}</span>
+    </button>
   }
 </mat-menu>
