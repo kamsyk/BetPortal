@@ -64,15 +64,23 @@ To execute unit tests with the [Karma](https://karma-runner.github.io) test runn
 ng test
 ```
 
-## Running end-to-end tests
+## Running navigation-menu browser tests
 
-For end-to-end (e2e) testing, run:
+The navigation-menu browser suite uses Playwright Test with Chromium at desktop
+and mobile viewports. It builds a static browser-only bundle and serves it on
+`http://127.0.0.1:4300`, avoiding server-side rendering and prerender-time API
+requests. It fails rather than reusing an existing server on that port.
+Browser-side API requests are stubbed with synthetic anonymous or authenticated
+responses; the suite does not require a running API or real user accounts.
 
-```bash
-ng e2e
+```powershell
+npm run test:e2e
+npm run test:e2e -- --project=mobile-chromium
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+The suite is mocked UI coverage, not full API or database E2E coverage. Reports
+and failure artifacts are written to ignored `playwright-report/` and
+`test-results/` directories.
 
 ## Additional Resources
 

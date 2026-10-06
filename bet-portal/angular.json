@@ -67,6 +67,10 @@
                   "with": "src/environments/environment.development.ts"
                 }
               ]
+            },
+            "playwright": {
+              "outputMode": "static",
+              "server": false
             }
           },
           "defaultConfiguration": "production"
