@@ -10,7 +10,7 @@ dotnet build
 dotnet run          # http://localhost:5026 — Swagger UI at /swagger (development only)
 ```
 
-There are no automated tests in this project yet.
+The API integration tests live in [BetPortalWebApi.IntegrationTests](../BetPortalWebApi.IntegrationTests/). They use xUnit v3, `WebApplicationFactory<Program>`, and real SQL Server migrations against a unique SQL Server LocalDB database per fixture. LocalDB must be installed and the `MSSQLLocalDB` instance available. The fixture creates and drops only its `BetPortal_IntegrationTests_<guid>` database; tests override the application connection string and never use the development database. Run from the repository root: `dotnet test BetPortalWebApi.IntegrationTests\BetPortalWebApi.IntegrationTests.csproj`.
 
 ## Configuration
 

@@ -28,7 +28,7 @@ Current repository baseline (recheck before use):
 |---------|----------------|----------|
 | Public portal | Angular 20, `@angular/build:karma`, Jasmine | Use Jasmine spies and matchers, Angular TestBed, and the existing adjacent `*.spec.ts` convention. |
 | Admin portal | Angular 21, `@angular/build:unit-test`, Vitest | Use Vitest-compatible spies, timers, and matchers. Read the shared providers and setup before adding local configuration. |
-| API | ASP.NET Core, `net9.0` | No backend test project was found when this skill was created. Recheck project metadata, including `IsTestProject`, package references, and solution membership rather than relying only on project names. |
+| API | ASP.NET Core, `net9.0` | `BetPortalWebApi.IntegrationTests` uses xUnit v3 and `WebApplicationFactory<Program>`. It applies the real SQL Server migrations to a unique disposable LocalDB database per fixture; `MSSQLLocalDB` must be installed. Run `dotnet test BetPortalWebApi.IntegrationTests\BetPortalWebApi.IntegrationTests.csproj` from the repository root. |
 | Database layer | EF Core with SQL Server and MySQL migration assemblies | Match the provider and behavior under test; confirm a disposable integration-test database strategy. |
 | Browser UI/E2E | No browser-test runner configuration found when this skill was created | Reuse any subsequently added setup. If none exists, propose Playwright and ask before scaffolding it. |
 
