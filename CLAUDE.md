@@ -98,7 +98,7 @@ When creating, editing, refactoring, or reviewing `BetPortalWebApi` C# code, use
 
 ## Test Authoring
 
-When creating or updating unit, integration, regression, or UI tests, use the [code-testing-agent skill](.claude/skills/code-testing-agent/SKILL.md). It covers test selection, deterministic fixtures, safe integration environments, browser automation, and evidence-based validation. Recheck the affected project's configuration: the public portal currently uses Karma/Jasmine, while the admin portal uses Vitest. Ask before introducing backend or browser-test infrastructure when no existing setup applies.
+When creating or updating unit, integration, regression, or UI tests, use the [code-testing-agent skill](.claude/skills/code-testing-agent/SKILL.md). It covers test selection, deterministic fixtures, safe integration environments, browser automation, and evidence-based validation. Recheck the affected project's configuration: the public portal currently uses Karma/Jasmine, the admin portal uses Vitest, and API integration coverage is in `BetPortalWebApi.IntegrationTests` (xUnit v3 with `WebApplicationFactory<Program>` and a disposable SQL Server LocalDB database). For API tests, see [BetPortalWebApi/CLAUDE.md](BetPortalWebApi/CLAUDE.md) for prerequisites and the run command. Ask before introducing additional backend or browser-test infrastructure when no existing setup applies.
 
 The reusable [BetPortal Test Author agent](.github/agents/test-author.agent.md) specializes this workflow for unit and integration coverage and requires Playwright Test for browser UI/E2E tests. Its definition does not install test infrastructure; when implementing UI coverage, Playwright is the selected runner.
 
