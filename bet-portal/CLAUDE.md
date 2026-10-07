@@ -30,6 +30,9 @@ All HTTP calls include `withCredentials: true` (set by `authInterceptor`). On th
 ### Internationalisation
 Translations are in `public/i18n/{en,cs,de}.json`, loaded at runtime by `ngx-translate` from `/i18n/<lang>.json`. `LanguageService` (`src/app/services/language.service.ts`) is the single source of truth: it initialises on app start (called from `AppComponent` constructor), reads from localStorage (`bet-portal.lang`), falls back to browser language then `'en'`. Supported languages: `en`, `cs`, `de`. Use `TranslatePipe` in templates and `TranslateService.instant()` for error strings in components.
 
+### Navigation
+The user-profile icon opens a shared desktop/mobile menu containing a nested language selector and, for authenticated users, Logout. Language selection remains available to guests. Main navigation and theme controls are shown only when authenticated; the mobile navigation menu does not contain language or logout actions.
+
 ### AI Advisor page (`/advisor`)
 `AdvisorComponent` maintains conversation state in a `signal<ChatMessage[]>`. `ChatService.sendMessage()` sends the last 10 messages as context to `POST /api/chat/ask`. The component uses `@ViewChild` + `AfterViewChecked` to auto-scroll — the `shouldScrollToBottom` flag avoids scroll-on-every-change-detection cycle.
 

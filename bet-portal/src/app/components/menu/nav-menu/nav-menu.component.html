@@ -26,31 +26,41 @@
     }
 
     <div class="utility-actions">
-      <button mat-button type="button" class="language-button" [matMenuTriggerFor]="languageMenu"
-        [attr.aria-label]="('nav.language' | translate) + ': ' + ('languages.' + languageService.currentLanguage() | translate)">
-        <mat-icon aria-hidden="true">language</mat-icon>
-        <span>{{ 'languages.' + languageService.currentLanguage() | translate }}</span>
-        <span class="select-chevron" aria-hidden="true"></span>
-      </button>
       @if (isLoggedIn()) {
         <button mat-icon-button type="button" class="theme-button" (click)="toggleTheme()"
           [attr.aria-label]="(themeService.isDarkMode() ? 'nav.switchToLightMode' : 'nav.switchToDarkMode') | translate"
           [title]="(themeService.isDarkMode() ? 'nav.switchToLightMode' : 'nav.switchToDarkMode') | translate">
           <mat-icon aria-hidden="true">{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
         </button>
-        <button mat-button type="button" class="logout-button" (click)="logOut()">
-          <mat-icon aria-hidden="true">logout</mat-icon>
-          {{ 'nav.logout' | translate }}
-        </button>
       }
     </div>
   </div>
 
-  <button mat-icon-button type="button" class="mobile-menu-button" [matMenuTriggerFor]="mobileMenu"
-    [attr.aria-label]="'nav.openMenu' | translate">
-    <mat-icon aria-hidden="true">menu</mat-icon>
+  @if (isLoggedIn()) {
+    <button mat-icon-button type="button" class="mobile-menu-button" [matMenuTriggerFor]="mobileMenu"
+      [attr.aria-label]="'nav.openMenu' | translate">
+      <mat-icon aria-hidden="true">menu</mat-icon>
+    </button>
+  }
+  <button mat-icon-button type="button" class="profile-button" [matMenuTriggerFor]="profileMenu"
+    [attr.aria-label]="'nav.userProfile' | translate" [title]="'nav.userProfile' | translate">
+    <mat-icon aria-hidden="true">account_circle</mat-icon>
   </button>
 </mat-toolbar>
+
+<mat-menu #profileMenu="matMenu">
+  <button mat-menu-item type="button" class="language-button" [matMenuTriggerFor]="languageMenu"
+    [attr.aria-label]="('nav.language' | translate) + ': ' + ('languages.' + languageService.currentLanguage() | translate)">
+    <mat-icon aria-hidden="true">language</mat-icon>
+    <span>{{ 'nav.language' | translate }}: {{ 'languages.' + languageService.currentLanguage() | translate }}</span>
+  </button>
+  @if (isLoggedIn()) {
+    <button mat-menu-item type="button" class="logout-button" (click)="logOut()">
+      <mat-icon aria-hidden="true">logout</mat-icon>
+      <span>{{ 'nav.logout' | translate }}</span>
+    </button>
+  }
+</mat-menu>
 
 <mat-menu #languageMenu="matMenu">
   @for (lang of languageService.languages; track lang) {
@@ -83,22 +93,10 @@
     </a>
     <div class="menu-divider" role="separator"></div>
   }
-  @for (lang of languageService.languages; track lang) {
-    <button mat-menu-item type="button" (click)="languageService.setLanguage(lang)"
-      [class.active-language]="languageService.currentLanguage() === lang">
-      <mat-icon aria-hidden="true">{{ languageService.currentLanguage() === lang ? 'check' : 'language' }}</mat-icon>
-      <span>{{ 'languages.' + lang | translate }}</span>
-    </button>
-  }
   @if (isLoggedIn()) {
-    <div class="menu-divider" role="separator"></div>
     <button mat-menu-item type="button" (click)="toggleTheme()">
       <mat-icon aria-hidden="true">{{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
       <span>{{ (themeService.isDarkMode() ? 'nav.lightMode' : 'nav.darkMode') | translate }}</span>
-    </button>
-    <button mat-menu-item type="button" (click)="logOut()">
-      <mat-icon aria-hidden="true">logout</mat-icon>
-      <span>{{ 'nav.logout' | translate }}</span>
     </button>
   }
 </mat-menu>

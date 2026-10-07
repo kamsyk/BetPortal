@@ -41,6 +41,8 @@ describe('NavMenuComponent', () => {
 
   function button(selector: string): HTMLButtonElement {
     const element = (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>(selector)
+      ?? overlayContainer.getContainerElement()
       .querySelector<HTMLButtonElement>(selector);
     if (!element) {
       throw new Error(`Missing menu control: ${selector}`);
@@ -49,8 +51,9 @@ describe('NavMenuComponent', () => {
   }
 
   function menu(): HTMLElement {
-    const element = overlayContainer.getContainerElement()
-      .querySelector<HTMLElement>('[role="menu"]');
+    const panels = overlayContainer.getContainerElement()
+      .querySelectorAll<HTMLElement>('[role="menu"]');
+    const element = panels.item(panels.length - 1);
     if (!element) {
       throw new Error('Expected an open menu');
     }
@@ -129,10 +132,11 @@ describe('NavMenuComponent', () => {
   it('keeps language selection available without authenticated navigation', () => {
     const element: HTMLElement = fixture.nativeElement;
     expect(element.querySelector('.primary-nav')).toBeNull();
-    expect(element.querySelector('.language-button')).not.toBeNull();
+    expect(element.querySelector('.profile-button')?.getAttribute('aria-label'))
+      .toBe('nav.userProfile');
+    expect(element.querySelector('.language-button')).toBeNull();
     expect(element.querySelector('.logout-button')).toBeNull();
-    expect(element.querySelector('.mobile-menu-button')?.getAttribute('aria-label'))
-      .toBe('nav.openMenu');
+    expect(element.querySelector('.mobile-menu-button')).toBeNull();
   });
 
   it('marks only the current page as active', async () => {
@@ -146,7 +150,7 @@ describe('NavMenuComponent', () => {
     const activeLinks = element.querySelectorAll('.primary-nav [aria-current="page"]');
     expect(activeLinks.length).toBe(1);
     expect(activeLinks[0].getAttribute('href')).toBe('/advisor');
-    expect(element.querySelector('.logout-button')).not.toBeNull();
+    expect(element.querySelector('.logout-button')).toBeNull();
   });
 
   it('provides an accessible theme control and reflects the dark theme', () => {
@@ -168,19 +172,27 @@ describe('NavMenuComponent', () => {
     const element: HTMLElement = fixture.nativeElement;
     expect(element.querySelectorAll('.primary-nav a').length).toBe(3);
     expect(element.querySelector('.theme-button')).not.toBeNull();
-    expect(element.querySelector('.logout-button')).not.toBeNull();
+    expect(element.querySelector('.profile-button')).not.toBeNull();
+    await openMenu('.profile-button');
+    expect(menu().textContent).toContain('nav.logout');
 
     authenticated.set(false);
     await settle();
     expect(element.querySelector('.primary-nav')).toBeNull();
     expect(element.querySelector('.theme-button')).toBeNull();
     expect(element.querySelector('.logout-button')).toBeNull();
-    expect(element.querySelector('.language-button')).not.toBeNull();
+    expect(element.querySelector('.profile-button')).not.toBeNull();
+    expect(menu().textContent).not.toContain('nav.logout');
+    expect(menu().textContent).toContain('nav.language');
   });
 
-  for (const selector of ['.language-button', '.mobile-menu-button']) {
-    it(`selects a language and closes the menu through ${selector}`, async () => {
-      const panel = await openMenu(selector);
+  for (const isAuthenticated of [false, true]) {
+    it(`selects a language through the profile submenu (authenticated: ${isAuthenticated})`, async () => {
+      authenticated.set(isAuthenticated);
+      await settle();
+      await openMenu('.profile-button');
+      expect(button('.language-button').getAttribute('aria-label')).toBe('nav.language: languages.en');
+      const panel = await openMenu('.language-button');
       const items = panel.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
       expect(Array.from(items, item => item.querySelector('span')?.textContent?.trim()))
         .toEqual(['languages.en', 'languages.cs', 'languages.de']);
@@ -191,17 +203,17 @@ describe('NavMenuComponent', () => {
       await settle();
       expect(setLanguage).toHaveBeenCalledOnceWith('cs');
       expect(overlayContainer.getContainerElement().querySelector('[role="menu"]')).toBeNull();
+      await openMenu('.profile-button');
       expect(button('.language-button').getAttribute('aria-label')).toBe('nav.language: languages.cs');
-
-      const reopened = await openMenu(selector);
+      const reopened = await openMenu('.language-button');
       expect(reopened.querySelectorAll('.active-language').length).toBe(1);
       expect(reopened.querySelector('.active-language')?.textContent).toContain('languages.cs');
     });
   }
 
-  it('shows only language choices in the anonymous mobile menu', async () => {
-    const panel = await openMenu('.mobile-menu-button');
-    expect(panel.querySelectorAll('[role="menuitem"]').length).toBe(3);
+  it('shows only the language submenu in the anonymous profile menu', async () => {
+    const panel = await openMenu('.profile-button');
+    expect(panel.querySelectorAll('[role="menuitem"]').length).toBe(1);
     expect(panel.querySelector('a')).toBeNull();
     expect(panel.querySelector('[role="separator"]')).toBeNull();
     expect(panel.textContent).not.toContain('nav.logout');
@@ -209,15 +221,17 @@ describe('NavMenuComponent', () => {
     expect(panel.textContent).not.toContain('nav.lightMode');
   });
 
-  it('shows authenticated mobile navigation, theme and logout choices', async () => {
+  it('shows authenticated mobile navigation and theme without language or logout choices', async () => {
     authenticated.set(true);
     await settle();
     const panel = await openMenu('.mobile-menu-button');
     expect(Array.from(panel.querySelectorAll('a'), link => link.getAttribute('href')))
       .toEqual(['/', '/advisor', '/about', '/contact']);
     expect(panel.textContent).toContain('nav.darkMode');
-    expect(panel.textContent).toContain('nav.logout');
-    expect(panel.querySelectorAll('[role="separator"]').length).toBe(2);
+    expect(panel.textContent).not.toContain('nav.logout');
+    expect(panel.textContent).not.toContain('nav.language');
+    expect(panel.textContent).not.toContain('languages.');
+    expect(panel.querySelectorAll('[role="separator"]').length).toBe(1);
   });
 
   it('navigates from the mobile menu, closes it and marks home active only on the exact route', async () => {
@@ -281,13 +295,11 @@ describe('NavMenuComponent', () => {
   });
 
   it('exposes expanded state and closes on Escape with focus restored to the trigger', async () => {
-    const trigger = button('.mobile-menu-button');
-    // Focus behavior is independent of which responsive breakpoint Karma uses.
-    trigger.style.display = 'inline-flex';
+    const trigger = button('.profile-button');
     trigger.focus();
     expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
-    const panel = await openMenu('.mobile-menu-button');
+    const panel = await openMenu('.profile-button');
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
     expect(trigger.getAttribute('aria-controls')).toBe(panel.id);
     expect(panel.contains(document.activeElement)).toBeTrue();
@@ -302,42 +314,38 @@ describe('NavMenuComponent', () => {
   });
 
   it('closes the menu when its backdrop is clicked', async () => {
-    await openMenu('.mobile-menu-button');
+    await openMenu('.profile-button');
     const backdrop = overlayContainer.getContainerElement()
       .querySelector<HTMLElement>('.cdk-overlay-backdrop');
     expect(backdrop).not.toBeNull();
     backdrop!.click();
     await settle();
-    expect(button('.mobile-menu-button').getAttribute('aria-expanded')).toBe('false');
+    expect(button('.profile-button').getAttribute('aria-expanded')).toBe('false');
     expect(overlayContainer.getContainerElement().querySelector('[role="menu"]')).toBeNull();
   });
 
   it('removes an open overlay when the component is destroyed', async () => {
-    await openMenu('.mobile-menu-button');
+    await openMenu('.profile-button');
+    await openMenu('.language-button');
     fixture.destroy();
     expect(overlayContainer.getContainerElement().querySelector('[role="menu"]')).toBeNull();
     expect(overlayContainer.getContainerElement().querySelector('.cdk-overlay-backdrop')).toBeNull();
   });
 
-  for (const surface of ['desktop', 'mobile']) {
-    it(`waits for the ${surface} logout response before navigating to login`, async () => {
-      authenticated.set(true);
-      await TestBed.inject(Router).navigateByUrl('/advisor');
-      await settle();
-      if (surface === 'mobile') {
-        await openMenu('.mobile-menu-button');
-        menuButton('nav.logout').click();
-      } else {
-        button('.logout-button').click();
-      }
-      await settle();
-      expect(logout).toHaveBeenCalled();
-      expect(TestBed.inject(Router).url).toBe('/advisor');
+  it('waits for the profile logout response before navigating to login', async () => {
+    authenticated.set(true);
+    await TestBed.inject(Router).navigateByUrl('/advisor');
+    await settle();
+    await openMenu('.profile-button');
+    expect(menu().querySelectorAll('[role="menuitem"]').length).toBe(2);
+    menuButton('nav.logout').click();
+    await settle();
+    expect(logout).toHaveBeenCalled();
+    expect(TestBed.inject(Router).url).toBe('/advisor');
 
-      logoutResponse.next({ success: true, message: 'Logged out' });
-      await settle();
-      expect(TestBed.inject(Router).url).toBe('/login');
-      expect(overlayContainer.getContainerElement().querySelector('[role="menu"]')).toBeNull();
-    });
-  }
+    logoutResponse.next({ success: true, message: 'Logged out' });
+    await settle();
+    expect(TestBed.inject(Router).url).toBe('/login');
+    expect(overlayContainer.getContainerElement().querySelector('[role="menu"]')).toBeNull();
+  });
 });
