@@ -36,6 +36,37 @@
     "errorMessage": "Omlouvám se, došlo k chybě. Zkuste to prosím znovu."
   },
   "home": {
-    "works": "domů funguje!"
+    "eyebrow": "Vítejte v Sázkovém portálu",
+    "title": "Data vašeho portálu.",
+    "titleAccent": "Jasnější pohled.",
+    "description": "Poznejte údaje o sportech a zemích a prozkoumejte je v rozhovoru s AI Poradcem. Jedno místo, kde se můžete ptát a zorientovat v portálu.",
+    "openAdvisor": "Otevřít AI Poradce",
+    "explore": "Prozkoumat portál",
+    "accessNote": "Tady je vítán každý. Pro použití AI Poradce se přihlaste.",
+    "previewLabel": "Pohled dovnitř",
+    "previewTitle": "Začněte jednoduchou otázkou",
+    "questionSports": "Jaké sporty jsou v portálu dostupné?",
+    "questionCountries": "Které země jsou uvedeny v systému?",
+    "previewNote": "Ukázkové otázky, nikoli živé výsledky. Poradce vám pomáhá odpovídat na otázky pomocí dat portálu.",
+    "featuresEyebrow": "Méně hledání. Více porozumění.",
+    "featuresTitle": "Seznamte se s portálem",
+    "featuresDescription": "Jednoduchý výchozí bod pro prozkoumání informací v Sázkovém portálu.",
+    "dataTitle": "Propojení s daty portálu",
+    "dataDescription": "Zjistěte více o sportech a zemích evidovaných v systému. Místo vlastního hledání v datech požádejte poradce o souvislosti.",
+    "advisorTitle": "Ptejte se vlastními slovy",
+    "advisorDescription": "AI Poradce nabízí konverzační způsob prozkoumání informací portálu. Položte otázku, navazujte dalšími a mějte celý rozhovor na jednom místě.",
+    "languageTitle": "Cítíte se tu jako doma",
+    "languageDescription": "V nabídce profilu vyberte angličtinu, češtinu nebo němčinu. Portál i přihlašovací formulář se přizpůsobí zvolenému jazyku.",
+    "startEyebrow": "Váš další krok",
+    "startTitle": "Zvědavost je dobrý začátek.",
+    "startDescription": "O portálu si můžete přečíst i bez účtu. Až budete chtít pokládat otázky, přihlaste se svým stávajícím účtem.",
+    "signIn": "Přihlásit se a začít",
+    "stepOneTitle": "Vyberte si jazyk",
+    "stepOneDescription": "Otevřete nabídku profilu v horní části stránky a vyberte jazyk, který vám vyhovuje.",
+    "stepTwoTitle": "Přihlaste se do portálu",
+    "stepTwoDescription": "Pomocí stávajícího účtu získáte přístup k AI Poradci.",
+    "stepThreeTitle": "Začněte rozhovor",
+    "stepThreeDescription": "Ptejte se na data portálu a navazujícími otázkami je prozkoumejte podrobněji.",
+    "disclaimer": "Odpovědi AI mohou obsahovat chyby. Důležité informace si ověřte. Portál nezaručuje výsledky sázek; jeho obsah berte jako informace, nikoli jako sázkové poradenství."
   }
 }

@@ -40,7 +40,7 @@ describe('Application routes', () => {
       await harness.navigateByUrl('/', HomeComponent);
 
       expect(TestBed.inject(Router).url).toBe('/');
-      expect(harness.routeNativeElement?.textContent).toContain('home.works');
+      expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain('home.title');
       expect(checkAuthStatus).not.toHaveBeenCalled();
     });
   }

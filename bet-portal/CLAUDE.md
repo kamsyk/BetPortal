@@ -28,6 +28,10 @@ All HTTP calls include `withCredentials: true` (set by `authInterceptor`). On th
 The home route (`/`) and login route are public. The advisor route (`/advisor`)
 requires authentication via `authGuard`.
 
+The public home page introduces portal data, the AI Advisor, language selection,
+and sign-in. Its content is translated in all three languages and scrolls within
+its own viewport because the application shell disables body scrolling.
+
 `authGuard` checks `AuthService.isAuthenticated()` (sync, from `ks-ag-controls`) first. If not locally authenticated it calls `GET /api/auth/check` and redirects to `/login` on failure. `AuthService` is external — it lives in the `ks-ag-controls` package, not in this repo.
 
 ### Internationalisation

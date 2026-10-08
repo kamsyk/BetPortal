@@ -82,14 +82,16 @@ while resolving Vitest's optional peers, use npm 11 for dependency changes:
 `npm exec --yes --package=npm@11 -- npm install`. Restoring the checked-in
 lockfile with `npm ci` also works with npm 10.
 
-## Running navigation-menu browser tests
+## Running home-page and navigation-menu browser tests
 
-The navigation-menu browser suite uses Playwright Test with Chromium at desktop
+The home-page and navigation-menu browser suite uses Playwright Test with Chromium at desktop
 and mobile viewports. It builds a static browser-only bundle and serves it on
 `http://127.0.0.1:4300`, avoiding server-side rendering and prerender-time API
 requests. It fails rather than reusing an existing server on that port.
 Browser-side API requests are stubbed with synthetic anonymous or authenticated
 responses; the suite does not require a running API or real user accounts.
+Home-page coverage includes anonymous access, advisor sign-in redirection,
+keyboard navigation, scrollable mobile layouts, saved languages, and dark theme.
 
 ```powershell
 npm run test:e2e
