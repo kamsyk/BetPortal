@@ -49,7 +49,8 @@ test('opens the profile submenu and restores focus after Escape', async ({ page 
   const menu = page.getByRole('menu');
   await expect(menu).toBeVisible();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  await expect(menu.getByRole('menuitem')).toHaveCount(1);
+  await expect(menu.getByRole('menuitem')).toHaveCount(2);
+  await expect(menu.getByRole('menuitem', { name: 'Sign in', exact: true })).toHaveAttribute('href', '/login');
   const languageTrigger = menu.getByRole('menuitem', { name: 'Language: English' });
   await languageTrigger.click();
   const languageMenuId = await languageTrigger.getAttribute('aria-controls');
@@ -88,6 +89,15 @@ test('selects a language from the profile submenu and marks it active when reope
   await expect(trigger).toHaveAttribute('aria-label', 'Uživatelský profil');
   await languageTrigger.click();
   await expect(page.locator('[role="menuitem"].active-language')).toHaveCount(1);
+});
+
+test('lets anonymous visitors sign in from the profile menu', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'User profile', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Sign in', exact: true }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('menu')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible();
 });
 
 test('shows authenticated navigation, marks the active route, and navigates home', async ({ page }, testInfo) => {
@@ -161,6 +171,7 @@ test('shows authenticated navigation, marks the active route, and navigates home
   await expect(profileMenu.getByRole('menuitem')).toHaveCount(2);
   await expect(profileMenu.getByRole('menuitem', { name: 'Language: English' })).toBeVisible();
   await expect(profileMenu.getByRole('menuitem', { name: /Logout/ })).toBeVisible();
+  await expect(profileMenu.getByRole('menuitem', { name: 'Sign in', exact: true })).toHaveCount(0);
   await profileMenu.getByRole('menuitem', { name: /Logout/ }).click();
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole('menu')).toHaveCount(0);

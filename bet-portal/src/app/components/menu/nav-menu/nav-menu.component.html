@@ -59,6 +59,11 @@
       <mat-icon aria-hidden="true">logout</mat-icon>
       <span>{{ 'nav.logout' | translate }}</span>
     </button>
+  } @else {
+    <a mat-menu-item class="sign-in-link" routerLink="/login">
+      <mat-icon aria-hidden="true">login</mat-icon>
+      <span>{{ 'nav.signIn' | translate }}</span>
+    </a>
   }
 </mat-menu>
 

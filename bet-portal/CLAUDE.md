@@ -41,7 +41,7 @@ The login page binds `LanguageService.currentLanguage()` to the local library's
 `lib-ks-login` language input, so login labels update when the selected language changes.
 
 ### Navigation
-The user-profile icon opens a shared desktop/mobile menu containing a nested language selector and, for authenticated users, Logout. Language selection remains available to guests. Main navigation and theme controls are shown only when authenticated; the mobile navigation menu does not contain language or logout actions.
+The user-profile icon opens a shared desktop/mobile menu containing a nested language selector and either Sign in for anonymous users or Logout for authenticated users. Language selection remains available to guests. Main navigation and theme controls are shown only when authenticated; the mobile navigation menu does not contain language or logout actions.
 
 ### AI Advisor page (`/advisor`)
 `AdvisorComponent` maintains conversation state in a `signal<ChatMessage[]>`. `ChatService.sendMessage()` sends the last 10 messages as context to `POST /api/chat/ask`. The component uses `@ViewChild` + `AfterViewChecked` to auto-scroll — the `shouldScrollToBottom` flag avoids scroll-on-every-change-detection cycle.

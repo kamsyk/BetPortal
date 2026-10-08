@@ -174,6 +174,7 @@ describe('NavMenuComponent', () => {
         expect(element.querySelector('.profile-button')).not.toBeNull();
         await openMenu('.profile-button');
         expect(menu().textContent).toContain('nav.logout');
+        expect(menu().querySelector('.sign-in-link')).toBeNull();
 
         authenticated.set(false);
         await settle();
@@ -183,6 +184,7 @@ describe('NavMenuComponent', () => {
         expect(element.querySelector('.profile-button')).not.toBeNull();
         expect(menu().textContent).not.toContain('nav.logout');
         expect(menu().textContent).toContain('nav.language');
+        expect(menu().querySelector('.sign-in-link')?.textContent).toContain('nav.signIn');
     });
 
     for (const isAuthenticated of [false, true]) {
@@ -211,14 +213,25 @@ describe('NavMenuComponent', () => {
         });
     }
 
-    it('shows only the language submenu in the anonymous profile menu', async () => {
+    it('shows language selection and sign-in in the anonymous profile menu', async () => {
         const panel = await openMenu('.profile-button');
-        expect(panel.querySelectorAll('[role="menuitem"]').length).toBe(1);
-        expect(panel.querySelector('a')).toBeNull();
+        expect(panel.querySelectorAll('[role="menuitem"]').length).toBe(2);
+        expect(panel.querySelector('a')?.getAttribute('href')).toBe('/login');
+        expect(panel.querySelector('a')?.textContent).toContain('nav.signIn');
         expect(panel.querySelector('[role="separator"]')).toBeNull();
         expect(panel.textContent).not.toContain('nav.logout');
         expect(panel.textContent).not.toContain('nav.darkMode');
         expect(panel.textContent).not.toContain('nav.lightMode');
+    });
+
+    it('navigates to login and closes the anonymous profile menu after sign-in is selected', async () => {
+        const panel = await openMenu('.profile-button');
+        const signIn = panel.querySelector<HTMLAnchorElement>('.sign-in-link');
+        expect(signIn).not.toBeNull();
+        signIn!.click();
+        await settle();
+        expect(TestBed.inject(Router).url).toBe('/login');
+        expect(overlayContainer.getContainerElement().querySelector('[role="menu"]')).toBeNull();
     });
 
     it('shows authenticated mobile navigation and theme without language or logout choices', async () => {
