@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm install
 npm start                                        # dev server at http://localhost:4200
 npm run build                                    # SSR production build → dist/bet-portal/
-npm test                                         # Karma/Jasmine (Chrome)
+npm test -- --watch=false                         # Vitest/jsdom via Angular unit-test builder
 ng test --include='**/foo.component.spec.ts'     # single spec
 npm run lint                                     # ESLint (TS + HTML)
 node dist/bet-portal/server/server.mjs           # serve SSR build
@@ -19,7 +19,7 @@ To update the `ks-ag-controls` local library: run `install-ks-controls-dev.bat` 
 ## Architecture
 
 ### SSR setup
-Angular 20 app with SSR via `@angular/ssr` + Express (`src/server.ts`). The SSR entry is `src/main.server.ts`; the browser entry is `src/main.ts`. Static assets (including i18n JSON files) are served from `public/`.
+Angular 21 app with SSR via `@angular/ssr` + Express (`src/server.ts`). The SSR entry is `src/main.server.ts`; the browser entry is `src/main.ts`. Static assets (including i18n JSON files) are served from `public/`.
 
 ### API communication
 All HTTP calls include `withCredentials: true` (set by `authInterceptor`). On the server side, the interceptor forwards the raw `Cookie` header from the incoming request via `global.__request__` so SSR can make authenticated API calls. The API base URL is provided via the `API_BASE_URL` injection token (`src/core/tokens.ts`), set from `environment.apiUrl` in `app.config.ts`.
