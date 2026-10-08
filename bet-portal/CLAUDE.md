@@ -25,6 +25,9 @@ Angular 21 app with SSR via `@angular/ssr` + Express (`src/server.ts`). The SSR 
 All HTTP calls include `withCredentials: true` (set by `authInterceptor`). On the server side, the interceptor forwards the raw `Cookie` header from the incoming request via `global.__request__` so SSR can make authenticated API calls. The API base URL is provided via the `API_BASE_URL` injection token (`src/core/tokens.ts`), set from `environment.apiUrl` in `app.config.ts`.
 
 ### Auth flow
+The home route (`/`) and login route are public. The advisor route (`/advisor`)
+requires authentication via `authGuard`.
+
 `authGuard` checks `AuthService.isAuthenticated()` (sync, from `ks-ag-controls`) first. If not locally authenticated it calls `GET /api/auth/check` and redirects to `/login` on failure. `AuthService` is external — it lives in the `ks-ag-controls` package, not in this repo.
 
 ### Internationalisation
