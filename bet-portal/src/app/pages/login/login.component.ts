@@ -1,13 +1,14 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { API_BASE_URL } from '../../../core/tokens';
 import { AuthService, KsLoginComponent } from 'ks-ag-controls';
 import { Router } from '@angular/router';
 import { take } from 'rxjs';
+import { LanguageService } from '../../services/language.service';
 
 @Component({
   selector: 'app-login',
-  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [KsLoginComponent],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
@@ -18,6 +19,7 @@ export class LoginComponent implements OnInit {
   private router = inject(Router);
   private apiBase = inject(API_BASE_URL);
   private authService = inject(AuthService);
+  protected readonly currentLanguage = inject(LanguageService).currentLanguage;
 
   loading = false;
   error = '';
