@@ -1,1 +1,72 @@
-<p>{{ 'home.works' | translate }}</p>
+<main class="home-page" tabindex="0" [attr.aria-label]="'nav.home' | translate">
+  <section class="hero" aria-labelledby="home-title">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow"><span aria-hidden="true"></span>{{ 'home.eyebrow' | translate }}</p>
+        <h1 id="home-title">{{ 'home.title' | translate }} <span>{{ 'home.titleAccent' | translate }}</span></h1>
+        <p class="hero-description">{{ 'home.description' | translate }}</p>
+        <div class="actions">
+          <a class="action primary" routerLink="/advisor">{{ 'home.openAdvisor' | translate }} <span aria-hidden="true">&rarr;</span></a>
+          <a class="action secondary" href="#portal-features">{{ 'home.explore' | translate }} <span aria-hidden="true">&darr;</span></a>
+        </div>
+        <p class="hero-note">{{ 'home.accessNote' | translate }}</p>
+      </div>
+      <aside class="preview" aria-labelledby="preview-title">
+        <div class="preview-top"><span class="preview-mark" aria-hidden="true">BP</span><span>{{ 'home.previewLabel' | translate }}</span></div>
+        <svg class="data-art" viewBox="0 0 320 140" fill="none" aria-hidden="true">
+          <path d="M20 35H300M20 70H300M20 105H300" stroke="currentColor" opacity=".15"/>
+          <path d="M50 120V20M105 120V20M160 120V20M215 120V20M270 120V20" stroke="currentColor" opacity=".1"/>
+          <path d="M50 95L105 55L160 80L215 35L270 65" stroke="#5eead4" stroke-width="3" stroke-linecap="round"/>
+          <g fill="#5eead4"><circle cx="50" cy="95" r="5"/><circle cx="105" cy="55" r="5"/><circle cx="160" cy="80" r="5"/><circle cx="215" cy="35" r="5"/><circle cx="270" cy="65" r="5"/></g>
+        </svg>
+        <h2 id="preview-title">{{ 'home.previewTitle' | translate }}</h2>
+        <ul class="questions">
+          <li><span aria-hidden="true">01</span>{{ 'home.questionSports' | translate }}</li>
+          <li><span aria-hidden="true">02</span>{{ 'home.questionCountries' | translate }}</li>
+        </ul>
+        <p class="preview-note">{{ 'home.previewNote' | translate }}</p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="content-section" id="portal-features" aria-labelledby="features-title">
+    <p class="section-kicker">{{ 'home.featuresEyebrow' | translate }}</p>
+    <h2 id="features-title">{{ 'home.featuresTitle' | translate }}</h2>
+    <p class="section-description">{{ 'home.featuresDescription' | translate }}</p>
+    <div class="feature-grid">
+      <article class="feature-card">
+        <span class="feature-icon" aria-hidden="true">&equiv;</span>
+        <h3>{{ 'home.dataTitle' | translate }}</h3>
+        <p>{{ 'home.dataDescription' | translate }}</p>
+      </article>
+      <article class="feature-card">
+        <span class="feature-icon" aria-hidden="true">&loz;</span>
+        <h3>{{ 'home.advisorTitle' | translate }}</h3>
+        <p>{{ 'home.advisorDescription' | translate }}</p>
+      </article>
+      <article class="feature-card">
+        <span class="feature-icon" aria-hidden="true">Aa</span>
+        <h3>{{ 'home.languageTitle' | translate }}</h3>
+        <p>{{ 'home.languageDescription' | translate }}</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="content-section getting-started" aria-labelledby="start-title">
+    <div>
+      <p class="section-kicker">{{ 'home.startEyebrow' | translate }}</p>
+      <h2 id="start-title">{{ 'home.startTitle' | translate }}</h2>
+      <p class="section-description">{{ 'home.startDescription' | translate }}</p>
+      <a class="action sign-in" routerLink="/login" [queryParams]="{ returnUrl: '/advisor' }">{{ 'home.signIn' | translate }} <span aria-hidden="true">&rarr;</span></a>
+    </div>
+    <ol class="steps">
+      <li><h3>{{ 'home.stepOneTitle' | translate }}</h3><p>{{ 'home.stepOneDescription' | translate }}</p></li>
+      <li><h3>{{ 'home.stepTwoTitle' | translate }}</h3><p>{{ 'home.stepTwoDescription' | translate }}</p></li>
+      <li><h3>{{ 'home.stepThreeTitle' | translate }}</h3><p>{{ 'home.stepThreeDescription' | translate }}</p></li>
+    </ol>
+  </section>
+  <footer class="home-footer">
+    <span>{{ 'nav.brand' | translate }}</span>
+    <p>{{ 'home.disclaimer' | translate }}</p>
+  </footer>
+</main>

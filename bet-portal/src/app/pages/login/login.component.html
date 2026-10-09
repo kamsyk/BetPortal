@@ -1,7 +1,7 @@
 <lib-ks-login
-class="login-component"
-[loginUrl]="loginUrl()"
+  class="login-component"
+  [language]="currentLanguage()"
+  [loginUrl]="loginUrl()"
   [redirectUrl]="redirectUrl()"
   (loginSuccess)="onLoginSuccess($event)"
 ></lib-ks-login>
-

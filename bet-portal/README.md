@@ -4,23 +4,26 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 
 ## Local controls dependency
 
-Before running `npm ci`, ensure the local `ks-ag-controls-0.0.6.tgz` package
-referenced by [package.json](./package.json) exists. Use the Angular 20-compatible
-library source at commit `ab090d0` in the sibling `ks-ag-controls-workspace`
-repository. In a separate checkout of that commit, run:
+This portal uses Angular 21 and the local `ks-ag-controls-0.0.7.tgz` package
+referenced by [package.json](./package.json). Use Node.js 22.12 or newer in the
+22.x release line (Node.js 22.19 is supported).
+
+To build, package, and install the library from the sibling
+`Angular\ks-ag-controls\ks-ag-controls-workspace` checkout, run from this directory:
 
 ```powershell
-npm ci
-npm run build:lib:styles
-npx ng build ks-ag-controls --configuration production
-Set-Location .\dist\ks-ag-controls
-npm pack
+.\scripts\install-ks-controls-dev.bat
 ```
 
-Copy the resulting tarball to the local path referenced by the dependency.
-The published npm version 0.0.6 does not export `AuthService` or
-`KsLoginComponent`; local version 0.0.7 requires Angular 21 and is not compatible
-with this Angular 20 portal.
+The library checkout must have its dependencies installed first. The script
+builds the library styles and Angular package, stops on errors, and installs
+without first removing the existing dependency. Once the tarball exists,
+`npm ci` can also restore the portal dependencies.
+
+Do not use `--force` or `--legacy-peer-deps` to install this library on Angular 20:
+version 0.0.7 requires Angular 21. The published npm version 0.0.6 does not export
+`AuthService` or `KsLoginComponent`; use the local package rather than the
+production install script for this checkout.
 
 ## Development server
 
@@ -58,20 +61,37 @@ This will compile your project and store the build artifacts in the `dist/` dire
 
 ## Running unit tests
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+Unit tests use Angular's `@angular/build:unit-test` builder with Vitest and jsdom.
+Run them once with:
 
-```bash
-ng test
+```powershell
+npm test -- --watch=false
 ```
 
-## Running navigation-menu browser tests
+Run a focused spec with `npm test -- --watch=false --include="src/app/components/menu/nav-menu/nav-menu.component.spec.ts"`.
+Browser UI coverage still uses Playwright as described below.
 
-The navigation-menu browser suite uses Playwright Test with Chromium at desktop
+Karma was removed because its dependency chain includes the unpatched `braces`
+stack-exhaustion denial-of-service advisory (GHSA-vfj7-8cjw-p6xm). Do not restore
+Karma or use forced downgrades to address this advisory. Check all installed
+dependencies with `npm audit` and production dependencies with
+`npm audit --omit=dev`.
+
+If npm 10 fails with `Cannot read properties of null (reading 'edgesOut')`
+while resolving Vitest's optional peers, use npm 11 for dependency changes:
+`npm exec --yes --package=npm@11 -- npm install`. Restoring the checked-in
+lockfile with `npm ci` also works with npm 10.
+
+## Running home-page and navigation-menu browser tests
+
+The home-page and navigation-menu browser suite uses Playwright Test with Chromium at desktop
 and mobile viewports. It builds a static browser-only bundle and serves it on
 `http://127.0.0.1:4300`, avoiding server-side rendering and prerender-time API
 requests. It fails rather than reusing an existing server on that port.
 Browser-side API requests are stubbed with synthetic anonymous or authenticated
 responses; the suite does not require a running API or real user accounts.
+Home-page coverage includes anonymous access, advisor sign-in redirection,
+keyboard navigation, scrollable mobile layouts, saved languages, and dark theme.
 
 ```powershell
 npm run test:e2e
