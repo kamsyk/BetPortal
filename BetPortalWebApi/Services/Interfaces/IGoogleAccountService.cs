@@ -6,6 +6,7 @@ namespace BetPortalWebApi.Services.Interfaces
     {
         Task<(BpUser? User, bool AccountExists)> FindExistingAsync(string email, CancellationToken cancellationToken);
 
-        Task<bool> RegisterAsync(string email, string? firstName, string? surname, CancellationToken cancellationToken);
+        Task<(bool AccountCreated, bool EmailSent)> RegisterAsync(
+            string email, string? firstName, string? surname, CancellationToken cancellationToken);
     }
 }

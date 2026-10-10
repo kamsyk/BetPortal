@@ -1,4 +1,5 @@
 using BpDbLayer;
+using BetPortalWebApi.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -152,7 +153,7 @@ public sealed class ApiFixture : IAsyncLifetime
         return new BpDbContext(_dbContextOptions);
     }
 
-    internal HttpClient CreateGoogleClient(HttpMessageHandler backchannel)
+    internal HttpClient CreateGoogleClient(HttpMessageHandler backchannel, IEmailService? emailService = null)
     {
         if (_factory is null)
         {
@@ -161,8 +162,14 @@ public sealed class ApiFixture : IAsyncLifetime
 
         var factory = _factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
+            {
                 services.PostConfigure<GoogleOptions>("Google", options =>
-                    options.Backchannel = new HttpClient(backchannel))));
+                    options.Backchannel = new HttpClient(backchannel));
+                if (emailService is not null)
+                {
+                    services.AddSingleton(emailService);
+                }
+            }));
         return factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             BaseAddress = new Uri("https://localhost"),
@@ -238,6 +245,7 @@ public sealed class ApiFixture : IAsyncLifetime
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Testing");
+            builder.ConfigureTestServices(services => services.AddSingleton<IEmailService>(new RecordingEmailService()));
             builder.ConfigureAppConfiguration((_, configuration) =>
             {
                 configuration.AddInMemoryCollection(new Dictionary<string, string?>

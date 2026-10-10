@@ -18,7 +18,7 @@
   },
   "signUpConfirmation": {
     "title": "Registrace přijata",
-    "message": "Váš účet byl vytvořen a čeká na aktivaci. Zatím nejste přihlášeni."
+    "message": "Váš účet byl vytvořen. V e-mailu najdete uvítací zprávu s odkazem pro aktivaci účtu. Zatím nejste přihlášeni."
   },
   "nav": {
     "brand": "Sázkový portál",

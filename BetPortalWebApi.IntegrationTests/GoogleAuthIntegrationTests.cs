@@ -2,10 +2,13 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BetPortalWebApi.Services;
+using BetPortalWebApi.Services.Interfaces;
+using BpDbLayer;
 using BpDbLayer.Models;
 using BpDbLayer.Utils;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
 [Collection("API integration tests")]
@@ -75,12 +78,14 @@ public sealed class GoogleAuthIntegrationTests
     [InlineData(true, "/advisor", "http://localhost:4200/login", true, true)]
     [InlineData(false, null, null, false, true)]
     [InlineData(null, null, null, false, true)]
+    [InlineData(true, null, null, false, true, false)]
     public async Task Google_round_trip_requires_verified_email_and_redirects_after_sign_in(
-        bool? emailVerified, string? returnUrl, string? destination, bool accountExists, bool register = false)
+        bool? emailVerified, string? returnUrl, string? destination, bool accountExists, bool register = false, bool emailSent = true)
     {
         var email = $"{Guid.NewGuid():N}@example.test";
         using var backchannel = new GoogleBackchannel(email, emailVerified);
-        using var client = _fixture.CreateGoogleClient(backchannel);
+        var emails = new RecordingEmailService(emailSent);
+        using var client = _fixture.CreateGoogleClient(backchannel, emails);
         var cookies = new CookieContainer();
         var cancellationToken = TestContext.Current.CancellationToken;
 
@@ -115,7 +120,12 @@ public sealed class GoogleAuthIntegrationTests
             using var callback = await client.GetAsync(googleResponse.Headers.Location, cancellationToken);
             if (destination is null)
             {
-                Assert.Equal(HttpStatusCode.Unauthorized, callback.StatusCode);
+                Assert.Equal(emailSent ? HttpStatusCode.Unauthorized : HttpStatusCode.ServiceUnavailable, callback.StatusCode);
+                if (!emailSent)
+                {
+                    var problem = await callback.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+                    Assert.Equal("Your account was registered, but the welcome email could not be sent", problem.GetProperty("title").GetString());
+                }
                 Assert.False(callback.Headers.TryGetValues("Set-Cookie", out var headers)
                     && headers.Any(header => header.StartsWith("AuthCookie=", StringComparison.Ordinal)
                         || header.StartsWith("SessionId=", StringComparison.Ordinal)));
@@ -194,17 +204,26 @@ public sealed class GoogleAuthIntegrationTests
                 Assert.Equal(32, Convert.FromHexString(token.UserInitToken).Length);
                 Assert.Equal(user.CreatedDate, token.CreatedDate);
                 Assert.False(await dbContext.BpUsers_BpRoles.AnyAsync(role => role.UserId == user.Id, cancellationToken));
-                var service = new GoogleAccountService(dbContext, NullLogger<GoogleAccountService>.Instance);
-                Assert.False(await service.RegisterAsync(email.ToUpperInvariant(), null, null, cancellationToken));
+                var message = Assert.Single(emails.Messages);
+                Assert.Equal(email, message.Recipient);
+                Assert.Equal("Welcome to Bet Portal", message.Subject);
+                var activationUrl = $"http://localhost:4200/user-token?token={token.UserInitToken}";
+                Assert.Contains($"href=\"{activationUrl}\"", message.Html);
+                Assert.Contains(activationUrl, message.PlainText!);
+                var service = CreateAccountService(dbContext, emails);
+                Assert.Equal((false, false), await service.RegisterAsync(email.ToUpperInvariant(), null, null, cancellationToken));
+                Assert.Single(emails.Messages);
                 Assert.Equal(1, await dbContext.BpUsers.CountAsync(u => u.Email == email, cancellationToken));
                 Assert.Equal(token.UserInitToken, (await dbContext.UserTokens.SingleAsync(t => t.UserId == user.Id, cancellationToken)).UserInitToken);
             }
             else if (!accountExists)
             {
+                Assert.Empty(emails.Messages);
                 Assert.Null(user);
             }
             else
             {
+                Assert.Empty(emails.Messages);
                 Assert.NotNull(user);
                 if (register)
                 {
@@ -298,7 +317,7 @@ public sealed class GoogleAuthIntegrationTests
             int createdId;
             await using (var dbContext = _fixture.CreateDbContext())
             {
-                var service = new GoogleAccountService(dbContext, NullLogger<GoogleAccountService>.Instance);
+                var service = CreateAccountService(dbContext);
                 var missing = await service.FindExistingAsync(email, TestContext.Current.CancellationToken);
                 Assert.Null(missing.User);
                 Assert.False(missing.AccountExists);
@@ -311,7 +330,7 @@ public sealed class GoogleAuthIntegrationTests
 
             await using (var dbContext = _fixture.CreateDbContext())
             {
-                var service = new GoogleAccountService(dbContext, NullLogger<GoogleAccountService>.Instance);
+                var service = CreateAccountService(dbContext);
                 var (existing, accountExists) = await service.FindExistingAsync(email.ToUpperInvariant(), TestContext.Current.CancellationToken);
                 Assert.True(accountExists);
                 Assert.NotNull(existing);
@@ -325,11 +344,74 @@ public sealed class GoogleAuthIntegrationTests
         }
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Registration_commits_before_sending_encoded_welcome_email_and_preserves_account_on_delivery_failure(bool succeeds)
+    {
+        var email = $"{Guid.NewGuid():N}@example.test";
+        var cancellationToken = TestContext.Current.CancellationToken;
+        string? savedToken = null;
+        var emails = new RecordingEmailService(succeeds)
+        {
+            OnSend = async () =>
+            {
+                await using var persisted = _fixture.CreateDbContext();
+                var user = await persisted.BpUsers.SingleAsync(u => u.Email == email, cancellationToken);
+                Assert.False(user.IsActive);
+                savedToken = (await persisted.UserTokens.SingleAsync(t => t.UserId == user.Id, cancellationToken)).UserInitToken;
+            },
+        };
+        try
+        {
+            await using var dbContext = _fixture.CreateDbContext();
+            var service = CreateAccountService(dbContext, emails);
+            Assert.Equal((true, succeeds), await service.RegisterAsync(email, "<script>&\"Name", null, cancellationToken));
+            Assert.NotNull(savedToken);
+            var message = Assert.Single(emails.Messages);
+            Assert.Equal(email, message.Recipient);
+            Assert.Equal(cancellationToken, message.CancellationToken);
+            Assert.Null(message.Bcc);
+            Assert.Contains("Hello &lt;script&gt;&amp;&quot;Name", message.Html);
+            Assert.DoesNotContain("<script>", message.Html);
+            Assert.Contains($"https://portal.example.test/user-token?token={savedToken}", message.Html);
+            Assert.Contains($"https://portal.example.test/user-token?token={savedToken}", message.PlainText!);
+            Assert.Equal((false, false), await service.RegisterAsync(email, null, null, cancellationToken));
+            Assert.Single(emails.Messages);
+            await using var persisted = _fixture.CreateDbContext();
+            Assert.Equal(savedToken, (await persisted.UserTokens.SingleAsync(t => t.User.Email == email, cancellationToken)).UserInitToken);
+            if (succeeds)
+            {
+                var activationLink = new Uri(message.PlainText!.Split('\n').Single(line => line.StartsWith("https://", StringComparison.Ordinal)));
+                var emailedToken = QueryHelpers.ParseQuery(activationLink.Query)["token"].ToString();
+                await using var scope = _fixture.CreateTestScope();
+                using var activation = await scope.Client.PostAsJsonAsync("/api/user-token", new { token = emailedToken }, cancellationToken);
+                Assert.Equal(HttpStatusCode.NoContent, activation.StatusCode);
+                Assert.True(await persisted.BpUsers.Where(u => u.Email == email).Select(u => u.IsActive).SingleAsync(cancellationToken));
+                Assert.False(await persisted.UserTokens.AnyAsync(t => t.User.Email == email, cancellationToken));
+            }
+        }
+        finally
+        {
+            await DeleteUsersAsync(email);
+        }
+    }
+
+    private static GoogleAccountService CreateAccountService(BpDbContext dbContext, IEmailService? emailService = null)
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Authentication:Google:FrontendOrigin"] = "https://portal.example.test",
+        }).Build();
+        return new GoogleAccountService(
+            dbContext, emailService ?? new RecordingEmailService(), configuration, NullLogger<GoogleAccountService>.Instance);
+    }
+
     [Fact]
     public async Task Account_service_links_existing_admin_by_email()
     {
         await using var dbContext = _fixture.CreateDbContext();
-        var service = new GoogleAccountService(dbContext, NullLogger<GoogleAccountService>.Instance);
+        var service = CreateAccountService(dbContext);
 
         var (user, accountExists) = await service.FindExistingAsync("ADMIN@betportal.com", TestContext.Current.CancellationToken);
 
@@ -351,7 +433,7 @@ public sealed class GoogleAuthIntegrationTests
             }
 
             await using var dbContext = _fixture.CreateDbContext();
-            var service = new GoogleAccountService(dbContext, NullLogger<GoogleAccountService>.Instance);
+            var service = CreateAccountService(dbContext);
 
             var (user, accountExists) = await service.FindExistingAsync(email, TestContext.Current.CancellationToken);
 

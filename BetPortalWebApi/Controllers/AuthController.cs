@@ -69,6 +69,7 @@ namespace BetPortalWebApi.Controllers
         [ProducesResponseType(StatusCodes.Status302Found)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
         public async Task<IActionResult> GoogleCallback(CancellationToken cancellationToken)
         {
             var external = await HttpContext.AuthenticateAsync("GoogleExternal");
@@ -89,7 +90,7 @@ namespace BetPortalWebApi.Controllers
 
             if (external.Properties.Items.TryGetValue("googleFlow", out var flow) && flow == "register")
             {
-                var created = await _googleAccountService.RegisterAsync(
+                var (created, emailSent) = await _googleAccountService.RegisterAsync(
                     email,
                     external.Principal?.FindFirstValue(ClaimTypes.GivenName),
                     external.Principal?.FindFirstValue(ClaimTypes.Surname),
@@ -97,6 +98,14 @@ namespace BetPortalWebApi.Controllers
                 if (!created)
                 {
                     return GoogleLoginRedirect("account-exists", destination);
+                }
+
+                if (!emailSent)
+                {
+                    return Problem(
+                        statusCode: StatusCodes.Status503ServiceUnavailable,
+                        title: "Your account was registered, but the welcome email could not be sent",
+                        detail: "Your account is inactive. Please contact support to receive an activation link.");
                 }
 
                 TryGetGoogleReturnUrl("/sign-up-confirmation", out var confirmationUrl);

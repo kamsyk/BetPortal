@@ -18,7 +18,7 @@
   },
   "signUpConfirmation": {
     "title": "Registration received",
-    "message": "Your account has been created and is awaiting activation. You are not signed in yet."
+    "message": "Your account has been created. Check your email for the welcome message and use its link to activate your account. You are not signed in yet."
   },
   "nav": {
     "brand": "Bet Portal",

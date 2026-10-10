@@ -40,6 +40,6 @@ test('Sign up with Google uses registration and reaches confirmation without a s
   await expect(page).toHaveURL(/\/sign-up-confirmation$/);
   expect(registrationStarted).toBe(true);
   await expect(page.getByRole('heading', { name: 'Registration received' })).toBeVisible();
-  await expect(page.getByText('Your account has been created and is awaiting activation. You are not signed in yet.')).toBeVisible();
+  await expect(page.getByText('Your account has been created. Check your email for the welcome message and use its link to activate your account. You are not signed in yet.')).toBeVisible();
   await expect(page.locator('.primary-nav')).toHaveCount(0);
 });

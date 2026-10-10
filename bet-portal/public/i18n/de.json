@@ -18,7 +18,7 @@
   },
   "signUpConfirmation": {
     "title": "Registrierung erhalten",
-    "message": "Ihr Konto wurde erstellt und wartet auf Aktivierung. Sie sind noch nicht angemeldet."
+    "message": "Ihr Konto wurde erstellt. Prüfen Sie Ihre E-Mails auf die Willkommensnachricht und aktivieren Sie Ihr Konto über den darin enthaltenen Link. Sie sind noch nicht angemeldet."
   },
   "nav": {
     "brand": "Wettportal",
