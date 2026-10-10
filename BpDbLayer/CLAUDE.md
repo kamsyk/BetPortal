@@ -44,6 +44,8 @@ Not every entity implements both — check individual models. Data annotations (
 
 `BpUserConfiguration` seeds an admin user (ID = `BpUserConfiguration.AdminUserId = 1`, username `admin`, password `admin` hashed with Argon2id). This constant is also used as the default `CreatedByUserId`/`ModifiedByUserId` in migration seed data for other entities.
 
+`BpRoleConfiguration` seeds `Admin` (ID 1), `BasicUser` (ID 2), and `SubscribedUserL1` (ID 3). The latter two are inserted by SQL Server migration `20261010163051_BpMigration_20261010183037`; creating the roles does not assign them to users or grant new permissions.
+
 ### Password hashing
 
 `Utils/PasswordHasher.cs` provides `HashPassword(string)` and `VerifyPassword(string, string)` using **Argon2id** (`Konscious.Security.Cryptography.Argon2`). Parameters: 16-byte salt, 32-byte hash, 4 iterations, 64 MB memory, parallelism 2. The stored format is `base64(salt + hash)`. Use `CryptographicOperations.FixedTimeEquals` for comparison (already done internally).

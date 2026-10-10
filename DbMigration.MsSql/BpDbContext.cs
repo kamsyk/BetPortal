@@ -31,10 +31,6 @@ namespace DbMigration.MsSql
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(BpDbContext).Assembly);
-
-            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.CompetitorConfiguration());
-
-            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.BpUserFavoritesConfiguration());
         }
     }
 }
