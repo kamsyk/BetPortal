@@ -3,7 +3,12 @@
     "title": "Sázkový portál"
   },
   "login": {
+    "googleAccountExists": "Účet s tímto e-mailem již existuje. Přihlaste se prosím.",
     "googleAccountRequired": "Pro váš e-mail Google neexistuje účet v portálu. Vyplňte registrační formulář. Žádný účet nebyl vytvořen automaticky."
+  },
+  "signUpConfirmation": {
+    "title": "Registrace přijata",
+    "message": "Váš účet byl vytvořen a čeká na aktivaci. Zatím nejste přihlášeni."
   },
   "nav": {
     "brand": "Sázkový portál",

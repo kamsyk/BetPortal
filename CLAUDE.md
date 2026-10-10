@@ -60,6 +60,8 @@ Login writes both cookies (`SessionId` + `AuthCookie`). The `GET /api/auth/check
 
 `AdminAccess` policy requires claim `Permission = "AdminAccess"`, granted only to users with the active `Admin` role. Google sign-in (`/api/auth/google`) signs in existing active users by verified email only. Unknown emails return to `/login` with an account-required message; no user or session is created.
 
+Explicit Google sign-up (`/api/auth/google/register`) creates an inactive user and a `UserToken` atomically and redirects to `/sign-up-confirmation`; existing emails are rejected without changes. No authenticated session is created by registration.
+
 ### Angular auth flow
 `authGuard` calls `AuthService.checkAuthStatus()` (from `ks-ag-controls`) → `GET /api/auth/check`. `authInterceptor` adds `withCredentials: true` to every request; on SSR it forwards the raw `Cookie` header from the incoming request via `global.__request__`.
 

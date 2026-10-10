@@ -33,6 +33,8 @@ dotnet user-secrets set "Authentication:Google:ClientSecret" "<client-secret>"
 
 ## Architecture
 
+Google registration starts at `/api/auth/google/register` and stores registration intent in the protected OAuth state. After Google verifies the email, it creates an inactive user and a `UserToken` with a cryptographically random 64-character token in one transaction, then redirects to `/sign-up-confirmation` without issuing application auth cookies. Existing emails are rejected without changes and return to Login with `googleError=account-exists`. This does not send email or activate the account.
+
 ### Project structure
 
 ```

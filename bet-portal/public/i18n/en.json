@@ -3,7 +3,12 @@
     "title": "Bet Portal"
   },
   "login": {
+    "googleAccountExists": "An account with this email already exists. Please sign in instead.",
     "googleAccountRequired": "No portal account matches your Google email address. Complete the Sign up form to register. No account has been created automatically."
+  },
+  "signUpConfirmation": {
+    "title": "Registration received",
+    "message": "Your account has been created and is awaiting activation. You are not signed in yet."
   },
   "nav": {
     "brand": "Bet Portal",

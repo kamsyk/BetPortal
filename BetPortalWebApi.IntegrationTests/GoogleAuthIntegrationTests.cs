@@ -71,8 +71,12 @@ public sealed class GoogleAuthIntegrationTests
     [InlineData(true, "/advisor", "http://localhost:4200/login", false)]
     [InlineData(false, null, null, false)]
     [InlineData(null, null, null, false)]
+    [InlineData(true, null, "http://localhost:4200/sign-up-confirmation", false, true)]
+    [InlineData(true, "/advisor", "http://localhost:4200/login", true, true)]
+    [InlineData(false, null, null, false, true)]
+    [InlineData(null, null, null, false, true)]
     public async Task Google_round_trip_requires_verified_email_and_redirects_after_sign_in(
-        bool? emailVerified, string? returnUrl, string? destination, bool accountExists)
+        bool? emailVerified, string? returnUrl, string? destination, bool accountExists, bool register = false)
     {
         var email = $"{Guid.NewGuid():N}@example.test";
         using var backchannel = new GoogleBackchannel(email, emailVerified);
@@ -89,9 +93,11 @@ public sealed class GoogleAuthIntegrationTests
                 await seed.SaveChangesAsync(cancellationToken);
             }
 
-            var startUrl = returnUrl is null
-                ? "/api/auth/google"
-                : $"/api/auth/google?returnUrl={Uri.EscapeDataString(returnUrl)}";
+            var startUrl = register ? "/api/auth/google/register" : "/api/auth/google";
+            if (returnUrl is not null)
+            {
+                startUrl += $"?returnUrl={Uri.EscapeDataString(returnUrl)}";
+            }
             using var challenge = await client.GetAsync(startUrl, cancellationToken);
             Assert.Equal(HttpStatusCode.Redirect, challenge.StatusCode);
             Assert.NotNull(challenge.Headers.Location);
@@ -118,7 +124,24 @@ public sealed class GoogleAuthIntegrationTests
             {
                 Assert.Equal(HttpStatusCode.Redirect, callback.StatusCode);
                 Assert.NotNull(callback.Headers.Location);
-                if (!accountExists)
+                if (register)
+                {
+                    Assert.Equal(destination, callback.Headers.Location.GetLeftPart(UriPartial.Path));
+                    if (accountExists)
+                    {
+                        Assert.Equal("account-exists", QueryHelpers.ParseQuery(callback.Headers.Location.Query)["googleError"].ToString());
+                    }
+
+                    Assert.DoesNotContain(callback.Headers.GetValues("Set-Cookie"), header =>
+                        header.StartsWith("AuthCookie=", StringComparison.Ordinal)
+                        || header.StartsWith("SessionId=", StringComparison.Ordinal));
+                    ApplyCookies(client, cookies, callback, "/api/auth/check");
+                    Assert.Empty(cookies.GetCookies(client.BaseAddress!)["GoogleExternal"]?.Value ?? string.Empty);
+                    using var check = await client.GetAsync("/api/auth/check", cancellationToken);
+                    var body = await check.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+                    Assert.False(body.GetProperty("isAuthenticated").GetBoolean());
+                }
+                else if (!accountExists)
                 {
                     Assert.Equal(destination, callback.Headers.Location.GetLeftPart(UriPartial.Path));
                     var query = QueryHelpers.ParseQuery(callback.Headers.Location.Query);
@@ -159,13 +182,35 @@ public sealed class GoogleAuthIntegrationTests
 
             await using var dbContext = _fixture.CreateDbContext();
             var user = await dbContext.BpUsers.SingleOrDefaultAsync(user => user.Email == email, cancellationToken);
-            if (!accountExists)
+            if (register && emailVerified == true && !accountExists)
+            {
+                Assert.NotNull(user);
+                Assert.False(user.IsActive);
+                Assert.Null(user.Password);
+                Assert.Equal("Google", user.FirstName);
+                Assert.Equal("User", user.Surname);
+                var token = await dbContext.UserTokens.SingleAsync(token => token.UserId == user.Id, cancellationToken);
+                Assert.Equal(64, token.UserInitToken.Length);
+                Assert.Equal(32, Convert.FromHexString(token.UserInitToken).Length);
+                Assert.Equal(user.CreatedDate, token.CreatedDate);
+                Assert.False(await dbContext.BpUsers_BpRoles.AnyAsync(role => role.UserId == user.Id, cancellationToken));
+                var service = new GoogleAccountService(dbContext, NullLogger<GoogleAccountService>.Instance);
+                Assert.False(await service.RegisterAsync(email.ToUpperInvariant(), null, null, cancellationToken));
+                Assert.Equal(1, await dbContext.BpUsers.CountAsync(u => u.Email == email, cancellationToken));
+                Assert.Equal(token.UserInitToken, (await dbContext.UserTokens.SingleAsync(t => t.UserId == user.Id, cancellationToken)).UserInitToken);
+            }
+            else if (!accountExists)
             {
                 Assert.Null(user);
             }
             else
             {
                 Assert.NotNull(user);
+                if (register)
+                {
+                    Assert.True(user.IsActive);
+                    Assert.False(await dbContext.UserTokens.AnyAsync(t => t.UserId == user.Id, cancellationToken));
+                }
                 Assert.False(await dbContext.BpUsers_BpRoles.AnyAsync(role => role.UserId == user.Id, cancellationToken));
             }
 

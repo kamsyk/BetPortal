@@ -18,6 +18,8 @@ To update the `ks-ag-controls` local library: run `install-ks-controls-dev.bat` 
 
 ## Architecture
 
+The Sign up dialog uses `/api/auth/google/register`, separately from Google's login endpoint. Verified Google registration creates an inactive user plus an initialization token and redirects to the public `/sign-up-confirmation` page. Registration does not sign the user in or send an activation email. Duplicate emails return to Login with an account-already-exists message.
+
 ### SSR setup
 Angular 21 app with SSR via `@angular/ssr` + Express (`src/server.ts`). The SSR entry is `src/main.server.ts`; the browser entry is `src/main.ts`. Static assets (including i18n JSON files) are served from `public/`.
 

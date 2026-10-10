@@ -1,6 +1,9 @@
 @if (googleAccountRequired()) {
   <p role="alert">{{ 'login.googleAccountRequired' | translate }}</p>
 }
+@if (googleAccountExists()) {
+  <p role="alert">{{ 'login.googleAccountExists' | translate }}</p>
+}
 <lib-ks-login
   class="login-component"
   [language]="currentLanguage()"

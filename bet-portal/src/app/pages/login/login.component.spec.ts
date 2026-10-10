@@ -82,7 +82,7 @@ describe('LoginComponent', () => {
     const signUp: KsSignUpComponent = dialog.componentInstance;
     expect(signUp.language()).toBe('cs');
     expect(signUp.googleReturnUrl()).toBe('/advisor');
-    expect(signUp.googleAuthUrl()).toBe('http://localhost:5026/api/auth/google');
+    expect(signUp.googleAuthUrl()).toBe('http://localhost:5026/api/auth/google/register');
     fixture.detectChanges();
     TestBed.tick();
     expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(1);
@@ -92,6 +92,14 @@ describe('LoginComponent', () => {
     TestBed.tick();
     await fixture.whenStable();
     expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
+  });
+
+  it('uses the registration endpoint when Sign up is opened manually without changing Google login', async () => {
+    loginControl().openSignUp();
+    await fixture.whenStable();
+    const signUp: KsSignUpComponent = TestBed.inject(MatDialog).openDialogs[0].componentInstance;
+    expect(signUp.googleAuthUrl()).toBe('http://localhost:5026/api/auth/google/register');
+    expect(loginControl().googleAuthUrl()).toBe('http://localhost:5026/api/auth/google');
   });
 
   it('passes the selected language and preserves login URLs', () => {

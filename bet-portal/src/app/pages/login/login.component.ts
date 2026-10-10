@@ -1,9 +1,11 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, inject, OnInit, signal, viewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { API_BASE_URL } from '../../../core/tokens';
-import { AuthService, KsLoginComponent } from 'ks-ag-controls';
+import { AuthService, KsLoginComponent, KsSignUpComponent } from 'ks-ag-controls';
+import { MatDialog } from '@angular/material/dialog';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { take } from 'rxjs';
+import { asapScheduler, observeOn, take } from 'rxjs';
 import { LanguageService } from '../../services/language.service';
 import { TranslatePipe } from '@ngx-translate/core';
 
@@ -29,9 +31,15 @@ export class LoginComponent implements OnInit {
   readonly googleAuthUrl = signal<string>('');
   readonly googleReturnUrl = signal<string>('');
   readonly googleAccountRequired = signal(false);
+  readonly googleAccountExists = signal(false);
   private readonly loginControl = viewChild.required(KsLoginComponent);
 
   constructor() {
+    inject(MatDialog).afterOpened.pipe(observeOn(asapScheduler), takeUntilDestroyed()).subscribe(dialog => {
+      if (dialog.componentInstance instanceof KsSignUpComponent) {
+        dialog.componentRef?.setInput('googleAuthUrl', `${this.apiBase}/auth/google/register`);
+      }
+    });
     afterNextRender(() => {
       if (this.googleAccountRequired()) {
         this.loginControl().openSignUp();
@@ -42,6 +50,7 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
     this.googleAccountRequired.set(this.route.snapshot.queryParamMap.get('googleError') === 'account-required');
+    this.googleAccountExists.set(this.route.snapshot.queryParamMap.get('googleError') === 'account-exists');
     this.redirectUrl.set(returnUrl);
     this.loginUrl.set(`${this.apiBase}/auth/login`);
     this.googleAuthUrl.set(`${this.apiBase}/auth/google`);

@@ -47,26 +47,20 @@ namespace BetPortalWebApi.Controllers
             [FromServices] IAuthenticationSchemeProvider schemes,
             CancellationToken cancellationToken)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (await schemes.GetSchemeAsync("Google") == null || !TryGetGoogleReturnUrl("/", out _))
-            {
-                _logger.LogWarning("Google sign-in is not configured.");
-                return Problem(statusCode: StatusCodes.Status503ServiceUnavailable, title: "Google sign-in is not configured");
-            }
+            return await StartGoogleAsync(returnUrl, schemes, false, cancellationToken);
+        }
 
-            if (!TryGetGoogleReturnUrl(returnUrl ?? "/", out var destination))
-            {
-                _logger.LogWarning("Google sign-in rejected an invalid return URL.");
-                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid return URL");
-            }
-
-            await HttpContext.SignOutAsync("GoogleExternal");
-            var properties = new AuthenticationProperties
-            {
-                RedirectUri = Url.Action(nameof(GoogleCallback)),
-            };
-            properties.Items["returnUrl"] = destination;
-            return Challenge(properties, "Google");
+        [HttpGet("google/register")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status302Found)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+        public async Task<IActionResult> GoogleRegister(
+            [FromQuery] string? returnUrl,
+            [FromServices] IAuthenticationSchemeProvider schemes,
+            CancellationToken cancellationToken)
+        {
+            return await StartGoogleAsync(returnUrl, schemes, true, cancellationToken);
         }
 
         /// <summary>Completes Google sign-in using the temporary, verified external authentication ticket.</summary>
@@ -93,15 +87,26 @@ namespace BetPortalWebApi.Controllers
                 return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Google sign-in could not be verified");
             }
 
+            if (external.Properties.Items.TryGetValue("googleFlow", out var flow) && flow == "register")
+            {
+                var created = await _googleAccountService.RegisterAsync(
+                    email,
+                    external.Principal?.FindFirstValue(ClaimTypes.GivenName),
+                    external.Principal?.FindFirstValue(ClaimTypes.Surname),
+                    cancellationToken);
+                if (!created)
+                {
+                    return GoogleLoginRedirect("account-exists", destination);
+                }
+
+                TryGetGoogleReturnUrl("/sign-up-confirmation", out var confirmationUrl);
+                return Redirect(confirmationUrl);
+            }
+
             var (user, accountExists) = await _googleAccountService.FindExistingAsync(email, cancellationToken);
             if (!accountExists)
             {
-                TryGetGoogleReturnUrl("/login", out var loginUrl);
-                return Redirect(QueryHelpers.AddQueryString(loginUrl, new Dictionary<string, string?>
-                {
-                    ["googleError"] = "account-required",
-                    ["returnUrl"] = new Uri(destination).PathAndQuery + new Uri(destination).Fragment,
-                }));
+                return GoogleLoginRedirect("account-required", destination);
             }
 
             if (user == null)
@@ -324,6 +329,45 @@ namespace BetPortalWebApi.Controllers
 
             destination = target.AbsoluteUri;
             return true;
+        }
+
+        private async Task<IActionResult> StartGoogleAsync(
+            string? returnUrl,
+            IAuthenticationSchemeProvider schemes,
+            bool register,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (await schemes.GetSchemeAsync("Google") == null || !TryGetGoogleReturnUrl("/", out _))
+            {
+                _logger.LogWarning("Google sign-in is not configured.");
+                return Problem(statusCode: StatusCodes.Status503ServiceUnavailable, title: "Google sign-in is not configured");
+            }
+
+            if (!TryGetGoogleReturnUrl(returnUrl ?? "/", out var destination))
+            {
+                _logger.LogWarning("Google sign-in rejected an invalid return URL.");
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid return URL");
+            }
+
+            await HttpContext.SignOutAsync("GoogleExternal");
+            var properties = new AuthenticationProperties
+            {
+                RedirectUri = Url.Action(nameof(GoogleCallback)),
+            };
+            properties.Items["returnUrl"] = destination;
+            properties.Items["googleFlow"] = register ? "register" : "login";
+            return Challenge(properties, "Google");
+        }
+
+        private IActionResult GoogleLoginRedirect(string error, string destination)
+        {
+            TryGetGoogleReturnUrl("/login", out var loginUrl);
+            return Redirect(QueryHelpers.AddQueryString(loginUrl, new Dictionary<string, string?>
+            {
+                ["googleError"] = error,
+                ["returnUrl"] = new Uri(destination).PathAndQuery + new Uri(destination).Fragment,
+            }));
         }
 
         private async Task SignInUserAsync(BpUser user, CancellationToken cancellationToken)
