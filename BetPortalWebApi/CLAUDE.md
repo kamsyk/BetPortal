@@ -22,6 +22,13 @@ dotnet user-secrets set "Claude:ApiKey" "sk-ant-..."
 
 Dev CORS allows origins: `http://localhost:4200` (bet-portal), `http://localhost:4210` (bet-portal-admin), `http://localhost:5026`.
 
+Google sign-in (`GET /api/auth/google?returnUrl=/path`) is enabled only when `Authentication:Google:ClientId` and `Authentication:Google:ClientSecret` are set; otherwise it returns 503. `Authentication:Google:FrontendOrigin` (for example `http://localhost:4200`) is the only origin it redirects back to. In the Google Cloud OAuth client, register the redirect URI `http://localhost:5026/signin-google`. Existing active users are matched by verified email; new users are created without roles, so they do not get `AdminAccess`.
+
+```bash
+dotnet user-secrets set "Authentication:Google:ClientId" "<client-id>.apps.googleusercontent.com"
+dotnet user-secrets set "Authentication:Google:ClientSecret" "<client-secret>"
+```
+
 ## Architecture
 
 ### Project structure
@@ -55,7 +62,7 @@ Write-endpoints (`POST add`, `PUT {id}`, `DELETE {id}`) require `[Authorize(Poli
 Dual-scheme setup in `Program.cs` (see solution-level `CLAUDE.md` for the full picture):
 
 - **Sessions are in-memory only** (`IMemoryCache`). Sessions are lost on process restart; the `AuthCookie` durable cookie will then re-authenticate via `CookieAuth`.
-- `SessionService` refreshes permissions from DB every 10 minutes of session lifetime — currently all users always receive `["AdminAccess"]` (hardcoded, marked TODO).
+- `SessionService` derives permissions from the user's active `Admin` role (`BpUsers_BpRoles`): admins get `["AdminAccess"]`, everyone else gets none. `CookieAuth` re-checks the user and permissions on every request.
 - `UserService` is registered as **singleton** because it is stateless. All other services are **scoped**.
 
 ### External dependency

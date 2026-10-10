@@ -10,6 +10,13 @@ public sealed class ApiFixture : IAsyncLifetime
     private const string MigrationAssemblyName = "DbMigration.MsSql";
     private const string LocalDbServer = @"(localdb)\MSSQLLocalDB";
     private const string ConnectionStringEnvironmentVariable = "ConnectionStrings__BetPortalDbConnectionString";
+    private static readonly Dictionary<string, string> GoogleEnvironment = new()
+    {
+        ["Authentication__Google__ClientId"] = "test-client-id",
+        ["Authentication__Google__ClientSecret"] = "test-client-secret",
+        ["Authentication__Google__FrontendOrigin"] = "http://localhost:4200",
+    };
+    private readonly Dictionary<string, string?> _previousGoogleEnvironment = new();
     private readonly string _databaseName = $"BetPortal_IntegrationTests_{Guid.NewGuid():N}";
     private readonly string _masterConnectionString = new SqlConnectionStringBuilder
     {
@@ -59,6 +66,13 @@ public sealed class ApiFixture : IAsyncLifetime
             _previousConnectionString = Environment.GetEnvironmentVariable(ConnectionStringEnvironmentVariable);
             Environment.SetEnvironmentVariable(ConnectionStringEnvironmentVariable, _databaseConnectionString);
             _connectionStringEnvironmentOverridden = true;
+
+            // Program.cs reads Google settings at startup, before WebApplicationFactory in-memory configuration is applied.
+            foreach (var (name, value) in GoogleEnvironment)
+            {
+                _previousGoogleEnvironment[name] = Environment.GetEnvironmentVariable(name);
+                Environment.SetEnvironmentVariable(name, value);
+            }
 
             _factory = new ApiFactory(_databaseConnectionString);
             using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -154,6 +168,13 @@ public sealed class ApiFixture : IAsyncLifetime
 
     private void RestoreConnectionStringEnvironment()
     {
+        foreach (var (name, value) in _previousGoogleEnvironment)
+        {
+            Environment.SetEnvironmentVariable(name, value);
+        }
+
+        _previousGoogleEnvironment.Clear();
+
         if (!_connectionStringEnvironmentOverridden)
         {
             return;

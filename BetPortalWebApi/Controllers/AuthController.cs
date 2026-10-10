@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using BetPortalWebApi.Services.Interfaces;
 using BpDbLayer;
+using BpDbLayer.Models;
 using BpDbLayer.Utils;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -16,11 +17,93 @@ namespace BetPortalWebApi.Controllers
     {
         private readonly BpDbContext _dbContext;
         private readonly ISessionService _sessionService;
+        private readonly IGoogleAccountService _googleAccountService;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(BpDbContext dbContext, ISessionService sessionService)
+        public AuthController(
+            BpDbContext dbContext,
+            ISessionService sessionService,
+            IGoogleAccountService googleAccountService,
+            IConfiguration configuration,
+            ILogger<AuthController> logger)
         {
             _dbContext = dbContext;
             _sessionService = sessionService;
+            _googleAccountService = googleAccountService;
+            _configuration = configuration;
+            _logger = logger;
+        }
+
+        /// <summary>Starts Google sign-in and returns to the configured portal after authentication.</summary>
+        [HttpGet("google")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status302Found)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+        public async Task<IActionResult> Google(
+            [FromQuery] string? returnUrl,
+            [FromServices] IAuthenticationSchemeProvider schemes,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (await schemes.GetSchemeAsync("Google") == null || !TryGetGoogleReturnUrl("/", out _))
+            {
+                _logger.LogWarning("Google sign-in is not configured.");
+                return Problem(statusCode: StatusCodes.Status503ServiceUnavailable, title: "Google sign-in is not configured");
+            }
+
+            if (!TryGetGoogleReturnUrl(returnUrl ?? "/", out var destination))
+            {
+                _logger.LogWarning("Google sign-in rejected an invalid return URL.");
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid return URL");
+            }
+
+            await HttpContext.SignOutAsync("GoogleExternal");
+            var properties = new AuthenticationProperties
+            {
+                RedirectUri = Url.Action(nameof(GoogleCallback)),
+            };
+            properties.Items["returnUrl"] = destination;
+            return Challenge(properties, "Google");
+        }
+
+        /// <summary>Completes Google sign-in using the temporary, verified external authentication ticket.</summary>
+        [HttpGet("google/callback")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status302Found)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GoogleCallback(CancellationToken cancellationToken)
+        {
+            var external = await HttpContext.AuthenticateAsync("GoogleExternal");
+            await HttpContext.SignOutAsync("GoogleExternal");
+            var email = external.Principal?.FindFirstValue(ClaimTypes.Email);
+            if (!external.Succeeded
+                || !bool.TryParse(external.Principal?.FindFirstValue("google:email_verified"), out var verified)
+                || !verified
+                || string.IsNullOrWhiteSpace(email)
+                || email.Length > 200
+                || external.Properties == null
+                || !external.Properties.Items.TryGetValue("returnUrl", out var returnUrl)
+                || !TryGetGoogleReturnUrl(returnUrl, out var destination))
+            {
+                _logger.LogWarning("Google sign-in rejected an invalid external authentication ticket.");
+                return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Google sign-in could not be verified");
+            }
+
+            var user = await _googleAccountService.FindOrCreateAsync(
+                email,
+                external.Principal?.FindFirstValue(ClaimTypes.GivenName),
+                external.Principal?.FindFirstValue(ClaimTypes.Surname),
+                cancellationToken);
+            if (user == null)
+            {
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "This account cannot sign in");
+            }
+
+            await SignInUserAsync(user, cancellationToken);
+            return Redirect(destination);
         }
 
         [HttpPost("login")]
@@ -41,45 +124,7 @@ namespace BetPortalWebApi.Controllers
                     return Unauthorized(new { success = false, message = "Invalid credentials" });
                 }
 
-                // Get client IP and User Agent
-                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-                var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
-
-                // Create session
-                var sessionId = await _sessionService.CreateSessionAsync(user.Id, ipAddress, userAgent);
-
-                // Set session cookie
-                var cookieOptions = new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = HttpContext.Request.IsHttps,
-                    SameSite = SameSiteMode.Lax,
-                    Expires = DateTimeOffset.UtcNow.AddDays(7),
-                };
-
-                HttpContext.Response.Cookies.Append("SessionId", sessionId, cookieOptions);
-
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new Claim(ClaimTypes.Name, user.UserName),
-                    new Claim("FullName", user.FirstName + " " + user.Surname),
-                    new Claim("Permission", "AdminAccess"),
-                };
-
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var principal = new ClaimsPrincipal(claimsIdentity);
-
-                var authProps = new AuthenticationProperties
-                {
-                    IsPersistent = true,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7),
-                    AllowRefresh = true,
-                };
-
-                await HttpContext.SignInAsync("CookieAuth", principal, authProps);
-
-                ////_logger.LogInformation("User {Username} logged in successfully with session {SessionId}", user.UserName, sessionId);
+                await SignInUserAsync(user, HttpContext.RequestAborted);
 
                 return Ok(new
                 {
@@ -194,12 +239,7 @@ namespace BetPortalWebApi.Controllers
         {
             var sessionId = HttpContext.Request.Cookies["SessionId"];
 
-            if (string.IsNullOrEmpty(sessionId))
-            {
-                return Ok(new { isAuthenticated = false });
-            }
-
-            var session = await _sessionService.GetSessionAsync(sessionId);
+            var session = string.IsNullOrEmpty(sessionId) ? null : await _sessionService.GetSessionAsync(sessionId);
 
             if (session == null)
             {
@@ -246,6 +286,70 @@ namespace BetPortalWebApi.Controllers
                 isAuthenticated = true,
                 username = session.Username,
                 sessionValid = true,
+            });
+        }
+
+        private bool TryGetGoogleReturnUrl(string? returnUrl, out string destination)
+        {
+            destination = string.Empty;
+            if (!Uri.TryCreate(_configuration["Authentication:Google:FrontendOrigin"], UriKind.Absolute, out var origin)
+                || (origin.Scheme != Uri.UriSchemeHttps && origin.Scheme != Uri.UriSchemeHttp)
+                || !string.IsNullOrEmpty(origin.UserInfo)
+                || origin.AbsolutePath != "/"
+                || !string.IsNullOrEmpty(origin.Query)
+                || !string.IsNullOrEmpty(origin.Fragment)
+                || string.IsNullOrWhiteSpace(returnUrl))
+            {
+                return false;
+            }
+
+            if (returnUrl.StartsWith('/') && !Url.IsLocalUrl(returnUrl))
+            {
+                return false;
+            }
+
+            if (!Uri.TryCreate(origin, returnUrl, out var target)
+                || target.GetLeftPart(UriPartial.Authority) != origin.GetLeftPart(UriPartial.Authority)
+                || !string.IsNullOrEmpty(target.UserInfo))
+            {
+                return false;
+            }
+
+            destination = target.AbsoluteUri;
+            return true;
+        }
+
+        private async Task SignInUserAsync(BpUser user, CancellationToken cancellationToken)
+        {
+            var sessionId = await _sessionService.CreateSessionAsync(
+                user.Id,
+                HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                HttpContext.Request.Headers.UserAgent.ToString(),
+                cancellationToken);
+            var permissions = await _sessionService.GetUserPermissionsAsync(user.Id, cancellationToken);
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim("FullName", user.FirstName + " " + user.Surname),
+            };
+            claims.AddRange(permissions.Select(permission => new Claim("Permission", permission)));
+
+            await HttpContext.SignInAsync(
+                "CookieAuth",
+                new ClaimsPrincipal(new ClaimsIdentity(claims, "CookieAuth")),
+                new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7),
+                    AllowRefresh = true,
+                });
+            HttpContext.Response.Cookies.Append("SessionId", sessionId, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = HttpContext.Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(7),
             });
         }
 
