@@ -34,6 +34,8 @@ its own viewport because the application shell disables body scrolling.
 
 `authGuard` checks `AuthService.isAuthenticated()` (sync, from `ks-ag-controls`) first. If not locally authenticated it calls `GET /api/auth/check` and redirects to `/login` on failure. `AuthService` is external — it lives in the `ks-ag-controls` package, not in this repo.
 
+`AppComponent` subscribes to `AuthService.checkAuthStatus()` after the first browser render to restore cookie-backed authentication on public pages, including a full-page redirect from Google sign-in. This updates the menu's auth signal without visiting Login. The startup check does not run during SSR or prerendering.
+
 ### Internationalisation
 Translations are in `public/i18n/{en,cs,de}.json`, loaded at runtime by `ngx-translate` from `/i18n/<lang>.json`. `LanguageService` (`src/app/services/language.service.ts`) is the single source of truth: it initialises on app start (called from `AppComponent` constructor), reads from localStorage (`bet-portal.lang`), falls back to browser language then `'en'`. Supported languages: `en`, `cs`, `de`. Use `TranslatePipe` in templates and `TranslateService.instant()` for error strings in components.
 
