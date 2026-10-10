@@ -22,6 +22,13 @@ dotnet user-secrets set "Claude:ApiKey" "sk-ant-..."
 
 Dev CORS allows origins: `http://localhost:4200` (bet-portal), `http://localhost:4210` (bet-portal-admin), `http://localhost:5026`.
 
+`IEmailService` is backed by the singleton `AzureCommunicationEmailService`. Configure `AzureCommunication:ConnectionString` and `AzureCommunication:SenderAddress` (an Azure-verified sender) using user secrets or environment variables. Missing/placeholder/invalid configuration disables delivery with a logged error or warning; sends return `false`. The service supports HTML, optional plain text and BCC, and cancellation. It returns `true` only when Azure's send operation succeeds (not proof of inbox delivery). Azure request failures are logged and return `false`; cancellation and unexpected failures propagate. No registration-email workflow is wired yet.
+
+```bash
+dotnet user-secrets set "AzureCommunication:ConnectionString" "<azure-communication-connection-string>"
+dotnet user-secrets set "AzureCommunication:SenderAddress" "<verified-sender-address>"
+```
+
 Google sign-in (`GET /api/auth/google?returnUrl=/path`) is enabled only when `Authentication:Google:ClientId` and `Authentication:Google:ClientSecret` are set; otherwise it returns 503. `Authentication:Google:FrontendOrigin` (for example `http://localhost:4200`) is the only origin it redirects back to. In the Google Cloud OAuth client, register the redirect URI `http://localhost:5026/signin-google`. Existing active users are matched by verified email. Unknown emails redirect to `/login?googleError=account-required&returnUrl=...` without creating users or application sessions. Inactive or ambiguous accounts remain forbidden.
 
 `/signin-google` is handled by the Google authentication middleware, which exchanges the authorization code and reads Google's v3 user-info response. Its `email_verified` field must be mapped to the verification claim. The middleware then redirects to `/api/auth/google/callback`, which validates the external ticket, sets the application cookies, and redirects to the portal's `returnUrl` (the home page `/` by default).

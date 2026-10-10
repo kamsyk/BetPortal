@@ -46,6 +46,8 @@ builder.Services.AddScoped<ISessionService, SessionService>();
 
 builder.Services.AddScoped<IGoogleAccountService, GoogleAccountService>();
 
+builder.Services.AddSingleton<IEmailService, AzureCommunicationEmailService>();
+
 builder.Services.AddScoped<IChatService, ChatService>();
 
 builder.Services.AddScoped<IDbQueryService, DbQueryService>();
