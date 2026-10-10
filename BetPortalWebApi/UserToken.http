@@ -1,0 +1,18 @@
+@baseUrl = http://localhost:5026
+@token = replace-with-a-valid-activation-token
+
+### Activate an account (204); consuming the same token again returns 404
+POST {{baseUrl}}/api/user-token
+Content-Type: application/json
+
+{
+  "token": "{{token}}"
+}
+
+### Reject a missing activation token (400)
+POST {{baseUrl}}/api/user-token
+Content-Type: application/json
+
+{
+  "token": ""
+}

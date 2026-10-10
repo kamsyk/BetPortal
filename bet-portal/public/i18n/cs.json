@@ -2,6 +2,16 @@
   "app": {
     "title": "Sázkový portál"
   },
+  "userToken": {
+    "title": "Aktivace účtu",
+    "pending": "Aktivujeme váš účet...",
+    "invalid": "Tento aktivační odkaz je neplatný nebo již byl použit.",
+    "failed": "Účet se nepodařilo aktivovat. Zkuste to prosím později."
+  },
+  "welcome": {
+    "title": "Vítejte v Sázkovém portálu",
+    "message": "Váš účet je aktivní. Nyní se můžete přihlásit."
+  },
   "login": {
     "googleAccountExists": "Účet s tímto e-mailem již existuje. Přihlaste se prosím.",
     "googleAccountRequired": "Pro váš e-mail Google neexistuje účet v portálu. Vyplňte registrační formulář. Žádný účet nebyl vytvořen automaticky."

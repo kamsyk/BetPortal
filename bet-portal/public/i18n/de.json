@@ -2,6 +2,16 @@
   "app": {
     "title": "Wettportal"
   },
+  "userToken": {
+    "title": "Konto aktivieren",
+    "pending": "Ihr Konto wird aktiviert...",
+    "invalid": "Dieser Aktivierungslink ist ungültig oder wurde bereits verwendet.",
+    "failed": "Ihr Konto konnte nicht aktiviert werden. Bitte versuchen Sie es später erneut."
+  },
+  "welcome": {
+    "title": "Willkommen im Wettportal",
+    "message": "Ihr Konto ist aktiv. Sie können sich jetzt anmelden."
+  },
   "login": {
     "googleAccountExists": "Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an.",
     "googleAccountRequired": "Zu Ihrer Google-E-Mail-Adresse gibt es kein Portalkonto. Füllen Sie das Registrierungsformular aus. Es wurde kein Konto automatisch erstellt."

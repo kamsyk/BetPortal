@@ -2,6 +2,16 @@
   "app": {
     "title": "Bet Portal"
   },
+  "userToken": {
+    "title": "Activate your account",
+    "pending": "Activating your account...",
+    "invalid": "This activation link is invalid or has already been used.",
+    "failed": "Your account could not be activated. Please try again later."
+  },
+  "welcome": {
+    "title": "Welcome to Bet Portal",
+    "message": "Your account is active. You can now sign in."
+  },
   "login": {
     "googleAccountExists": "An account with this email already exists. Please sign in instead.",
     "googleAccountRequired": "No portal account matches your Google email address. Complete the Sign up form to register. No account has been created automatically."

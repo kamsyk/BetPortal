@@ -40,6 +40,8 @@ dotnet user-secrets set "Authentication:Google:ClientSecret" "<client-secret>"
 
 ## Architecture
 
+Account activation uses anonymous `POST /api/user-token` with JSON `{ "token": "..." }`. A case-sensitive, unambiguous token match activates its user, updates audit fields, and deletes the token in one transaction. Tokens are single-use with no expiry. Missing/malformed tokens return 400; unknown, ambiguous, or consumed tokens return 404. Activation does not issue authentication cookies or assign roles.
+
 Google registration starts at `/api/auth/google/register` and stores registration intent in the protected OAuth state. After Google verifies the email, it creates an inactive user and a `UserToken` with a cryptographically random 64-character token in one transaction, then redirects to `/sign-up-confirmation` without issuing application auth cookies. Existing emails are rejected without changes and return to Login with `googleError=account-exists`. This does not send email or activate the account.
 
 ### Project structure

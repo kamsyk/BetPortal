@@ -3,6 +3,16 @@ import { authGuard } from './auth/auth.guard';
 
 export const routes: Routes = [
   {
+    path: 'user-token',
+    loadComponent: () =>
+      import('./pages/user-token/user-token.component').then((m) => m.UserTokenComponent),
+  },
+  {
+    path: 'welcome',
+    loadComponent: () =>
+      import('./pages/welcome/welcome.component').then((m) => m.WelcomeComponent),
+  },
+  {
     path: 'sign-up-confirmation',
     loadComponent: () =>
       import('./pages/sign-up-confirmation/sign-up-confirmation.component').then((m) => m.SignUpConfirmationComponent),

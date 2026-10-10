@@ -18,6 +18,8 @@ To update the `ks-ag-controls` local library: run `install-ks-controls-dev.bat` 
 
 ## Architecture
 
+Activation links use `/user-token?token=<token>`. The lazy public page posts the token to `/api/user-token` after the first browser render (never during SSR/prerender), then redirects to `/welcome` with history replacement so the token is removed from the current URL. Invalid/used tokens or server errors are shown inline. The welcome page confirms activation and links to Login; activation does not automatically sign in the user.
+
 The Sign up dialog uses `/api/auth/google/register`, separately from Google's login endpoint. Verified Google registration creates an inactive user plus an initialization token and redirects to the public `/sign-up-confirmation` page. Registration does not sign the user in or send an activation email. Duplicate emails return to Login with an account-already-exists message.
 
 ### SSR setup
