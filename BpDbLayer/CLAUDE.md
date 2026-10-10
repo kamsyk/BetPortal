@@ -27,6 +27,10 @@ When adding a new entity, also register it in `BpDbContext` and create a corresp
 
 ## Architecture
 
+### User favorites
+
+`BpUserFavorites` stores one favorite per row with a generated `Id`, required owner and audit fields, and exactly one non-null target (`CountryId`, `SportId`, `CompetitionId`, or `CompetitorId`). A database check constraint enforces the single target; four unique owner/target indexes prevent duplicates. SQL Server generates filtered indexes excluding null targets; MySQL unique indexes permit nulls. All seven relationships use restricted deletes. Delete favorites explicitly before deleting a referenced user or target. The runtime and both migration contexts use the shared configuration and expose the referenced entities. MySQL must support enforced check constraints (8.0.16+). Generate and review migrations before using these tables.
+
 ### Entity conventions
 
 All models are `partial` classes in `Models/`. Two audit interfaces drive timestamp/author tracking:

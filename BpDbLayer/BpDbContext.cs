@@ -20,6 +20,10 @@ namespace BpDbLayer
 
         public DbSet<Competitor> Competitors { get; set; }
 
+        public DbSet<Competition> Competitions { get; set; }
+
+        public DbSet<BpUserFavorites> BpUserFavorites { get; set; }
+
         public DbSet<UserGridSettings> UserGridSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

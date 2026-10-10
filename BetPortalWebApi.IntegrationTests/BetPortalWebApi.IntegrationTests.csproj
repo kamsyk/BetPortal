@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BetPortalWebApi\BetPortalWebApi.csproj" />
     <ProjectReference Include="..\DbMigration.MsSql\DbMigration.MsSql.csproj" />
+    <ProjectReference Include="..\DbMigration.MySql\DbMigration.MySql.csproj" />
   </ItemGroup>
 
 </Project>

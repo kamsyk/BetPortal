@@ -20,6 +20,10 @@ namespace DbMigration.MsSql
 
         public DbSet<Competitor> Competitors { get; set; }
 
+        public DbSet<Competition> Competitions { get; set; }
+
+        public DbSet<BpUserFavorites> BpUserFavorites { get; set; }
+
         public DbSet<UserGridSettings> UserGridSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -29,6 +33,8 @@ namespace DbMigration.MsSql
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(BpDbContext).Assembly);
 
             modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.CompetitorConfiguration());
+
+            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.BpUserFavoritesConfiguration());
         }
     }
 }

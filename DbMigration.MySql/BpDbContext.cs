@@ -14,11 +14,33 @@ namespace DbMigration.MySql
 
         public DbSet<Competitor> Competitors { get; set; }
 
+        public DbSet<Sport> Sports { get; set; }
+
+        public DbSet<Country> Countries { get; set; }
+
+        public DbSet<Competition> Competitions { get; set; }
+
+        public DbSet<BpUserFavorites> BpUserFavorites { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.BpUserConfiguration());
+
+            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.BpRoleConfiguration());
+
+            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.BpUserBpRoleConfiguration());
+
             modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.CompetitorConfiguration());
+
+            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.CompetitionConfiguration());
+
+            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.SportConfiguration());
+
+            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.CountryConfiguration());
+
+            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.BpUserFavoritesConfiguration());
         }
     }
 }
