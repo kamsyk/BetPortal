@@ -65,12 +65,14 @@ public sealed class GoogleAuthIntegrationTests
     }
 
     [Theory]
-    [InlineData(true, null, "http://localhost:4200/")]
-    [InlineData(true, "/advisor", "http://localhost:4200/advisor")]
-    [InlineData(false, null, null)]
-    [InlineData(null, null, null)]
+    [InlineData(true, null, "http://localhost:4200/", true)]
+    [InlineData(true, "/advisor", "http://localhost:4200/advisor", true)]
+    [InlineData(true, null, "http://localhost:4200/login", false)]
+    [InlineData(true, "/advisor", "http://localhost:4200/login", false)]
+    [InlineData(false, null, null, false)]
+    [InlineData(null, null, null, false)]
     public async Task Google_round_trip_requires_verified_email_and_redirects_after_sign_in(
-        bool? emailVerified, string? returnUrl, string? destination)
+        bool? emailVerified, string? returnUrl, string? destination, bool accountExists)
     {
         var email = $"{Guid.NewGuid():N}@example.test";
         using var backchannel = new GoogleBackchannel(email, emailVerified);
@@ -80,6 +82,13 @@ public sealed class GoogleAuthIntegrationTests
 
         try
         {
+            if (accountExists)
+            {
+                await using var seed = _fixture.CreateDbContext();
+                seed.BpUsers.Add(NewUser(email, isActive: true));
+                await seed.SaveChangesAsync(cancellationToken);
+            }
+
             var startUrl = returnUrl is null
                 ? "/api/auth/google"
                 : $"/api/auth/google?returnUrl={Uri.EscapeDataString(returnUrl)}";
@@ -108,29 +117,49 @@ public sealed class GoogleAuthIntegrationTests
             else
             {
                 Assert.Equal(HttpStatusCode.Redirect, callback.StatusCode);
-                Assert.Equal(destination, callback.Headers.Location?.AbsoluteUri);
-                var headers = callback.Headers.GetValues("Set-Cookie").ToList();
-                Assert.Contains(headers, header => header.StartsWith("AuthCookie=", StringComparison.Ordinal));
-                Assert.Contains(headers, header => header.StartsWith("SessionId=", StringComparison.Ordinal));
-                ApplyCookies(client, cookies, callback, "/api/auth/check");
-                Assert.Empty(cookies.GetCookies(client.BaseAddress!)["GoogleExternal"]?.Value ?? string.Empty);
-
-                foreach (var cookieName in new[] { "AuthCookie", "SessionId" })
+                Assert.NotNull(callback.Headers.Location);
+                if (!accountExists)
                 {
-                    client.DefaultRequestHeaders.Remove("Cookie");
-                    var cookie = cookies.GetCookies(client.BaseAddress!)[cookieName];
-                    Assert.NotNull(cookie);
-                    client.DefaultRequestHeaders.Add("Cookie", $"{cookie.Name}={cookie.Value}");
+                    Assert.Equal(destination, callback.Headers.Location.GetLeftPart(UriPartial.Path));
+                    var query = QueryHelpers.ParseQuery(callback.Headers.Location.Query);
+                    Assert.Equal("account-required", query["googleError"].ToString());
+                    Assert.Equal(returnUrl ?? "/", query["returnUrl"].ToString());
+                    var rejectedHeaders = callback.Headers.GetValues("Set-Cookie").ToList();
+                    Assert.DoesNotContain(rejectedHeaders, header =>
+                        header.StartsWith("AuthCookie=", StringComparison.Ordinal)
+                        || header.StartsWith("SessionId=", StringComparison.Ordinal));
+                    ApplyCookies(client, cookies, callback, "/api/auth/check");
+                    Assert.Empty(cookies.GetCookies(client.BaseAddress!)["GoogleExternal"]?.Value ?? string.Empty);
                     using var check = await client.GetAsync("/api/auth/check", cancellationToken);
-                    Assert.Equal(HttpStatusCode.OK, check.StatusCode);
                     var body = await check.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
-                    Assert.True(body.GetProperty("isAuthenticated").GetBoolean());
+                    Assert.False(body.GetProperty("isAuthenticated").GetBoolean());
+                }
+                else
+                {
+                    Assert.Equal(destination, callback.Headers.Location.AbsoluteUri);
+                    var headers = callback.Headers.GetValues("Set-Cookie").ToList();
+                    Assert.Contains(headers, header => header.StartsWith("AuthCookie=", StringComparison.Ordinal));
+                    Assert.Contains(headers, header => header.StartsWith("SessionId=", StringComparison.Ordinal));
+                    ApplyCookies(client, cookies, callback, "/api/auth/check");
+                    Assert.Empty(cookies.GetCookies(client.BaseAddress!)["GoogleExternal"]?.Value ?? string.Empty);
+
+                    foreach (var cookieName in new[] { "AuthCookie", "SessionId" })
+                    {
+                        client.DefaultRequestHeaders.Remove("Cookie");
+                        var cookie = cookies.GetCookies(client.BaseAddress!)[cookieName];
+                        Assert.NotNull(cookie);
+                        client.DefaultRequestHeaders.Add("Cookie", $"{cookie.Name}={cookie.Value}");
+                        using var check = await client.GetAsync("/api/auth/check", cancellationToken);
+                        Assert.Equal(HttpStatusCode.OK, check.StatusCode);
+                        var body = await check.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+                        Assert.True(body.GetProperty("isAuthenticated").GetBoolean());
+                    }
                 }
             }
 
             await using var dbContext = _fixture.CreateDbContext();
             var user = await dbContext.BpUsers.SingleOrDefaultAsync(user => user.Email == email, cancellationToken);
-            if (destination is null)
+            if (!accountExists)
             {
                 Assert.Null(user);
             }
@@ -216,7 +245,7 @@ public sealed class GoogleAuthIntegrationTests
     }
 
     [Fact]
-    public async Task Account_service_creates_new_non_admin_user_and_reuses_it_case_insensitively()
+    public async Task Account_service_does_not_create_unknown_user_and_matches_existing_case_insensitively()
     {
         var email = $"{Guid.NewGuid():N}@Example.test";
         try
@@ -225,18 +254,21 @@ public sealed class GoogleAuthIntegrationTests
             await using (var dbContext = _fixture.CreateDbContext())
             {
                 var service = new GoogleAccountService(dbContext, NullLogger<GoogleAccountService>.Instance);
-                var created = await service.FindOrCreateAsync(email, "New", "User", TestContext.Current.CancellationToken);
-                Assert.NotNull(created);
-                Assert.True(created.IsActive);
-                Assert.Null(created.Password);
-                Assert.Equal("New", created.FirstName);
+                var missing = await service.FindExistingAsync(email, TestContext.Current.CancellationToken);
+                Assert.Null(missing.User);
+                Assert.False(missing.AccountExists);
+                Assert.False(await dbContext.BpUsers.AnyAsync(u => u.Email == email, TestContext.Current.CancellationToken));
+                var created = NewUser(email, isActive: true);
+                dbContext.BpUsers.Add(created);
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
                 createdId = created.Id;
             }
 
             await using (var dbContext = _fixture.CreateDbContext())
             {
                 var service = new GoogleAccountService(dbContext, NullLogger<GoogleAccountService>.Instance);
-                var existing = await service.FindOrCreateAsync(email.ToUpperInvariant(), "Other", "Name", TestContext.Current.CancellationToken);
+                var (existing, accountExists) = await service.FindExistingAsync(email.ToUpperInvariant(), TestContext.Current.CancellationToken);
+                Assert.True(accountExists);
                 Assert.NotNull(existing);
                 Assert.Equal(createdId, existing.Id);
                 Assert.False(await dbContext.BpUsers_BpRoles.AnyAsync(userRole => userRole.UserId == createdId, TestContext.Current.CancellationToken));
@@ -254,8 +286,9 @@ public sealed class GoogleAuthIntegrationTests
         await using var dbContext = _fixture.CreateDbContext();
         var service = new GoogleAccountService(dbContext, NullLogger<GoogleAccountService>.Instance);
 
-        var user = await service.FindOrCreateAsync("ADMIN@betportal.com", null, null, TestContext.Current.CancellationToken);
+        var (user, accountExists) = await service.FindExistingAsync("ADMIN@betportal.com", TestContext.Current.CancellationToken);
 
+        Assert.True(accountExists);
         Assert.NotNull(user);
         Assert.Equal("admin", user.UserName);
     }
@@ -275,8 +308,9 @@ public sealed class GoogleAuthIntegrationTests
             await using var dbContext = _fixture.CreateDbContext();
             var service = new GoogleAccountService(dbContext, NullLogger<GoogleAccountService>.Instance);
 
-            var user = await service.FindOrCreateAsync(email, null, null, TestContext.Current.CancellationToken);
+            var (user, accountExists) = await service.FindExistingAsync(email, TestContext.Current.CancellationToken);
 
+            Assert.True(accountExists);
             Assert.Null(user);
             Assert.Equal(1, await dbContext.BpUsers.CountAsync(u => u.Email == email, TestContext.Current.CancellationToken));
         }

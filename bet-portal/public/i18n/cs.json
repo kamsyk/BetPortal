@@ -2,6 +2,9 @@
   "app": {
     "title": "Sázkový portál"
   },
+  "login": {
+    "googleAccountRequired": "Pro váš e-mail Google neexistuje účet v portálu. Vyplňte registrační formulář. Žádný účet nebyl vytvořen automaticky."
+  },
   "nav": {
     "brand": "Sázkový portál",
     "home": "Domů",

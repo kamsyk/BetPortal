@@ -2,6 +2,9 @@
   "app": {
     "title": "Bet Portal"
   },
+  "login": {
+    "googleAccountRequired": "No portal account matches your Google email address. Complete the Sign up form to register. No account has been created automatically."
+  },
   "nav": {
     "brand": "Bet Portal",
     "home": "Home",

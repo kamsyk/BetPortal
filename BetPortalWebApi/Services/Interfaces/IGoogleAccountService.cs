@@ -4,6 +4,6 @@ namespace BetPortalWebApi.Services.Interfaces
 {
     public interface IGoogleAccountService
     {
-        Task<BpUser?> FindOrCreateAsync(string email, string? firstName, string? surname, CancellationToken cancellationToken);
+        Task<(BpUser? User, bool AccountExists)> FindExistingAsync(string email, CancellationToken cancellationToken);
     }
 }

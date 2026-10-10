@@ -42,6 +42,8 @@ Translations are in `public/i18n/{en,cs,de}.json`, loaded at runtime by `ngx-tra
 The login page binds `LanguageService.currentLanguage()` to the local library's
 `lib-ks-login` language input, so login labels update when the selected language changes.
 
+Google sign-in requires an existing active portal account with the same verified email. Unknown accounts return to `/login?googleError=account-required&returnUrl=...`, where a translated account-required alert is shown and the original destination is preserved. After the browser renders, the login page calls the library's `openSignUp()` to open the same registration dialog as the Sign up button, once per page load. Google sign-in does not register users automatically.
+
 ### Navigation
 The user-profile icon opens a shared desktop/mobile menu containing a nested language selector and either Sign in for anonymous users or Logout for authenticated users. Language selection remains available to guests. Main navigation and theme controls are shown only when authenticated; the mobile navigation menu does not contain language or logout actions.
 

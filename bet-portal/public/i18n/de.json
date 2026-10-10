@@ -2,6 +2,9 @@
   "app": {
     "title": "Wettportal"
   },
+  "login": {
+    "googleAccountRequired": "Zu Ihrer Google-E-Mail-Adresse gibt es kein Portalkonto. Füllen Sie das Registrierungsformular aus. Es wurde kein Konto automatisch erstellt."
+  },
   "nav": {
     "brand": "Wettportal",
     "home": "Startseite",

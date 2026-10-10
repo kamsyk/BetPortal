@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace BetPortalWebApi.Controllers
@@ -92,11 +93,17 @@ namespace BetPortalWebApi.Controllers
                 return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Google sign-in could not be verified");
             }
 
-            var user = await _googleAccountService.FindOrCreateAsync(
-                email,
-                external.Principal?.FindFirstValue(ClaimTypes.GivenName),
-                external.Principal?.FindFirstValue(ClaimTypes.Surname),
-                cancellationToken);
+            var (user, accountExists) = await _googleAccountService.FindExistingAsync(email, cancellationToken);
+            if (!accountExists)
+            {
+                TryGetGoogleReturnUrl("/login", out var loginUrl);
+                return Redirect(QueryHelpers.AddQueryString(loginUrl, new Dictionary<string, string?>
+                {
+                    ["googleError"] = "account-required",
+                    ["returnUrl"] = new Uri(destination).PathAndQuery + new Uri(destination).Fragment,
+                }));
+            }
+
             if (user == null)
             {
                 return Problem(statusCode: StatusCodes.Status403Forbidden, title: "This account cannot sign in");
