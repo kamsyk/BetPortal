@@ -18,6 +18,8 @@ namespace BpDbLayer
 
         public DbSet<Country> Countries { get; set; }
 
+        public DbSet<Competitor> Competitors { get; set; }
+
         public DbSet<UserGridSettings> UserGridSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

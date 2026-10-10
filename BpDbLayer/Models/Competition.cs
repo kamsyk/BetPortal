@@ -3,7 +3,7 @@ using BpDbLayer.Models.Interfaces;
 
 namespace BpDbLayer.Models;
 
-public partial class Competition : IModifiedFields
+public partial class Competition : IModifiedFields, ICreatedFields
 {
     [Key]
     public int Id { get; set; }
@@ -24,9 +24,17 @@ public partial class Competition : IModifiedFields
     [Required]
     public int ModifiedByUserId { get; set; }
 
+    [Required]
+    public DateTime CreatedDate { get; set; }
+
+    [Required]
+    public int CreatedByUserId { get; set; }
+
     public virtual Sport? Sport { get; set; }
 
     public virtual Country? Country { get; set; }
 
-    public virtual BpUser? ModifiedByUser { get; set; }
+    public virtual BpUser?ModifiedByUser { get; set; }
+
+    public virtual BpUser? CreatedByUser { get; set; }
 }

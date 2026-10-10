@@ -18,6 +18,8 @@ namespace DbMigration.MsSql
 
         public DbSet<Country> Countries { get; set; }
 
+        public DbSet<Competitor> Competitors { get; set; }
+
         public DbSet<UserGridSettings> UserGridSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -25,6 +27,8 @@ namespace DbMigration.MsSql
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(BpDbContext).Assembly);
+
+            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.CompetitorConfiguration());
         }
     }
 }

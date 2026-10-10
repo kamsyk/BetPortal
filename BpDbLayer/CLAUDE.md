@@ -23,6 +23,8 @@ EfUtils\UpdateDevelop.bat             # apply migrations (shared dev DB)
 
 When adding a new entity, also register it in `BpDbContext` and create a corresponding `IEntityTypeConfiguration<T>` in `ModelConfigurations/`.
 
+`Competitors` is registered in the runtime context and both migration contexts. They share `CompetitorConfiguration`: a required, non-unique name (100 characters), a required website (2,048 characters), and required creator/modifier foreign keys to `BpUser` with restricted deletes. Generate and review a provider-specific migration before using the table; registering the entity does not update an existing database.
+
 ## Architecture
 
 ### Entity conventions
