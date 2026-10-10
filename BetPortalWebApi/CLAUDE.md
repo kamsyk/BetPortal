@@ -24,6 +24,8 @@ Dev CORS allows origins: `http://localhost:4200` (bet-portal), `http://localhost
 
 Google sign-in (`GET /api/auth/google?returnUrl=/path`) is enabled only when `Authentication:Google:ClientId` and `Authentication:Google:ClientSecret` are set; otherwise it returns 503. `Authentication:Google:FrontendOrigin` (for example `http://localhost:4200`) is the only origin it redirects back to. In the Google Cloud OAuth client, register the redirect URI `http://localhost:5026/signin-google`. Existing active users are matched by verified email; new users are created without roles, so they do not get `AdminAccess`.
 
+`/signin-google` is handled by the Google authentication middleware, which exchanges the authorization code and reads Google's v3 user-info response. Its `email_verified` field must be mapped to the verification claim. The middleware then redirects to `/api/auth/google/callback`, which validates the external ticket, sets the application cookies, and redirects to the portal's `returnUrl` (the home page `/` by default).
+
 ```bash
 dotnet user-secrets set "Authentication:Google:ClientId" "<client-id>.apps.googleusercontent.com"
 dotnet user-secrets set "Authentication:Google:ClientSecret" "<client-secret>"

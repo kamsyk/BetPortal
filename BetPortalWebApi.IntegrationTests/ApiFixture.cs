@@ -1,9 +1,12 @@
 using BpDbLayer;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 public sealed class ApiFixture : IAsyncLifetime
 {
@@ -147,6 +150,25 @@ public sealed class ApiFixture : IAsyncLifetime
         }
 
         return new BpDbContext(_dbContextOptions);
+    }
+
+    internal HttpClient CreateGoogleClient(HttpMessageHandler backchannel)
+    {
+        if (_factory is null)
+        {
+            throw new InvalidOperationException("The API fixture has not been initialized.");
+        }
+
+        var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+                services.PostConfigure<GoogleOptions>("Google", options =>
+                    options.Backchannel = new HttpClient(backchannel))));
+        return factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            HandleCookies = false,
+            AllowAutoRedirect = false,
+        });
     }
 
     public async ValueTask DisposeAsync()

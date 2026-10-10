@@ -174,7 +174,7 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["Authentication:Google:Clie
         options.SignInScheme = "GoogleExternal";
         options.CallbackPath = "/signin-google";
         options.UsePkce = true;
-        options.ClaimActions.MapJsonKey("google:email_verified", "verified_email");
+        options.ClaimActions.MapJsonKey("google:email_verified", "email_verified");
         options.Events.OnRemoteFailure = async context =>
         {
             context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
