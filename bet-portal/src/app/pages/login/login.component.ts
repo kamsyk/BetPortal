@@ -25,11 +25,15 @@ export class LoginComponent implements OnInit {
   error = '';
   readonly loginUrl = signal<string>('');
   readonly redirectUrl = signal<string>('');
+  readonly googleAuthUrl = signal<string>('');
+  readonly googleReturnUrl = signal<string>('');
 
   ngOnInit(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
     this.redirectUrl.set(returnUrl);
     this.loginUrl.set(`${this.apiBase}/auth/login`);
+    this.googleAuthUrl.set(`${this.apiBase}/auth/google`);
+    this.googleReturnUrl.set(returnUrl);
 
     this.authService
       .checkAuthStatus()

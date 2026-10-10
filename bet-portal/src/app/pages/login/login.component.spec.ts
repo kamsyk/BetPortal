@@ -43,6 +43,8 @@ describe('LoginComponent', () => {
     expect(loginControl().language()).toBe('cs');
     expect(loginControl().loginUrl()).toBe('http://localhost:5026/api/auth/login');
     expect(loginControl().redirectUrl()).toBe('/');
+    expect(loginControl().googleAuthUrl()).toBe('http://localhost:5026/api/auth/google');
+    expect(loginControl().googleReturnUrl()).toBe('/');
   });
 
   it('updates the login labels when the selected language changes', async () => {
