@@ -29,7 +29,7 @@ namespace BetPortalWebApi.Services
                 _emailClient = new EmailClient(connectionString);
                 _logger.LogInformation("Azure Communication Email initialized.");
             }
-            catch (ArgumentException)
+            catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or FormatException)
             {
                 _logger.LogError("Azure Communication Email configuration is invalid. Email delivery is disabled.");
             }
