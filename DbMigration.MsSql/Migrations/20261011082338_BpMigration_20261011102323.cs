@@ -27,7 +27,7 @@ namespace DbMigration.MsSql.Migrations
 
             migrationBuilder.InsertData(
                 table: "LoginProviders",
-                column: "ProviderName",
+                columns: new[] { "ProviderName" },
                 values: new object[,]
                 {
                     { "Google" },
