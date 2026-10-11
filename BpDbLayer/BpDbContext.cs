@@ -26,6 +26,10 @@ namespace BpDbLayer
 
         public DbSet<UserGridSettings> UserGridSettings { get; set; }
 
+        public DbSet<BpUserLoginProvider> BpUserLoginProviders { get; set; }
+
+        public DbSet<LoginProvider> LoginProviders { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

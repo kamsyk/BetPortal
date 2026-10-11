@@ -22,6 +22,10 @@ namespace DbMigration.MySql
 
         public DbSet<BpUserFavorites> BpUserFavorites { get; set; }
 
+        public DbSet<BpUserLoginProvider> BpUserLoginProviders { get; set; }
+
+        public DbSet<LoginProvider> LoginProviders { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -41,6 +45,10 @@ namespace DbMigration.MySql
             modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.CountryConfiguration());
 
             modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.BpUserFavoritesConfiguration());
+
+            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.BpUserLoginProviderConfiguration());
+
+            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.LoginProviderConfiguration());
         }
     }
 }

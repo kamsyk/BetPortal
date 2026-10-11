@@ -26,11 +26,19 @@ namespace DbMigration.MsSql
 
         public DbSet<UserGridSettings> UserGridSettings { get; set; }
 
+        public DbSet<BpUserLoginProvider> BpUserLoginProviders { get; set; }
+
+        public DbSet<LoginProvider> LoginProviders { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(BpDbContext).Assembly);
+
+            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.BpUserLoginProviderConfiguration());
+
+            modelBuilder.ApplyConfiguration(new BpDbLayer.ModelConfigurations.LoginProviderConfiguration());
         }
     }
 }
