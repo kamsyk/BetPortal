@@ -13,6 +13,8 @@
     "message": "Váš účet je aktivní. Nyní se můžete přihlásit."
   },
   "login": {
+    "facebookAccountExists": "Účet s tímto e-mailem již existuje. Přihlaste se prosím.",
+    "facebookAccountRequired": "Pro váš e-mail Facebook neexistuje účet v portálu. Zaregistrujte se přes Facebook. Žádný účet nebyl vytvořen automaticky.",
     "googleAccountExists": "Účet s tímto e-mailem již existuje. Přihlaste se prosím.",
     "googleAccountRequired": "Pro váš e-mail Google neexistuje účet v portálu. Vyplňte registrační formulář. Žádný účet nebyl vytvořen automaticky."
   },

@@ -32,16 +32,20 @@ export class LoginComponent implements OnInit {
   readonly googleReturnUrl = signal<string>('');
   readonly googleAccountRequired = signal(false);
   readonly googleAccountExists = signal(false);
+  readonly facebookAuthUrl = signal<string>('');
+  readonly facebookAccountRequired = signal(false);
+  readonly facebookAccountExists = signal(false);
   private readonly loginControl = viewChild.required(KsLoginComponent);
 
   constructor() {
     inject(MatDialog).afterOpened.pipe(observeOn(asapScheduler), takeUntilDestroyed()).subscribe(dialog => {
       if (dialog.componentInstance instanceof KsSignUpComponent) {
         dialog.componentRef?.setInput('googleAuthUrl', `${this.apiBase}/auth/google/register`);
+        dialog.componentRef?.setInput('facebookAuthUrl', `${this.apiBase}/auth/facebook/register`);
       }
     });
     afterNextRender(() => {
-      if (this.googleAccountRequired()) {
+      if (this.googleAccountRequired() || this.facebookAccountRequired()) {
         this.loginControl().openSignUp();
       }
     });
@@ -51,9 +55,12 @@ export class LoginComponent implements OnInit {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
     this.googleAccountRequired.set(this.route.snapshot.queryParamMap.get('googleError') === 'account-required');
     this.googleAccountExists.set(this.route.snapshot.queryParamMap.get('googleError') === 'account-exists');
+    this.facebookAccountRequired.set(this.route.snapshot.queryParamMap.get('facebookError') === 'account-required');
+    this.facebookAccountExists.set(this.route.snapshot.queryParamMap.get('facebookError') === 'account-exists');
     this.redirectUrl.set(returnUrl);
     this.loginUrl.set(`${this.apiBase}/auth/login`);
     this.googleAuthUrl.set(`${this.apiBase}/auth/google`);
+    this.facebookAuthUrl.set(`${this.apiBase}/auth/facebook`);
     this.googleReturnUrl.set(returnUrl);
 
     this.authService

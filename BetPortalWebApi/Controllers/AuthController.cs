@@ -19,6 +19,7 @@ namespace BetPortalWebApi.Controllers
         private readonly BpDbContext _dbContext;
         private readonly ISessionService _sessionService;
         private readonly IGoogleAccountService _googleAccountService;
+        private readonly IFacebookAccountService _facebookAccountService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
 
@@ -26,12 +27,14 @@ namespace BetPortalWebApi.Controllers
             BpDbContext dbContext,
             ISessionService sessionService,
             IGoogleAccountService googleAccountService,
+            IFacebookAccountService facebookAccountService,
             IConfiguration configuration,
             ILogger<AuthController> logger)
         {
             _dbContext = dbContext;
             _sessionService = sessionService;
             _googleAccountService = googleAccountService;
+            _facebookAccountService = facebookAccountService;
             _configuration = configuration;
             _logger = logger;
         }
@@ -47,7 +50,7 @@ namespace BetPortalWebApi.Controllers
             [FromServices] IAuthenticationSchemeProvider schemes,
             CancellationToken cancellationToken)
         {
-            return await StartGoogleAsync(returnUrl, schemes, false, cancellationToken);
+            return await StartExternalAsync("Google", returnUrl, schemes, false, cancellationToken);
         }
 
         [HttpGet("google/register")]
@@ -60,7 +63,7 @@ namespace BetPortalWebApi.Controllers
             [FromServices] IAuthenticationSchemeProvider schemes,
             CancellationToken cancellationToken)
         {
-            return await StartGoogleAsync(returnUrl, schemes, true, cancellationToken);
+            return await StartExternalAsync("Google", returnUrl, schemes, true, cancellationToken);
         }
 
         /// <summary>Completes Google sign-in using the temporary, verified external authentication ticket.</summary>
@@ -72,59 +75,44 @@ namespace BetPortalWebApi.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
         public async Task<IActionResult> GoogleCallback(CancellationToken cancellationToken)
         {
-            var external = await HttpContext.AuthenticateAsync("GoogleExternal");
-            await HttpContext.SignOutAsync("GoogleExternal");
-            var email = external.Principal?.FindFirstValue(ClaimTypes.Email);
-            if (!external.Succeeded
-                || !bool.TryParse(external.Principal?.FindFirstValue("google:email_verified"), out var verified)
-                || !verified
-                || string.IsNullOrWhiteSpace(email)
-                || email.Length > 150
-                || external.Properties == null
-                || !external.Properties.Items.TryGetValue("returnUrl", out var returnUrl)
-                || !TryGetGoogleReturnUrl(returnUrl, out var destination))
-            {
-                _logger.LogWarning("Google sign-in rejected an invalid external authentication ticket.");
-                return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Google sign-in could not be verified");
-            }
+            return await CompleteExternalAsync("Google", _googleAccountService, cancellationToken);
+        }
 
-            if (external.Properties.Items.TryGetValue("googleFlow", out var flow) && flow == "register")
-            {
-                var (created, emailSent) = await _googleAccountService.RegisterAsync(
-                    email,
-                    external.Principal?.FindFirstValue(ClaimTypes.GivenName),
-                    external.Principal?.FindFirstValue(ClaimTypes.Surname),
-                    cancellationToken);
-                if (!created)
-                {
-                    return GoogleLoginRedirect("account-exists", destination);
-                }
+        [HttpGet("facebook")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status302Found)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+        public async Task<IActionResult> Facebook(
+            [FromQuery] string? returnUrl,
+            [FromServices] IAuthenticationSchemeProvider schemes,
+            CancellationToken cancellationToken)
+        {
+            return await StartExternalAsync("Facebook", returnUrl, schemes, false, cancellationToken);
+        }
 
-                if (!emailSent)
-                {
-                    return Problem(
-                        statusCode: StatusCodes.Status503ServiceUnavailable,
-                        title: "Your account was registered, but the welcome email could not be sent",
-                        detail: "Your account is inactive. Please contact support to receive an activation link.");
-                }
+        [HttpGet("facebook/register")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status302Found)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+        public async Task<IActionResult> FacebookRegister(
+            [FromQuery] string? returnUrl,
+            [FromServices] IAuthenticationSchemeProvider schemes,
+            CancellationToken cancellationToken)
+        {
+            return await StartExternalAsync("Facebook", returnUrl, schemes, true, cancellationToken);
+        }
 
-                TryGetGoogleReturnUrl("/sign-up-confirmation", out var confirmationUrl);
-                return Redirect(confirmationUrl);
-            }
-
-            var (user, accountExists) = await _googleAccountService.FindExistingAsync(email, cancellationToken);
-            if (!accountExists)
-            {
-                return GoogleLoginRedirect("account-required", destination);
-            }
-
-            if (user == null)
-            {
-                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "This account cannot sign in");
-            }
-
-            await SignInUserAsync(user, cancellationToken);
-            return Redirect(destination);
+        [HttpGet("facebook/callback")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status302Found)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+        public async Task<IActionResult> FacebookCallback(CancellationToken cancellationToken)
+        {
+            return await CompleteExternalAsync("Facebook", _facebookAccountService, cancellationToken);
         }
 
         [HttpPost("login")]
@@ -310,10 +298,72 @@ namespace BetPortalWebApi.Controllers
             });
         }
 
-        private bool TryGetGoogleReturnUrl(string? returnUrl, out string destination)
+        private async Task<IActionResult> CompleteExternalAsync(
+            string provider, IExternalAccountService accountService, CancellationToken cancellationToken)
+        {
+            var external = await HttpContext.AuthenticateAsync($"{provider}External");
+            await HttpContext.SignOutAsync($"{provider}External");
+            var email = external.Principal?.FindFirstValue(ClaimTypes.Email);
+            if (!external.Succeeded
+                || (provider == "Google"
+                    && (!bool.TryParse(external.Principal?.FindFirstValue("google:email_verified"), out var verified) || !verified))
+                || string.IsNullOrWhiteSpace(external.Principal?.FindFirstValue(ClaimTypes.NameIdentifier))
+                || string.IsNullOrWhiteSpace(email)
+                || email.Length > 150
+                || external.Properties == null
+                || !external.Properties.Items.TryGetValue("returnUrl", out var returnUrl)
+                || !TryGetExternalReturnUrl(provider, returnUrl, out var destination))
+            {
+                _logger.LogWarning("{Provider} sign-in rejected an invalid external authentication ticket or missing email.", provider);
+                return Problem(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    title: $"{provider} sign-in could not be verified",
+                    detail: provider == "Facebook" ? "Sign in again and allow access to your Facebook email. An email address is required." : null);
+            }
+
+            if (external.Properties.Items.TryGetValue($"{provider.ToLowerInvariant()}Flow", out var flow) && flow == "register")
+            {
+                var (created, emailSent) = await accountService.RegisterAsync(
+                    email,
+                    external.Principal?.FindFirstValue(ClaimTypes.GivenName),
+                    external.Principal?.FindFirstValue(ClaimTypes.Surname),
+                    cancellationToken);
+                if (!created)
+                {
+                    return ExternalLoginRedirect(provider, "account-exists", destination);
+                }
+
+                if (!emailSent)
+                {
+                    return Problem(
+                        statusCode: StatusCodes.Status503ServiceUnavailable,
+                        title: "Your account was registered, but the welcome email could not be sent",
+                        detail: "Your account is inactive. Please contact support to receive an activation link.");
+                }
+
+                TryGetExternalReturnUrl(provider, "/sign-up-confirmation", out var confirmationUrl);
+                return Redirect(confirmationUrl);
+            }
+
+            var (user, accountExists) = await accountService.FindExistingAsync(email, cancellationToken);
+            if (!accountExists)
+            {
+                return ExternalLoginRedirect(provider, "account-required", destination);
+            }
+
+            if (user == null)
+            {
+                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "This account cannot sign in");
+            }
+
+            await SignInUserAsync(user, cancellationToken);
+            return Redirect(destination);
+        }
+
+        private bool TryGetExternalReturnUrl(string provider, string? returnUrl, out string destination)
         {
             destination = string.Empty;
-            if (!Uri.TryCreate(_configuration["Authentication:Google:FrontendOrigin"], UriKind.Absolute, out var origin)
+            if (!Uri.TryCreate(_configuration[$"Authentication:{provider}:FrontendOrigin"], UriKind.Absolute, out var origin)
                 || (origin.Scheme != Uri.UriSchemeHttps && origin.Scheme != Uri.UriSchemeHttp)
                 || !string.IsNullOrEmpty(origin.UserInfo)
                 || origin.AbsolutePath != "/"
@@ -340,41 +390,42 @@ namespace BetPortalWebApi.Controllers
             return true;
         }
 
-        private async Task<IActionResult> StartGoogleAsync(
+        private async Task<IActionResult> StartExternalAsync(
+            string provider,
             string? returnUrl,
             IAuthenticationSchemeProvider schemes,
             bool register,
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (await schemes.GetSchemeAsync("Google") == null || !TryGetGoogleReturnUrl("/", out _))
+            if (await schemes.GetSchemeAsync(provider) == null || !TryGetExternalReturnUrl(provider, "/", out _))
             {
-                _logger.LogWarning("Google sign-in is not configured.");
-                return Problem(statusCode: StatusCodes.Status503ServiceUnavailable, title: "Google sign-in is not configured");
+                _logger.LogWarning("{Provider} sign-in is not configured.", provider);
+                return Problem(statusCode: StatusCodes.Status503ServiceUnavailable, title: $"{provider} sign-in is not configured");
             }
 
-            if (!TryGetGoogleReturnUrl(returnUrl ?? "/", out var destination))
+            if (!TryGetExternalReturnUrl(provider, returnUrl ?? "/", out var destination))
             {
-                _logger.LogWarning("Google sign-in rejected an invalid return URL.");
+                _logger.LogWarning("{Provider} sign-in rejected an invalid return URL.", provider);
                 return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid return URL");
             }
 
-            await HttpContext.SignOutAsync("GoogleExternal");
+            await HttpContext.SignOutAsync($"{provider}External");
             var properties = new AuthenticationProperties
             {
-                RedirectUri = Url.Action(nameof(GoogleCallback)),
+                RedirectUri = Url.Action(provider == "Google" ? nameof(GoogleCallback) : nameof(FacebookCallback)),
             };
             properties.Items["returnUrl"] = destination;
-            properties.Items["googleFlow"] = register ? "register" : "login";
-            return Challenge(properties, "Google");
+            properties.Items[$"{provider.ToLowerInvariant()}Flow"] = register ? "register" : "login";
+            return Challenge(properties, provider);
         }
 
-        private IActionResult GoogleLoginRedirect(string error, string destination)
+        private IActionResult ExternalLoginRedirect(string provider, string error, string destination)
         {
-            TryGetGoogleReturnUrl("/login", out var loginUrl);
+            TryGetExternalReturnUrl(provider, "/login", out var loginUrl);
             return Redirect(QueryHelpers.AddQueryString(loginUrl, new Dictionary<string, string?>
             {
-                ["googleError"] = error,
+                [$"{provider.ToLowerInvariant()}Error"] = error,
                 ["returnUrl"] = new Uri(destination).PathAndQuery + new Uri(destination).Fragment,
             }));
         }

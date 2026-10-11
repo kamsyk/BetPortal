@@ -1,6 +1,8 @@
 using BpDbLayer;
 using BetPortalWebApi.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.Facebook;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -14,13 +16,16 @@ public sealed class ApiFixture : IAsyncLifetime
     private const string MigrationAssemblyName = "DbMigration.MsSql";
     private const string LocalDbServer = @"(localdb)\MSSQLLocalDB";
     private const string ConnectionStringEnvironmentVariable = "ConnectionStrings__BetPortalDbConnectionString";
-    private static readonly Dictionary<string, string> GoogleEnvironment = new()
+    private static readonly Dictionary<string, string> ExternalAuthEnvironment = new()
     {
         ["Authentication__Google__ClientId"] = "test-client-id",
         ["Authentication__Google__ClientSecret"] = "test-client-secret",
         ["Authentication__Google__FrontendOrigin"] = "http://localhost:4200",
+        ["Authentication__Facebook__AppId"] = "test-facebook-app-id",
+        ["Authentication__Facebook__AppSecret"] = "test-facebook-app-secret",
+        ["Authentication__Facebook__FrontendOrigin"] = "http://localhost:4200",
     };
-    private readonly Dictionary<string, string?> _previousGoogleEnvironment = new();
+    private readonly Dictionary<string, string?> _previousExternalAuthEnvironment = new();
     private readonly string _databaseName = $"BetPortal_IntegrationTests_{Guid.NewGuid():N}";
     private readonly string _masterConnectionString = new SqlConnectionStringBuilder
     {
@@ -71,10 +76,10 @@ public sealed class ApiFixture : IAsyncLifetime
             Environment.SetEnvironmentVariable(ConnectionStringEnvironmentVariable, _databaseConnectionString);
             _connectionStringEnvironmentOverridden = true;
 
-            // Program.cs reads Google settings at startup, before WebApplicationFactory in-memory configuration is applied.
-            foreach (var (name, value) in GoogleEnvironment)
+            // Program.cs reads OAuth settings at startup, before WebApplicationFactory in-memory configuration is applied.
+            foreach (var (name, value) in ExternalAuthEnvironment)
             {
-                _previousGoogleEnvironment[name] = Environment.GetEnvironmentVariable(name);
+                _previousExternalAuthEnvironment[name] = Environment.GetEnvironmentVariable(name);
                 Environment.SetEnvironmentVariable(name, value);
             }
 
@@ -155,21 +160,45 @@ public sealed class ApiFixture : IAsyncLifetime
 
     internal HttpClient CreateGoogleClient(HttpMessageHandler backchannel, IEmailService? emailService = null)
     {
+        return CreateExternalClient<GoogleOptions>("Google", backchannel, emailService);
+    }
+
+    internal HttpClient CreateFacebookClient(
+        HttpMessageHandler backchannel, IEmailService? emailService = null, string frontendOrigin = "http://localhost:4200")
+    {
+        return CreateExternalClient<FacebookOptions>("Facebook", backchannel, emailService, frontendOrigin);
+    }
+
+    private HttpClient CreateExternalClient<TOptions>(
+        string provider, HttpMessageHandler backchannel, IEmailService? emailService, string? frontendOrigin = null)
+        where TOptions : OAuthOptions
+    {
         if (_factory is null)
         {
             throw new InvalidOperationException("The API fixture has not been initialized.");
         }
 
         var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            if (frontendOrigin is not null)
+            {
+                builder.ConfigureAppConfiguration((_, configuration) =>
+                    configuration.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        [$"Authentication:{provider}:FrontendOrigin"] = frontendOrigin,
+                    }));
+            }
+
             builder.ConfigureTestServices(services =>
             {
-                services.PostConfigure<GoogleOptions>("Google", options =>
+                services.PostConfigure<TOptions>(provider, options =>
                     options.Backchannel = new HttpClient(backchannel));
                 if (emailService is not null)
                 {
                     services.AddSingleton(emailService);
                 }
-            }));
+            });
+        });
         return factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             BaseAddress = new Uri("https://localhost"),
@@ -197,12 +226,12 @@ public sealed class ApiFixture : IAsyncLifetime
 
     private void RestoreConnectionStringEnvironment()
     {
-        foreach (var (name, value) in _previousGoogleEnvironment)
+        foreach (var (name, value) in _previousExternalAuthEnvironment)
         {
             Environment.SetEnvironmentVariable(name, value);
         }
 
-        _previousGoogleEnvironment.Clear();
+        _previousExternalAuthEnvironment.Clear();
 
         if (!_connectionStringEnvironmentOverridden)
         {

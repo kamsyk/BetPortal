@@ -62,15 +62,17 @@ Login writes both cookies (`SessionId` + `AuthCookie`). The `GET /api/auth/check
 
 Explicit Google sign-up (`/api/auth/google/register`) creates an inactive user, a `UserToken`, and a `BpUserLoginProvider` for the existing `Google` provider atomically and redirects to `/sign-up-confirmation`; existing local or Google-linked emails are rejected without changes. Apply the login-provider migration before registration. No authenticated session is created by registration.
 
+Facebook uses the same provider-link and activation rules through `/api/auth/facebook` and `/api/auth/facebook/register`. Configure `Authentication:Facebook:AppId`, `AppSecret`, and `FrontendOrigin` on the backend and allow its `/signin-facebook` callback in Meta. Unlike Google, Facebook does not return an `email_verified` claim; the activation email verifies mailbox access for registration. Existing Google accounts are not automatically linked to Facebook. See `BetPortalWebApi/CLAUDE.md` for the full flow.
+
 ### Angular auth flow
 `authGuard` calls `AuthService.checkAuthStatus()` (from `ks-ag-controls`) → `GET /api/auth/check`. `authInterceptor` adds `withCredentials: true` to every request; on SSR it forwards the raw `Cookie` header from the incoming request via `global.__request__`.
 
 ### `ks-ag-controls` local library
-Both Angular apps depend on `ks-ag-controls` installed from a local `.tgz`:
+Both Angular apps depend on `ks-ag-controls` installed from a local `.tgz`. The public portal uses 0.0.8, which adds Facebook login/sign-up URLs; the admin portal's version is unchanged. For the public portal:
 ```
-"ks-ag-controls": "file:../../../Angular/ks-ag-controls/ks-ag-controls-workspace/dist/ks-ag-controls/ks-ag-controls-0.0.6.tgz"
+"ks-ag-controls": "file:../../../Angular/ks-ag-controls/ks-ag-controls-workspace/dist/ks-ag-controls/ks-ag-controls-0.0.8.tgz"
 ```
-Scripts `install-ks-controls-dev.bat` / `install-ks-controls-prod.bat` in each Angular project update this package. `AuthService` (used by auth guard) lives in this library.
+Build and pack the library in its workspace, then run `npm install` in the consuming app after updating the archive path. `AuthService` (used by auth guard) lives in this library.
 
 ### External project dependency
 `BetPortalWebApi` references `KsAuthentication` via a relative path outside this repo:

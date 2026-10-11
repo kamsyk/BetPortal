@@ -46,6 +46,8 @@ builder.Services.AddScoped<ISessionService, SessionService>();
 
 builder.Services.AddScoped<IGoogleAccountService, GoogleAccountService>();
 
+builder.Services.AddScoped<IFacebookAccountService, FacebookAccountService>();
+
 builder.Services.AddSingleton<IEmailService, AzureCommunicationEmailService>();
 
 builder.Services.AddScoped<IChatService, ChatService>();
@@ -164,6 +166,14 @@ var authentication = builder.Services.AddAuthentication(options =>
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+    })
+    .AddCookie("FacebookExternal", options =>
+    {
+        options.Cookie.Name = "FacebookExternal";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
     });
 
 if (!string.IsNullOrWhiteSpace(builder.Configuration["Authentication:Google:ClientId"])
@@ -189,6 +199,37 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["Authentication:Google:Clie
                 Status = StatusCodes.Status401Unauthorized,
                 Title = "Google authentication failed",
                 Detail = "Google sign-in was cancelled or could not be verified. Please try again.",
+            };
+            await context.Response.WriteAsJsonAsync(problem, context.HttpContext.RequestAborted);
+        };
+    });
+}
+
+if (!string.IsNullOrWhiteSpace(builder.Configuration["Authentication:Facebook:AppId"])
+    && !string.IsNullOrWhiteSpace(builder.Configuration["Authentication:Facebook:AppSecret"]))
+{
+    authentication.AddFacebook(options =>
+    {
+        options.AppId = builder.Configuration["Authentication:Facebook:AppId"] ?? string.Empty;
+        options.AppSecret = builder.Configuration["Authentication:Facebook:AppSecret"] ?? string.Empty;
+        options.SignInScheme = "FacebookExternal";
+        options.CallbackPath = "/signin-facebook";
+        options.Fields.Add("first_name");
+        options.Fields.Add("last_name");
+        options.ClaimActions.MapJsonKey(ClaimTypes.GivenName, "first_name");
+        options.ClaimActions.MapJsonKey(ClaimTypes.Surname, "last_name");
+        options.Events.OnRemoteFailure = async context =>
+        {
+            context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("FacebookAuthentication")
+                .LogWarning("Facebook authentication failed.");
+            context.HandleResponse();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            var problem = new Microsoft.AspNetCore.Mvc.ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Facebook authentication failed",
+                Detail = "Facebook sign-in was cancelled or could not be verified. Please try again and allow access to your email.",
             };
             await context.Response.WriteAsJsonAsync(problem, context.HttpContext.RequestAborted);
         };

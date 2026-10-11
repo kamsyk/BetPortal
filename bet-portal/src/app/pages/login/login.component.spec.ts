@@ -83,6 +83,8 @@ describe('LoginComponent', () => {
     expect(signUp.language()).toBe('cs');
     expect(signUp.googleReturnUrl()).toBe('/advisor');
     expect(signUp.googleAuthUrl()).toBe('http://localhost:5026/api/auth/google/register');
+    expect(signUp.facebookAuthUrl()).toBe('http://localhost:5026/api/auth/facebook/register');
+    expect(signUp.facebookReturnUrl()).toBe('/advisor');
     fixture.detectChanges();
     TestBed.tick();
     expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(1);
@@ -100,6 +102,8 @@ describe('LoginComponent', () => {
     const signUp: KsSignUpComponent = TestBed.inject(MatDialog).openDialogs[0].componentInstance;
     expect(signUp.googleAuthUrl()).toBe('http://localhost:5026/api/auth/google/register');
     expect(loginControl().googleAuthUrl()).toBe('http://localhost:5026/api/auth/google');
+    expect(signUp.facebookAuthUrl()).toBe('http://localhost:5026/api/auth/facebook/register');
+    expect(loginControl().facebookAuthUrl()).toBe('http://localhost:5026/api/auth/facebook');
   });
 
   it('passes the selected language and preserves login URLs', () => {
@@ -108,6 +112,32 @@ describe('LoginComponent', () => {
     expect(loginControl().redirectUrl()).toBe('/');
     expect(loginControl().googleAuthUrl()).toBe('http://localhost:5026/api/auth/google');
     expect(loginControl().googleReturnUrl()).toBe('/');
+    expect(loginControl().facebookAuthUrl()).toBe('http://localhost:5026/api/auth/facebook');
+    expect(loginControl().facebookReturnUrl()).toBe('/');
+  });
+
+  it('opens Sign up after Facebook rejects an unknown account and preserves the return URL', async () => {
+    fixture.destroy();
+    queryParams = { facebookError: 'account-required', returnUrl: '/advisor' };
+    fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+    TestBed.tick();
+    await fixture.whenStable();
+    const signUp: KsSignUpComponent = TestBed.inject(MatDialog).openDialogs[0].componentInstance;
+    expect(signUp.facebookAuthUrl()).toBe('http://localhost:5026/api/auth/facebook/register');
+    expect(signUp.facebookReturnUrl()).toBe('/advisor');
+    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent)
+      .toContain('login.facebookAccountRequired');
+  });
+
+  it('shows an existing Facebook account message without opening Sign up', async () => {
+    queryParams = { facebookError: 'account-exists', returnUrl: '/advisor' };
+    component.ngOnInit();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent)
+      .toContain('login.facebookAccountExists');
+    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
   });
 
   it('updates the login labels when the selected language changes', async () => {

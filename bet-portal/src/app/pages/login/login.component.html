@@ -4,6 +4,12 @@
 @if (googleAccountExists()) {
   <p role="alert">{{ 'login.googleAccountExists' | translate }}</p>
 }
+@if (facebookAccountRequired()) {
+  <p role="alert">{{ 'login.facebookAccountRequired' | translate }}</p>
+}
+@if (facebookAccountExists()) {
+  <p role="alert">{{ 'login.facebookAccountExists' | translate }}</p>
+}
 <lib-ks-login
   class="login-component"
   [language]="currentLanguage()"
@@ -11,5 +17,7 @@
   [redirectUrl]="redirectUrl()"
   [googleAuthUrl]="googleAuthUrl()"
   [googleReturnUrl]="googleReturnUrl()"
+  [facebookAuthUrl]="facebookAuthUrl()"
+  [facebookReturnUrl]="redirectUrl()"
   (loginSuccess)="onLoginSuccess($event)"
 ></lib-ks-login>
