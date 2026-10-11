@@ -253,6 +253,26 @@ namespace DbMigration.MsSql.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BpDbLayer.Models.BpUserLoginProvider", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProviderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("UserId", "ProviderId");
+
+                    b.HasIndex("ProviderId");
+
+                    b.ToTable("BpUserLoginProviders");
+                });
+
             modelBuilder.Entity("BpDbLayer.Models.Competition", b =>
                 {
                     b.Property<int>("Id")
@@ -366,6 +386,24 @@ namespace DbMigration.MsSql.Migrations
                         .IsUnique();
 
                     b.ToTable("Countries");
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.LoginProvider", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ProviderName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LoginProviders");
                 });
 
             modelBuilder.Entity("BpDbLayer.Models.Sport", b =>
@@ -531,6 +569,25 @@ namespace DbMigration.MsSql.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("BpDbLayer.Models.BpUserLoginProvider", b =>
+                {
+                    b.HasOne("BpDbLayer.Models.LoginProvider", "LoginProvider")
+                        .WithMany("UserLoginProviders")
+                        .HasForeignKey("ProviderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BpDbLayer.Models.BpUser", "User")
+                        .WithMany("UserLoginProviders")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LoginProvider");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("BpDbLayer.Models.Competition", b =>
                 {
                     b.HasOne("BpDbLayer.Models.Country", "Country")
@@ -638,7 +695,14 @@ namespace DbMigration.MsSql.Migrations
                 {
                     b.Navigation("BpUser_BpRole");
 
+                    b.Navigation("UserLoginProviders");
+
                     b.Navigation("UserToken");
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.LoginProvider", b =>
+                {
+                    b.Navigation("UserLoginProviders");
                 });
 #pragma warning restore 612, 618
         }

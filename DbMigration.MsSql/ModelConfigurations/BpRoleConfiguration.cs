@@ -32,9 +32,9 @@ namespace BpDbLayer.ModelConfigurations
                     RoleName = "BasicUser",
                     Description = "Basic user role",
                     IsActive = true,
-                    CreatedByUserId = 1,
+                    CreatedByUserId = BpUserConfiguration.AdminUserId,
                     CreatedDate = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc),
-                    ModifiedByUserId = 1,
+                    ModifiedByUserId = BpUserConfiguration.AdminUserId,
                     ModifiedDate = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc),
                 },
                 new BpRole
@@ -43,9 +43,9 @@ namespace BpDbLayer.ModelConfigurations
                     RoleName = "SubscribedUserL1",
                     Description = "Level 1 subscribed user role",
                     IsActive = true,
-                    CreatedByUserId = 1,
+                    CreatedByUserId = BpUserConfiguration.AdminUserId,
                     CreatedDate = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc),
-                    ModifiedByUserId = 1,
+                    ModifiedByUserId = BpUserConfiguration.AdminUserId,
                     ModifiedDate = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc),
                 });
         }
