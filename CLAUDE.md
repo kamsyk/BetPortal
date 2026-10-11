@@ -58,9 +58,9 @@ Dual-scheme auth in `Program.cs`:
 
 Login writes both cookies (`SessionId` + `AuthCookie`). The `GET /api/auth/check` endpoint validates whichever session exists and re-issues `CookieAuth` if session is valid.
 
-`AdminAccess` policy requires claim `Permission = "AdminAccess"`, granted only to users with the active `Admin` role. Google sign-in (`/api/auth/google`) signs in existing active users by verified email only. Unknown emails return to `/login` with an account-required message; no user or session is created.
+`AdminAccess` policy requires claim `Permission = "AdminAccess"`, granted only to users with the active `Admin` role. Google sign-in (`/api/auth/google`) requires an active user with a matching `BpUserLoginProvider` for the `Google` provider and verified email (case-insensitive, up to 150 characters). A matching local email alone is not sufficient and never automatically links an account. Unknown emails return to `/login` with an account-required message; no user or session is created.
 
-Explicit Google sign-up (`/api/auth/google/register`) creates an inactive user and a `UserToken` atomically and redirects to `/sign-up-confirmation`; existing emails are rejected without changes. No authenticated session is created by registration.
+Explicit Google sign-up (`/api/auth/google/register`) creates an inactive user, a `UserToken`, and a `BpUserLoginProvider` for the existing `Google` provider atomically and redirects to `/sign-up-confirmation`; existing local or Google-linked emails are rejected without changes. Apply the login-provider migration before registration. No authenticated session is created by registration.
 
 ### Angular auth flow
 `authGuard` calls `AuthService.checkAuthStatus()` (from `ks-ag-controls`) → `GET /api/auth/check`. `authInterceptor` adds `withCredentials: true` to every request; on SSR it forwards the raw `Cookie` header from the incoming request via `global.__request__`.

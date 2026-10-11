@@ -22,12 +22,17 @@ namespace BetPortalWebApi.Services
                 ?? throw new InvalidOperationException("The Google frontend origin is not configured."));
             await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
             var normalizedEmail = email.ToLowerInvariant();
-            if (await dbContext.BpUsers.AnyAsync(user => user.Email.ToLower() == normalizedEmail, cancellationToken))
+            if (await dbContext.BpUsers.AnyAsync(user => user.Email.ToLower() == normalizedEmail, cancellationToken)
+                || await dbContext.BpUserLoginProviders.AnyAsync(
+                    link => link.LoginProvider.ProviderName == "Google" && link.Email.ToLower() == normalizedEmail, cancellationToken))
             {
-                logger.LogWarning("Google registration rejected because the local account already exists.");
+                logger.LogWarning("Google registration rejected because the local account or Google provider link already exists.");
                 return (false, false);
             }
 
+            var googleProvider = await dbContext.LoginProviders.SingleOrDefaultAsync(
+                provider => provider.ProviderName == "Google", cancellationToken)
+                ?? throw new InvalidOperationException("The Google login provider is missing. Apply the login provider migration before registering users.");
             var now = DateTime.UtcNow;
             var user = new BpUser
             {
@@ -47,6 +52,12 @@ namespace BetPortalWebApi.Services
                 UserInitToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
                 CreatedDate = now,
             };
+            user.UserLoginProviders.Add(new BpUserLoginProvider
+            {
+                User = user,
+                LoginProvider = googleProvider,
+                Email = email,
+            });
             dbContext.BpUsers.Add(user);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -74,21 +85,28 @@ namespace BetPortalWebApi.Services
         public async Task<(BpUser? User, bool AccountExists)> FindExistingAsync(string email, CancellationToken cancellationToken)
         {
             var normalizedEmail = email.ToLowerInvariant();
-            var matches = await dbContext.BpUsers
+            var matches = await dbContext.BpUserLoginProviders
                 .AsNoTracking()
-                .Where(user => user.Email.ToLower() == normalizedEmail)
+                .Where(link => link.LoginProvider.ProviderName == "Google" && link.Email.ToLower() == normalizedEmail)
+                .Select(link => link.User)
                 .Take(2)
                 .ToListAsync(cancellationToken);
 
             if (matches.Count > 1 || (matches.Count == 1 && !matches[0].IsActive))
             {
-                logger.LogWarning("Google sign-in rejected because the local account is inactive or ambiguous.");
+                logger.LogWarning("Google sign-in rejected because the linked account is inactive or the provider email is ambiguous.");
                 return (null, true);
             }
 
             if (matches.Count == 1)
             {
                 return (matches[0], true);
+            }
+
+            if (await dbContext.BpUsers.AnyAsync(user => user.Email.ToLower() == normalizedEmail, cancellationToken))
+            {
+                logger.LogWarning("Google sign-in rejected because the local account has no matching Google provider link.");
+                return (null, true);
             }
 
             logger.LogInformation("Google sign-in requires an existing local account.");

@@ -79,7 +79,7 @@ namespace BetPortalWebApi.Controllers
                 || !bool.TryParse(external.Principal?.FindFirstValue("google:email_verified"), out var verified)
                 || !verified
                 || string.IsNullOrWhiteSpace(email)
-                || email.Length > 200
+                || email.Length > 150
                 || external.Properties == null
                 || !external.Properties.Items.TryGetValue("returnUrl", out var returnUrl)
                 || !TryGetGoogleReturnUrl(returnUrl, out var destination))

@@ -79,10 +79,18 @@ public sealed class GoogleAuthIntegrationTests
     [InlineData(false, null, null, false, true)]
     [InlineData(null, null, null, false, true)]
     [InlineData(true, null, null, false, true, false)]
+    [InlineData(true, null, "http://localhost:4200/sign-up-confirmation", false, true, true, 150)]
+    [InlineData(true, null, null, false, true, true, 151)]
+    [InlineData(true, null, null, true, false, true, null, false)]
     public async Task Google_round_trip_requires_verified_email_and_redirects_after_sign_in(
-        bool? emailVerified, string? returnUrl, string? destination, bool accountExists, bool register = false, bool emailSent = true)
+        bool? emailVerified, string? returnUrl, string? destination, bool accountExists, bool register = false, bool emailSent = true,
+        int? emailLength = null, bool linked = true)
     {
         var email = $"{Guid.NewGuid():N}@example.test";
+        if (emailLength.HasValue)
+        {
+            email = email.PadLeft(emailLength.Value, 'a');
+        }
         using var backchannel = new GoogleBackchannel(email, emailVerified);
         var emails = new RecordingEmailService(emailSent);
         using var client = _fixture.CreateGoogleClient(backchannel, emails);
@@ -94,7 +102,12 @@ public sealed class GoogleAuthIntegrationTests
             if (accountExists)
             {
                 await using var seed = _fixture.CreateDbContext();
-                seed.BpUsers.Add(NewUser(email, isActive: true));
+                var existingUser = NewUser(email, isActive: true);
+                if (linked && !register)
+                {
+                    existingUser.UserLoginProviders.Add(await NewProviderLinkAsync(seed, existingUser, email));
+                }
+                seed.BpUsers.Add(existingUser);
                 await seed.SaveChangesAsync(cancellationToken);
             }
 
@@ -120,7 +133,10 @@ public sealed class GoogleAuthIntegrationTests
             using var callback = await client.GetAsync(googleResponse.Headers.Location, cancellationToken);
             if (destination is null)
             {
-                Assert.Equal(emailSent ? HttpStatusCode.Unauthorized : HttpStatusCode.ServiceUnavailable, callback.StatusCode);
+                Assert.Equal(
+                    accountExists && !linked ? HttpStatusCode.Forbidden
+                        : emailSent ? HttpStatusCode.Unauthorized : HttpStatusCode.ServiceUnavailable,
+                    callback.StatusCode);
                 if (!emailSent)
                 {
                     var problem = await callback.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
@@ -192,7 +208,7 @@ public sealed class GoogleAuthIntegrationTests
 
             await using var dbContext = _fixture.CreateDbContext();
             var user = await dbContext.BpUsers.SingleOrDefaultAsync(user => user.Email == email, cancellationToken);
-            if (register && emailVerified == true && !accountExists)
+            if (register && emailVerified == true && email.Length <= 150 && !accountExists)
             {
                 Assert.NotNull(user);
                 Assert.False(user.IsActive);
@@ -203,6 +219,10 @@ public sealed class GoogleAuthIntegrationTests
                 Assert.Equal(64, token.UserInitToken.Length);
                 Assert.Equal(32, Convert.FromHexString(token.UserInitToken).Length);
                 Assert.Equal(user.CreatedDate, token.CreatedDate);
+                var link = await dbContext.BpUserLoginProviders.Include(link => link.LoginProvider)
+                    .SingleAsync(link => link.UserId == user.Id, cancellationToken);
+                Assert.Equal("Google", link.LoginProvider.ProviderName);
+                Assert.Equal(email, link.Email);
                 Assert.False(await dbContext.BpUsers_BpRoles.AnyAsync(role => role.UserId == user.Id, cancellationToken));
                 var message = Assert.Single(emails.Messages);
                 Assert.Equal(email, message.Recipient);
@@ -215,6 +235,7 @@ public sealed class GoogleAuthIntegrationTests
                 Assert.Single(emails.Messages);
                 Assert.Equal(1, await dbContext.BpUsers.CountAsync(u => u.Email == email, cancellationToken));
                 Assert.Equal(token.UserInitToken, (await dbContext.UserTokens.SingleAsync(t => t.UserId == user.Id, cancellationToken)).UserInitToken);
+                Assert.Equal(1, await dbContext.BpUserLoginProviders.CountAsync(link => link.UserId == user.Id, cancellationToken));
             }
             else if (!accountExists)
             {
@@ -229,6 +250,7 @@ public sealed class GoogleAuthIntegrationTests
                 {
                     Assert.True(user.IsActive);
                     Assert.False(await dbContext.UserTokens.AnyAsync(t => t.UserId == user.Id, cancellationToken));
+                    Assert.False(await dbContext.BpUserLoginProviders.AnyAsync(link => link.UserId == user.Id, cancellationToken));
                 }
                 Assert.False(await dbContext.BpUsers_BpRoles.AnyAsync(role => role.UserId == user.Id, cancellationToken));
             }
@@ -323,6 +345,7 @@ public sealed class GoogleAuthIntegrationTests
                 Assert.False(missing.AccountExists);
                 Assert.False(await dbContext.BpUsers.AnyAsync(u => u.Email == email, TestContext.Current.CancellationToken));
                 var created = NewUser(email, isActive: true);
+                created.UserLoginProviders.Add(await NewProviderLinkAsync(dbContext, created, email));
                 dbContext.BpUsers.Add(created);
                 await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
                 createdId = created.Id;
@@ -359,7 +382,14 @@ public sealed class GoogleAuthIntegrationTests
                 await using var persisted = _fixture.CreateDbContext();
                 var user = await persisted.BpUsers.SingleAsync(u => u.Email == email, cancellationToken);
                 Assert.False(user.IsActive);
+                var link = await persisted.BpUserLoginProviders.Include(link => link.LoginProvider)
+                    .SingleAsync(link => link.UserId == user.Id, cancellationToken);
+                Assert.Equal("Google", link.LoginProvider.ProviderName);
+                Assert.Equal(email, link.Email);
                 savedToken = (await persisted.UserTokens.SingleAsync(t => t.UserId == user.Id, cancellationToken)).UserInitToken;
+                var inactive = await CreateAccountService(persisted).FindExistingAsync(email, cancellationToken);
+                Assert.True(inactive.AccountExists);
+                Assert.Null(inactive.User);
             },
         };
         try
@@ -389,6 +419,9 @@ public sealed class GoogleAuthIntegrationTests
                 Assert.Equal(HttpStatusCode.NoContent, activation.StatusCode);
                 Assert.True(await persisted.BpUsers.Where(u => u.Email == email).Select(u => u.IsActive).SingleAsync(cancellationToken));
                 Assert.False(await persisted.UserTokens.AnyAsync(t => t.User.Email == email, cancellationToken));
+                var authenticated = await service.FindExistingAsync(email.ToUpperInvariant(), cancellationToken);
+                Assert.True(authenticated.AccountExists);
+                Assert.NotNull(authenticated.User);
             }
         }
         finally
@@ -408,7 +441,7 @@ public sealed class GoogleAuthIntegrationTests
     }
 
     [Fact]
-    public async Task Account_service_links_existing_admin_by_email()
+    public async Task Account_service_rejects_existing_admin_without_google_link()
     {
         await using var dbContext = _fixture.CreateDbContext();
         var service = CreateAccountService(dbContext);
@@ -416,8 +449,7 @@ public sealed class GoogleAuthIntegrationTests
         var (user, accountExists) = await service.FindExistingAsync("ADMIN@betportal.com", TestContext.Current.CancellationToken);
 
         Assert.True(accountExists);
-        Assert.NotNull(user);
-        Assert.Equal("admin", user.UserName);
+        Assert.Null(user);
     }
 
     [Fact]
@@ -428,7 +460,9 @@ public sealed class GoogleAuthIntegrationTests
         {
             await using (var seed = _fixture.CreateDbContext())
             {
-                seed.BpUsers.Add(NewUser(email, isActive: false));
+                var inactive = NewUser(email, isActive: false);
+                inactive.UserLoginProviders.Add(await NewProviderLinkAsync(seed, inactive, email));
+                seed.BpUsers.Add(inactive);
                 await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
@@ -440,6 +474,94 @@ public sealed class GoogleAuthIntegrationTests
             Assert.True(accountExists);
             Assert.Null(user);
             Assert.Equal(1, await dbContext.BpUsers.CountAsync(u => u.Email == email, TestContext.Current.CancellationToken));
+        }
+        finally
+        {
+            await DeleteUsersAsync(email);
+        }
+    }
+
+    [Fact]
+    public async Task Account_service_matches_provider_email_even_when_local_email_differs()
+    {
+        var localEmail = $"{Guid.NewGuid():N}@example.test";
+        var googleEmail = $"{Guid.NewGuid():N}@Example.test";
+        var cancellationToken = TestContext.Current.CancellationToken;
+        try
+        {
+            await using var dbContext = _fixture.CreateDbContext();
+            var created = NewUser(localEmail, isActive: true);
+            created.UserLoginProviders.Add(await NewProviderLinkAsync(dbContext, created, googleEmail));
+            dbContext.BpUsers.Add(created);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            var emails = new RecordingEmailService();
+            var service = CreateAccountService(dbContext, emails);
+            var (user, accountExists) = await service.FindExistingAsync(googleEmail.ToUpperInvariant(), cancellationToken);
+
+            Assert.True(accountExists);
+            Assert.NotNull(user);
+            Assert.Equal(created.Id, user.Id);
+            Assert.Equal((false, false), await service.RegisterAsync(googleEmail.ToUpperInvariant(), null, null, cancellationToken));
+            Assert.Empty(emails.Messages);
+            Assert.False(await dbContext.BpUsers.AnyAsync(user => user.Email == googleEmail, cancellationToken));
+            Assert.Equal(1, await dbContext.BpUserLoginProviders.CountAsync(link => link.UserId == created.Id, cancellationToken));
+        }
+        finally
+        {
+            await DeleteUsersAsync(localEmail);
+        }
+    }
+
+    [Theory]
+    [InlineData("Facebook", false)]
+    [InlineData("Google", true)]
+    public async Task Account_service_rejects_other_provider_or_mismatched_provider_email(string providerName, bool differentEmail)
+    {
+        var email = $"{Guid.NewGuid():N}@example.test";
+        var cancellationToken = TestContext.Current.CancellationToken;
+        try
+        {
+            await using var dbContext = _fixture.CreateDbContext();
+            var created = NewUser(email, isActive: true);
+            created.UserLoginProviders.Add(await NewProviderLinkAsync(
+                dbContext, created, differentEmail ? $"{Guid.NewGuid():N}@example.test" : email, providerName));
+            dbContext.BpUsers.Add(created);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            var (user, accountExists) = await CreateAccountService(dbContext).FindExistingAsync(email, cancellationToken);
+
+            Assert.True(accountExists);
+            Assert.Null(user);
+            Assert.Equal(1, await dbContext.BpUserLoginProviders.CountAsync(link => link.UserId == created.Id, cancellationToken));
+        }
+        finally
+        {
+            await DeleteUsersAsync(email);
+        }
+    }
+
+    [Fact]
+    public async Task Account_service_rejects_ambiguous_google_provider_email()
+    {
+        var email = $"{Guid.NewGuid():N}@example.test";
+        var cancellationToken = TestContext.Current.CancellationToken;
+        try
+        {
+            await using var dbContext = _fixture.CreateDbContext();
+            foreach (var isActive in new[] { true, false })
+            {
+                var created = NewUser(email, isActive);
+                created.UserLoginProviders.Add(await NewProviderLinkAsync(dbContext, created, email));
+                dbContext.BpUsers.Add(created);
+            }
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            var (user, accountExists) = await CreateAccountService(dbContext).FindExistingAsync(email, cancellationToken);
+
+            Assert.True(accountExists);
+            Assert.Null(user);
+            Assert.Equal(2, await dbContext.BpUserLoginProviders.CountAsync(link => link.Email == email, cancellationToken));
         }
         finally
         {
@@ -494,6 +616,19 @@ public sealed class GoogleAuthIntegrationTests
         CreatedByUserId = 1,
         ModifiedByUserId = 1,
     };
+
+    private static async Task<BpUserLoginProvider> NewProviderLinkAsync(
+        BpDbContext dbContext, BpUser user, string email, string providerName = "Google")
+    {
+        var provider = await dbContext.LoginProviders.SingleAsync(
+            provider => provider.ProviderName == providerName, TestContext.Current.CancellationToken);
+        return new BpUserLoginProvider
+        {
+            User = user,
+            LoginProvider = provider,
+            Email = email,
+        };
+    }
 
     private async Task DeleteUsersAsync(string email)
     {
