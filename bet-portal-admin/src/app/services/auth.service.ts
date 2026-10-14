@@ -58,7 +58,7 @@ export class AuthService {
   }
 
   logout(): Observable<void> {
-    return this.http.post<{success: boolean}>(`${this.apiBase}/api/auth/logout`, {}, {
+    return this.http.post<{success: boolean}>(`${this.apiBase}/auth/logout`, {}, {
       withCredentials: true // 🔥 This sends HttpOnly cookies
     }).pipe(
       tap(() => this.userSubject.next(null)),

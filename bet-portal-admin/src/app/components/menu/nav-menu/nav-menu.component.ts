@@ -2,8 +2,8 @@ import { Component, inject } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
-import { AuthService } from 'ks-ag-controls';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-nav-menu',
@@ -30,7 +30,8 @@ export class NavMenuComponent {
   }
 
   logOut() {
-    this.authService.logout();
-    this.router.navigateByUrl('/login');
+    this.authService.logout().subscribe(() => {
+      void this.router.navigateByUrl('/login');
+    });
   }
 }

@@ -1,14 +1,17 @@
 ﻿using BetPortalWebApi.Controllers;
-using BetPortalWebApi.Services;
 using BetPortalWebApi.Services.Interfaces;
+using BetPortalWebApi.Services.Models;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : BpBaseController
 {
+    private const string SessionCookieName = "session_id";
+
+    private static readonly TimeSpan SessionLifetime = TimeSpan.FromDays(7);
+
     private readonly IAuthService _authService;
     private readonly ISessionService _sessionService;
 
@@ -27,61 +30,24 @@ public class AuthController : BpBaseController
             return Unauthorized(new { message = "Invalid credentials" });
         }
 
-        // Create server session (NOT a JWT)
-        var sessionId = await _sessionService.CreateSessionAsync(user.Id, TimeSpan.FromDays(7));
-
-        // Set secure HttpOnly cookie
-        var cookieOptions = new CookieOptions
-        {
-           HttpOnly = true,                    // No JavaScript access
-           //// Secure = Request.IsHttps,           // HTTPS only (auto-detect)
-           SameSite = SameSiteMode.Lax,     // CSRF protection
-            MaxAge = TimeSpan.FromDays(7),      // Cookie expiry
-            Path = "/",                         // Available to entire app
-           //// IsEssential = true,                  // GDPR compliance
-        };
-
-        Response.Cookies.Append("session_id", sessionId, cookieOptions);
+        var sessionId = await _sessionService.CreateSessionAsync(user.Id, SessionLifetime);
+        Response.Cookies.Append(SessionCookieName, sessionId, CreateSessionCookieOptions());
 
         return Ok(new
         {
             success = true,
             user = new { user.Id, user.Email, user.UserName },
-            //// Never return session ID in response body
         });
     }
 
     [HttpGet("me")]
     public async Task<IActionResult> GetCurrentUser()
     {
-        await Task.Delay(1); // Placeholder to avoid compiler warning
-        var sessionId = Request.Cookies["session_id"];
-
-
-        return Ok(new
-        {
-            success = true,
-            user = new
-            {
-                Id = "session.UserId",
-                Email = "session.Email",
-                Name = "session.Name",
-            },
-        });
-
-        /*if (string.IsNullOrEmpty(sessionId))
+        var session = await GetActiveSessionAsync();
+        if (session == null)
         {
             return Unauthorized();
         }
-
-        var session = await _sessionService.GetSessionAsync(sessionId);
-        if (session == null || session.ExpiresAt < DateTime.UtcNow)
-        {
-            return Unauthorized();
-        }
-
-        // Refresh session on each valid request
-        await _sessionService.RefreshSessionAsync(sessionId, TimeSpan.FromDays(7));
 
         return Ok(new
         {
@@ -92,25 +58,18 @@ public class AuthController : BpBaseController
                 Email = session.Email,
                 Name = session.Name,
             },
-        });*/
+        });
     }
 
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
-        var sessionId = Request.Cookies["session_id"];
-        if (!string.IsNullOrEmpty(sessionId))
+        if (Request.Cookies.TryGetValue(SessionCookieName, out var sessionId) && !string.IsNullOrEmpty(sessionId))
         {
             await _sessionService.DeleteSessionAsync(sessionId);
         }
 
-        // Clear cookie
-        Response.Cookies.Delete("session_id", new CookieOptions
-        {
-            Path = "/",
-            Secure = Request.IsHttps,
-            SameSite = SameSiteMode.Strict,
-        });
+        Response.Cookies.Delete(SessionCookieName, CreateSessionCookieOptions());
 
         return Ok(new { success = true });
     }
@@ -118,9 +77,10 @@ public class AuthController : BpBaseController
     [HttpGet("validate-session")]
     public async Task<IActionResult> ValidateSession()
     {
-        if (Request.Cookies.TryGetValue("session_id", out var value))
+        var session = await GetActiveSessionAsync();
+        if (session == null)
         {
-            int g = 5;
+            return Ok(new { success = false, user = (object?)null });
         }
 
         return Ok(new
@@ -128,51 +88,38 @@ public class AuthController : BpBaseController
             success = true,
             user = new
             {
-                id = "session.UserId",
-                email = "session.Email",
-                name = "session.Name",
+                id = session.UserId,
+                email = session.Email,
+                name = session.Name,
             },
         });
+    }
 
-        try
+    private static CookieOptions CreateSessionCookieOptions()
+    {
+        return new CookieOptions
         {
-            // Check if user is authenticated via cookie/JWT
-            if (!User.Identity?.IsAuthenticated ?? false)
-            {
-                return Ok(new { success = false, user = (object?)null });
-            }
+            HttpOnly = true,
+            SameSite = SameSiteMode.Lax,
+            MaxAge = SessionLifetime,
+            Path = "/",
+        };
+    }
 
-            // Get user ID from claims
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                return Ok(new { success = false, user = (object?)null });
-            }
-
-            // Fetch user details from database
-            ////var user = await _userService.GetUserByIdAsync(userIdClaim);
-            var session = await _sessionService.GetSessionAsync(userIdClaim);
-            if (session == null)
-            {
-                return Ok(new { success = false, user = (object?)null });
-            }
-
-            // Return success with user data
-            return Ok(new
-            {
-                success = true,
-                user = new
-                {
-                    id = session.UserId,
-                    email = session.Email,
-                    name = session.Name,
-                },
-            });
-        }
-        catch (Exception ex)
+    private async Task<SessionData?> GetActiveSessionAsync()
+    {
+        if (!Request.Cookies.TryGetValue(SessionCookieName, out var sessionId) || string.IsNullOrEmpty(sessionId))
         {
-           //// _logger.LogError(ex, "Error validating session");
-            return Ok(new { success = false, user = (object?)null });
+            return null;
         }
+
+        var session = await _sessionService.GetSessionAsync(sessionId);
+        if (session == null || session.ExpiresAt < DateTime.UtcNow)
+        {
+            return null;
+        }
+
+        await _sessionService.RefreshSessionAsync(sessionId, SessionLifetime);
+        return session;
     }
 }
