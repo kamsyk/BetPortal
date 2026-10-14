@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetPortalWebApi", "BetPorta
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KsAuthentication", "..\KsAuthentication\KsAuthentication\KsAuthentication.csproj", "{EE94AEF0-2C74-F46D-279E-AC721B8DB7DB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetPortalWebApi.Tests", "BetPortalWebApi.Tests\BetPortalWebApi.Tests.csproj", "{C0DC4A13-B934-4342-A5B6-8D8F421D26CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{EE94AEF0-2C74-F46D-279E-AC721B8DB7DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE94AEF0-2C74-F46D-279E-AC721B8DB7DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE94AEF0-2C74-F46D-279E-AC721B8DB7DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0DC4A13-B934-4342-A5B6-8D8F421D26CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0DC4A13-B934-4342-A5B6-8D8F421D26CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0DC4A13-B934-4342-A5B6-8D8F421D26CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0DC4A13-B934-4342-A5B6-8D8F421D26CC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
