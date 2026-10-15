@@ -115,7 +115,7 @@ test('lets anonymous visitors open sign up from the toolbar or mobile menu', asy
     await page.getByRole('link', { name: 'Sign up', exact: true }).click();
   }
 
-  await expect(page).toHaveURL(/\/login\?signUp=true/);
+  await expect(page).toHaveURL(/\/sign-up$/);
 });
 
 test('shows authenticated navigation, marks the active route, and navigates home', async ({ page }, testInfo) => {

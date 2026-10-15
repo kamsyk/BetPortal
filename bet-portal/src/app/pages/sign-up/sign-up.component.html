@@ -1,0 +1,21 @@
+<main class="sign-up-page">
+  @if (googleAccountRequired()) {
+    <p role="alert">{{ 'login.googleAccountRequired' | translate }}</p>
+  }
+  @if (facebookAccountRequired()) {
+    <p role="alert">{{ 'login.facebookAccountRequired' | translate }}</p>
+  }
+
+  <lib-ks-sign-up
+    class="sign-up-component"
+    [language]="currentLanguage()"
+    [googleAuthUrl]="googleAuthUrl()"
+    [googleReturnUrl]="googleReturnUrl()"
+    [facebookAuthUrl]="facebookAuthUrl()"
+    [facebookReturnUrl]="facebookReturnUrl()"
+  ></lib-ks-sign-up>
+
+  <p class="sign-in-prompt">
+    <a routerLink="/login">{{ 'nav.signIn' | translate }}</a>
+  </p>
+</main>

@@ -92,6 +92,7 @@ describe('NavMenuComponent', () => {
                     { path: '', component: NavMenuComponent },
                     { path: 'advisor', component: NavMenuComponent },
                     { path: 'login', component: NavMenuComponent },
+                    { path: 'sign-up', component: NavMenuComponent },
                 ]),
                 provideNoopAnimations(),
                 { provide: AuthService, useValue: { isAuthenticated: authenticated, logout } },
@@ -133,7 +134,7 @@ describe('NavMenuComponent', () => {
         expect(element.querySelector('.primary-nav')).toBeNull();
         expect(element.querySelector('.profile-button')).toBeNull();
         expect(element.querySelector('.sign-in-link')?.getAttribute('href')).toBe('/login');
-        expect(element.querySelector('.sign-up-link')?.getAttribute('href')).toBe('/login?signUp=true');
+        expect(element.querySelector('.sign-up-link')?.getAttribute('href')).toBe('/sign-up');
         expect(element.querySelector('.desktop-actions .language-button')).not.toBeNull();
         expect(element.querySelector('.theme-button')).not.toBeNull();
         expect(element.querySelector('.mobile-menu-button')).not.toBeNull();
@@ -232,7 +233,7 @@ describe('NavMenuComponent', () => {
         const panel = await openMenu('.mobile-menu-button');
         expect(panel.querySelectorAll('[role="menuitem"]').length).toBe(4);
         expect(panel.querySelector('.sign-in-link')?.getAttribute('href')).toBe('/login');
-        expect(panel.querySelector('.sign-up-link')?.getAttribute('href')).toBe('/login?signUp=true');
+        expect(panel.querySelector('.sign-up-link')?.getAttribute('href')).toBe('/sign-up');
         expect(panel.textContent).toContain('nav.language');
         expect(panel.textContent).toContain('nav.darkMode');
         expect(panel.textContent).not.toContain('nav.logout');
@@ -248,13 +249,13 @@ describe('NavMenuComponent', () => {
         expect(TestBed.inject(Router).url).toBe('/login');
     });
 
-    it('navigates to login with signUp from the anonymous desktop sign-up control', async () => {
+    it('navigates to sign-up from the anonymous desktop sign-up control', async () => {
         const signUp = (fixture.nativeElement as HTMLElement)
             .querySelector<HTMLAnchorElement>('.desktop-actions .sign-up-link');
         expect(signUp).not.toBeNull();
         signUp!.click();
         await settle();
-        expect(TestBed.inject(Router).url).toBe('/login?signUp=true');
+        expect(TestBed.inject(Router).url).toBe('/sign-up');
     });
 
     it('shows authenticated mobile navigation and theme without language or logout choices', async () => {

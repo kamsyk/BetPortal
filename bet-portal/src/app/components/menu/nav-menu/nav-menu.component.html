@@ -30,7 +30,7 @@
         <a mat-button class="sign-in-link" routerLink="/login">
           {{ 'nav.signIn' | translate }}
         </a>
-        <a mat-button class="sign-up-link" routerLink="/login" [queryParams]="{ signUp: true }">
+        <a mat-button class="sign-up-link" routerLink="/sign-up">
           {{ 'nav.signUp' | translate }}
         </a>
         <button mat-button type="button" class="language-button" [matMenuTriggerFor]="languageMenu"
@@ -108,7 +108,7 @@
       <mat-icon aria-hidden="true">login</mat-icon>
       <span>{{ 'nav.signIn' | translate }}</span>
     </a>
-    <a mat-menu-item class="sign-up-link" routerLink="/login" [queryParams]="{ signUp: true }">
+    <a mat-menu-item class="sign-up-link" routerLink="/sign-up">
       <mat-icon aria-hidden="true">person_add</mat-icon>
       <span>{{ 'nav.signUp' | translate }}</span>
     </a>
