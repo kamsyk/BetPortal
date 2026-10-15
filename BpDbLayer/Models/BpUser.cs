@@ -42,4 +42,6 @@ public partial class BpUser : ICreatedFields
     public UserToken? UserToken { get; set; }
 
     public virtual ICollection<BpUserBpRole> BpUser_BpRole { get; set; } = new List<BpUserBpRole>();
+
+    public ICollection<BpUserLoginProvider> UserLoginProviders { get; set; } = new List<BpUserLoginProvider>();
 }

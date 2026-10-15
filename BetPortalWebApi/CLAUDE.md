@@ -22,7 +22,37 @@ dotnet user-secrets set "Claude:ApiKey" "sk-ant-..."
 
 Dev CORS allows origins: `http://localhost:4200` (bet-portal), `http://localhost:4210` (bet-portal-admin), `http://localhost:5026`.
 
+`IEmailService` is backed by the singleton `AzureCommunicationEmailService`. Configure `AzureCommunication:ConnectionString` and `AzureCommunication:SenderAddress` (an Azure-verified sender) using user secrets or environment variables. Missing/placeholder/invalid configuration disables delivery with a logged error or warning; sends return `false`. The service supports HTML, optional plain text and BCC, and cancellation. It returns `true` only when Azure's send operation succeeds (not proof of inbox delivery). Azure request failures are logged and return `false`; cancellation and unexpected failures propagate. Google registration uses this service to send its welcome/activation email.
+
+```bash
+dotnet user-secrets set "AzureCommunication:ConnectionString" "<azure-communication-connection-string>"
+dotnet user-secrets set "AzureCommunication:SenderAddress" "<verified-sender-address>"
+```
+
+Google sign-in (`GET /api/auth/google?returnUrl=/path`) is enabled only when `Authentication:Google:ClientId` and `Authentication:Google:ClientSecret` are set; otherwise it returns 503. `Authentication:Google:FrontendOrigin` (for example `http://localhost:4200`) is the only origin it redirects back to. In the Google Cloud OAuth client, register the redirect URI `http://localhost:5026/signin-google`. Existing active users are matched by verified email (case-insensitively) against a `BpUserLoginProvider` whose `LoginProvider.ProviderName` is `Google`. The provider-link email may differ from the local user's email. Matching only a local user email does not authorize Google login or automatically link that account. Unknown emails redirect to `/login?googleError=account-required&returnUrl=...` without creating users or application sessions. Inactive, unlinked, or ambiguous accounts remain forbidden. The callback accepts emails up to 150 characters, matching the provider-link column.
+
+`/signin-google` is handled by the Google authentication middleware, which exchanges the authorization code and reads Google's v3 user-info response. Its `email_verified` field must be mapped to the verification claim. The middleware then redirects to `/api/auth/google/callback`, which validates the external ticket, sets the application cookies, and redirects to the portal's `returnUrl` (the home page `/` by default).
+
+```bash
+dotnet user-secrets set "Authentication:Google:ClientId" "<client-id>.apps.googleusercontent.com"
+dotnet user-secrets set "Authentication:Google:ClientSecret" "<client-secret>"
+```
+
 ## Architecture
+
+### Facebook authentication
+
+Facebook login starts at `GET /api/auth/facebook?returnUrl=/path`; sign-up starts at `GET /api/auth/facebook/register`. Set `Authentication:Facebook:AppId`, `Authentication:Facebook:AppSecret`, and `Authentication:Facebook:FrontendOrigin`. Development uses `http://localhost:4200` as the frontend origin. Keep secrets in user secrets or environment variables, never in committed configuration. In Meta's Facebook Login settings, allow the exact backend callback URL (`http://localhost:5026/signin-facebook` locally, or the HTTPS backend URL used by your app); use HTTPS where required by Meta. Development-mode apps only allow app administrators/developers/testers; production access and the email permission may require Meta review.
+
+The ASP.NET Facebook handler requests the `email` permission, exchanges the code server-side, and fetches `id`, `email`, `first_name`, and `last_name` from Graph API with an app-secret proof. Its protected, five-minute `FacebookExternal` cookie is separate from Google and application cookies. `/api/auth/facebook/callback` requires an authenticated Facebook ticket with an ID and email of at most 150 characters. Missing email (including declined email permission), cancellation, or invalid OAuth state returns 401 without an application session. Facebook does not supply Google's `email_verified` claim; registration's activation email verifies mailbox access.
+
+`FacebookAccountService` and `GoogleAccountService` share `ExternalAccountService`. Facebook registration creates an inactive user, activation token, and `BpUserLoginProvider` for the existing `Facebook` provider in one transaction, then sends the activation email. Registration never logs the user in; delivery failure preserves the saved records and returns 503. Apply the existing login-provider migration, which inserts Google and Facebook, before use. Existing local or same-provider emails are rejected without linking or modification and redirect to `/login?facebookError=account-exists`.
+
+Facebook login requires an active, unambiguous Facebook provider link matched by email, case-insensitively. A local email or Google link alone does not grant Facebook access. Unknown accounts redirect to `/login?facebookError=account-required`, where the public portal opens Sign up. Inactive or unlinked accounts return 403. No automatic cross-provider linking is performed. All return URLs stay on the provider's configured frontend origin. See `ExternalAuth.http` for request examples.
+
+Account activation uses anonymous `POST /api/user-token` with JSON `{ "token": "..." }`. A case-sensitive, unambiguous token match activates its user, updates audit fields, and deletes the token in one transaction. Tokens are single-use with no expiry. Missing/malformed tokens return 400; unknown, ambiguous, or consumed tokens return 404. Activation does not issue authentication cookies or assign roles.
+
+Google registration starts at `/api/auth/google/register` and stores registration intent in the protected OAuth state. After Google verifies the email, it creates an inactive user, a `UserToken` with a cryptographically random 64-character token, and a `BpUserLoginProvider` containing the verified email and the existing `Google` provider in one transaction. After committing, it sends a "Welcome to Bet Portal" email (HTML and plain text) containing `${Authentication:Google:FrontendOrigin}/user-token?token=<token>`, then redirects to `/sign-up-confirmation` without issuing application auth cookies. Names and URLs in HTML are encoded. Existing emails are rejected without changes or another email and return to Login with `googleError=account-exists`. If email delivery returns failure, the inactive account/token remain saved and the callback returns an explicit 503 Problem Details asking the user to contact support. No automatic retry/resend is implemented. Registration itself does not activate the account.
 
 ### Project structure
 
@@ -55,7 +85,7 @@ Write-endpoints (`POST add`, `PUT {id}`, `DELETE {id}`) require `[Authorize(Poli
 Dual-scheme setup in `Program.cs` (see solution-level `CLAUDE.md` for the full picture):
 
 - **Sessions are in-memory only** (`IMemoryCache`). Sessions are lost on process restart; the `AuthCookie` durable cookie will then re-authenticate via `CookieAuth`.
-- `SessionService` refreshes permissions from DB every 10 minutes of session lifetime — currently all users always receive `["AdminAccess"]` (hardcoded, marked TODO).
+- `SessionService` derives permissions from the user's active `Admin` role (`BpUsers_BpRoles`): admins get `["AdminAccess"]`, everyone else gets none. `CookieAuth` re-checks the user and permissions on every request.
 - `UserService` is registered as **singleton** because it is stateless. All other services are **scoped**.
 
 ### External dependency

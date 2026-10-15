@@ -118,6 +118,35 @@ h3 { font-size: 1.15rem; font-weight: 700; }
 :is(a, main):focus-visible { outline: 3px solid #0f766e; outline-offset: 4px; }
 .hero a:focus-visible { outline-color: #5eead4; }
 
+:host-context(body:not(.dark-theme)) {
+  .hero {
+    background:
+      linear-gradient(to bottom, transparent 55%, var(--background-color)),
+      radial-gradient(ellipse at top right, #ccfbf1, transparent 65%),
+      #f1f5f9;
+    color: #0f172a;
+  }
+
+  .eyebrow, h1 span, .preview-mark, .questions span { color: #0f766e; }
+  .hero-description, .hero-note, .preview-top, .preview-note, .data-art { color: #475569; }
+  .primary { background: #0f766e; color: #fff; }
+  .primary:hover { background: #115e59; }
+  .secondary { border-color: #64748b; color: #0f172a; }
+  .secondary:hover { background: #0f172a0a; }
+
+  .preview {
+    background: #ffffffcc;
+    border-color: #cbd5e1;
+    box-shadow: 0 24px 64px #0f172a14;
+  }
+
+  .preview-mark { border-color: #0f766e; }
+  .questions li { border-bottom-color: #cbd5e1; }
+  .data-art path[stroke="#5eead4"] { stroke: #0f766e; }
+  .data-art g[fill="#5eead4"] { fill: #0f766e; }
+  .hero a:focus-visible { outline-color: #0f766e; }
+}
+
 @media (max-width: 800px) {
   .hero-inner, .getting-started { grid-template-columns: 1fr; gap: 36px; }
   .feature-grid { grid-template-columns: 1fr; }

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using BetPortalWebApi.Middleware;
 using BetPortalWebApi.Services.Interfaces;
 using BpDbLayer;
+using BpDbLayer.ModelConfigurations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -24,7 +25,7 @@ namespace BetPortalWebApi.Services
             _logger = logger;
         }
 
-        public async Task<string> CreateSessionAsync(int userId, string ipAddress, string userAgent)
+        public async Task<string> CreateSessionAsync(int userId, string ipAddress, string userAgent, CancellationToken cancellationToken = default)
         {
             //// Todo: KSY - remove it
             /* // Get user with permissions from database
@@ -33,7 +34,7 @@ namespace BetPortalWebApi.Services
                  .ThenInclude(up => up.Permission)
                  .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);*/
 
-            var user = await _dbContext.BpUsers.Where(u => u.Id == userId && u.IsActive).FirstOrDefaultAsync();
+            var user = await _dbContext.BpUsers.Where(u => u.Id == userId && u.IsActive).FirstOrDefaultAsync(cancellationToken);
             if (user == null)
             {
                  throw new UnauthorizedAccessException("User not found or inactive");
@@ -43,10 +44,7 @@ namespace BetPortalWebApi.Services
             var sessionId = GenerateSessionId();
             var expiresAt = DateTime.UtcNow.Add(_sessionTimeout);
 
-            ////TODO: KSY - remove it
-            // Get user permissions
-            ////var permissions = user.Permissions.Select(up => up.Permission.Name).ToList();
-            var permissions = new List<string>() { "AdminAccess" };
+            var permissions = await GetUserPermissionsAsync(userId, cancellationToken);
 
             // Create session object
             var session = new UserSession
@@ -143,16 +141,15 @@ namespace BetPortalWebApi.Services
             await Task.CompletedTask;
         }
 
-        public async Task<List<string>> GetUserPermissionsAsync(int userId)
+        public async Task<List<string>> GetUserPermissionsAsync(int userId, CancellationToken cancellationToken = default)
         {
-            /*var permissions = await _dbContext.UserPermissions
-                .Where(up => up.UserId == userId)
-                .Include(up => up.Permission)
-                .Select(up => up.Permission.Name)
-                .ToListAsync();
-
-            return permissions;*/
-            return await Task.FromResult(new List<string>() { "AdminAccess" });
+            var isAdmin = await _dbContext.BpUsers_BpRoles.AnyAsync(
+                userRole => userRole.UserId == userId
+                    && userRole.User.IsActive
+                    && userRole.RoleId == BpRoleConfiguration.AdminRoleId
+                    && userRole.Role.IsActive,
+                cancellationToken);
+            return isAdmin ? ["AdminAccess"] : [];
         }
 
         private string GenerateSessionId()

@@ -18,7 +18,17 @@ namespace BpDbLayer
 
         public DbSet<Country> Countries { get; set; }
 
+        public DbSet<Competitor> Competitors { get; set; }
+
+        public DbSet<Competition> Competitions { get; set; }
+
+        public DbSet<BpUserFavorites> BpUserFavorites { get; set; }
+
         public DbSet<UserGridSettings> UserGridSettings { get; set; }
+
+        public DbSet<BpUserLoginProvider> BpUserLoginProviders { get; set; }
+
+        public DbSet<LoginProvider> LoginProviders { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

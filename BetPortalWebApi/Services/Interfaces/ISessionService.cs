@@ -4,7 +4,7 @@ namespace BetPortalWebApi.Services.Interfaces
 {
     public interface ISessionService
     {
-        Task<string> CreateSessionAsync(int userId, string ipAddress, string userAgent);
+        Task<string> CreateSessionAsync(int userId, string ipAddress, string userAgent, CancellationToken cancellationToken = default);
 
         Task<UserSession?> GetSessionAsync(string sessionId);
 
@@ -14,6 +14,6 @@ namespace BetPortalWebApi.Services.Interfaces
 
         Task CleanupExpiredSessionsAsync();
 
-        Task<List<string>> GetUserPermissionsAsync(int userId);
+        Task<List<string>> GetUserPermissionsAsync(int userId, CancellationToken cancellationToken = default);
     }
 }

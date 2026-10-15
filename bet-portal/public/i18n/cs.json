@@ -2,6 +2,26 @@
   "app": {
     "title": "Sázkový portál"
   },
+  "userToken": {
+    "title": "Aktivace účtu",
+    "pending": "Aktivujeme váš účet...",
+    "invalid": "Tento aktivační odkaz je neplatný nebo již byl použit.",
+    "failed": "Účet se nepodařilo aktivovat. Zkuste to prosím později."
+  },
+  "welcome": {
+    "title": "Vítejte v Sázkovém portálu",
+    "message": "Váš účet je aktivní. Nyní se můžete přihlásit."
+  },
+  "login": {
+    "facebookAccountExists": "Účet s tímto e-mailem již existuje. Přihlaste se prosím.",
+    "facebookAccountRequired": "Pro váš e-mail Facebook neexistuje účet v portálu. Zaregistrujte se přes Facebook. Žádný účet nebyl vytvořen automaticky.",
+    "googleAccountExists": "Účet s tímto e-mailem již existuje. Přihlaste se prosím.",
+    "googleAccountRequired": "Pro váš e-mail Google neexistuje účet v portálu. Vyplňte registrační formulář. Žádný účet nebyl vytvořen automaticky."
+  },
+  "signUpConfirmation": {
+    "title": "Registrace přijata",
+    "message": "Váš účet byl vytvořen. V e-mailu najdete uvítací zprávu s odkazem pro aktivaci účtu. Zatím nejste přihlášeni."
+  },
   "nav": {
     "brand": "Sázkový portál",
     "home": "Domů",

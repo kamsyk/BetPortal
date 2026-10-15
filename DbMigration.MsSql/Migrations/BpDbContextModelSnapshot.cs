@@ -70,6 +70,28 @@ namespace DbMigration.MsSql.Migrations
                             ModifiedByUserId = 1,
                             ModifiedDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             RoleName = "Admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedByUserId = 1,
+                            CreatedDate = new DateTime(2026, 10, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Basic user role",
+                            IsActive = true,
+                            ModifiedByUserId = 1,
+                            ModifiedDate = new DateTime(2026, 10, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            RoleName = "BasicUser"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedByUserId = 1,
+                            CreatedDate = new DateTime(2026, 10, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Level 1 subscribed user role",
+                            IsActive = true,
+                            ModifiedByUserId = 1,
+                            ModifiedDate = new DateTime(2026, 10, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            RoleName = "SubscribedUserL1"
                         });
                 });
 
@@ -160,6 +182,97 @@ namespace DbMigration.MsSql.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BpDbLayer.Models.BpUserFavorites", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CompetitionId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CompetitorId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CountryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ModifiedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("SportId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompetitionId");
+
+                    b.HasIndex("CompetitorId");
+
+                    b.HasIndex("CountryId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("ModifiedByUserId");
+
+                    b.HasIndex("SportId");
+
+                    b.HasIndex("UserId", "CompetitionId")
+                        .IsUnique()
+                        .HasFilter("[CompetitionId] IS NOT NULL");
+
+                    b.HasIndex("UserId", "CompetitorId")
+                        .IsUnique()
+                        .HasFilter("[CompetitorId] IS NOT NULL");
+
+                    b.HasIndex("UserId", "CountryId")
+                        .IsUnique()
+                        .HasFilter("[CountryId] IS NOT NULL");
+
+                    b.HasIndex("UserId", "SportId")
+                        .IsUnique()
+                        .HasFilter("[SportId] IS NOT NULL");
+
+                    b.ToTable("BpUserFavorites", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BpUserFavorites_ExactlyOneTarget", "(CASE WHEN CountryId IS NOT NULL THEN 1 ELSE 0 END + CASE WHEN SportId IS NOT NULL THEN 1 ELSE 0 END + CASE WHEN CompetitionId IS NOT NULL THEN 1 ELSE 0 END + CASE WHEN CompetitorId IS NOT NULL THEN 1 ELSE 0 END) = 1");
+                        });
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.BpUserLoginProvider", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProviderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("UserId", "ProviderId");
+
+                    b.HasIndex("ProviderId");
+
+                    b.ToTable("BpUserLoginProviders");
+                });
+
             modelBuilder.Entity("BpDbLayer.Models.Competition", b =>
                 {
                     b.Property<int>("Id")
@@ -170,6 +283,12 @@ namespace DbMigration.MsSql.Migrations
 
                     b.Property<int>("CountryId")
                         .HasColumnType("int");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("ModifiedByUserId")
                         .HasColumnType("int");
@@ -189,11 +308,52 @@ namespace DbMigration.MsSql.Migrations
 
                     b.HasIndex("CountryId");
 
+                    b.HasIndex("CreatedByUserId");
+
                     b.HasIndex("ModifiedByUserId");
 
                     b.HasIndex("SportId");
 
-                    b.ToTable("Competition");
+                    b.ToTable("Competitions");
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.Competitor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ModifiedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("WebSiteUrl")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("nvarchar(2048)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("ModifiedByUserId");
+
+                    b.ToTable("Competitors");
                 });
 
             modelBuilder.Entity("BpDbLayer.Models.Country", b =>
@@ -226,6 +386,24 @@ namespace DbMigration.MsSql.Migrations
                         .IsUnique();
 
                     b.ToTable("Countries");
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.LoginProvider", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ProviderName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LoginProviders");
                 });
 
             modelBuilder.Entity("BpDbLayer.Models.Sport", b =>
@@ -336,11 +514,91 @@ namespace DbMigration.MsSql.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("BpDbLayer.Models.BpUserFavorites", b =>
+                {
+                    b.HasOne("BpDbLayer.Models.Competition", "Competition")
+                        .WithMany()
+                        .HasForeignKey("CompetitionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BpDbLayer.Models.Competitor", "Competitor")
+                        .WithMany()
+                        .HasForeignKey("CompetitorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BpDbLayer.Models.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BpDbLayer.Models.BpUser", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BpDbLayer.Models.BpUser", "ModifiedByUser")
+                        .WithMany()
+                        .HasForeignKey("ModifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BpDbLayer.Models.Sport", "Sport")
+                        .WithMany()
+                        .HasForeignKey("SportId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BpDbLayer.Models.BpUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Competition");
+
+                    b.Navigation("Competitor");
+
+                    b.Navigation("Country");
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("ModifiedByUser");
+
+                    b.Navigation("Sport");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.BpUserLoginProvider", b =>
+                {
+                    b.HasOne("BpDbLayer.Models.LoginProvider", "LoginProvider")
+                        .WithMany("UserLoginProviders")
+                        .HasForeignKey("ProviderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BpDbLayer.Models.BpUser", "User")
+                        .WithMany("UserLoginProviders")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LoginProvider");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("BpDbLayer.Models.Competition", b =>
                 {
                     b.HasOne("BpDbLayer.Models.Country", "Country")
                         .WithMany()
                         .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BpDbLayer.Models.BpUser", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -358,9 +616,30 @@ namespace DbMigration.MsSql.Migrations
 
                     b.Navigation("Country");
 
+                    b.Navigation("CreatedByUser");
+
                     b.Navigation("ModifiedByUser");
 
                     b.Navigation("Sport");
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.Competitor", b =>
+                {
+                    b.HasOne("BpDbLayer.Models.BpUser", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BpDbLayer.Models.BpUser", "ModifiedByUser")
+                        .WithMany()
+                        .HasForeignKey("ModifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("ModifiedByUser");
                 });
 
             modelBuilder.Entity("BpDbLayer.Models.Country", b =>
@@ -416,7 +695,14 @@ namespace DbMigration.MsSql.Migrations
                 {
                     b.Navigation("BpUser_BpRole");
 
+                    b.Navigation("UserLoginProviders");
+
                     b.Navigation("UserToken");
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.LoginProvider", b =>
+                {
+                    b.Navigation("UserLoginProviders");
                 });
 #pragma warning restore 612, 618
         }

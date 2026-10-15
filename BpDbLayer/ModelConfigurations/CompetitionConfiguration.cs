@@ -26,6 +26,11 @@ namespace BpDbLayer.ModelConfigurations
                 .WithMany()
                 .HasForeignKey(c => c.ModifiedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(c => c.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(c => c.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

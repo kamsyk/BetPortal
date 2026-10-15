@@ -1,0 +1,13 @@
+@baseUrl = http://localhost:5026
+
+### Start Facebook login (follow the redirect in a browser)
+GET {{baseUrl}}/api/auth/facebook?returnUrl=%2Fadvisor
+
+### Start Facebook sign-up (creates an inactive account after OAuth completes)
+GET {{baseUrl}}/api/auth/facebook/register?returnUrl=%2Fadvisor
+
+### A direct callback without the protected Facebook ticket returns 401
+GET {{baseUrl}}/api/auth/facebook/callback
+
+### Reject an untrusted return URL
+GET {{baseUrl}}/api/auth/facebook?returnUrl=https%3A%2F%2Fevil.example%2F

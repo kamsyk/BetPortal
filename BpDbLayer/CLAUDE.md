@@ -23,7 +23,13 @@ EfUtils\UpdateDevelop.bat             # apply migrations (shared dev DB)
 
 When adding a new entity, also register it in `BpDbContext` and create a corresponding `IEntityTypeConfiguration<T>` in `ModelConfigurations/`.
 
+`Competitors` is registered in the runtime context and both migration contexts. They share `CompetitorConfiguration`: a required, non-unique name (100 characters), a required website (2,048 characters), and required creator/modifier foreign keys to `BpUser` with restricted deletes. Generate and review a provider-specific migration before using the table; registering the entity does not update an existing database.
+
 ## Architecture
+
+### User favorites
+
+`BpUserFavorites` stores one favorite per row with a generated `Id`, required owner and audit fields, and exactly one non-null target (`CountryId`, `SportId`, `CompetitionId`, or `CompetitorId`). A database check constraint enforces the single target; four unique owner/target indexes prevent duplicates. SQL Server generates filtered indexes excluding null targets; MySQL unique indexes permit nulls. All seven relationships use restricted deletes. Delete favorites explicitly before deleting a referenced user or target. The runtime and both migration contexts use the shared configuration and expose the referenced entities. MySQL must support enforced check constraints (8.0.16+). Generate and review migrations before using these tables.
 
 ### Entity conventions
 
@@ -37,6 +43,8 @@ Not every entity implements both — check individual models. Data annotations (
 ### Seeded data
 
 `BpUserConfiguration` seeds an admin user (ID = `BpUserConfiguration.AdminUserId = 1`, username `admin`, password `admin` hashed with Argon2id). This constant is also used as the default `CreatedByUserId`/`ModifiedByUserId` in migration seed data for other entities.
+
+`BpRoleConfiguration` seeds `Admin` (ID 1), `BasicUser` (ID 2), and `SubscribedUserL1` (ID 3). The latter two are inserted by SQL Server migration `20261010163051_BpMigration_20261010183037`; creating the roles does not assign them to users or grant new permissions.
 
 ### Password hashing
 
