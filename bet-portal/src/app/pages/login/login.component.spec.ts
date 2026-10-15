@@ -96,6 +96,18 @@ describe('LoginComponent', () => {
     expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
   });
 
+  it('opens Sign up when the login page is opened with signUp=true', async () => {
+    fixture.destroy();
+    queryParams = { signUp: 'true' };
+    fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+    TestBed.tick();
+    await fixture.whenStable();
+    const dialogs = TestBed.inject(MatDialog).openDialogs;
+    expect(dialogs).toHaveLength(1);
+    expect(dialogs[0].componentInstance).toBeInstanceOf(KsSignUpComponent);
+  });
+
   it('uses the registration endpoint when Sign up is opened manually without changing Google login', async () => {
     loginControl().openSignUp();
     await fixture.whenStable();

@@ -128,14 +128,16 @@ describe('NavMenuComponent', () => {
         expect(component).toBeTruthy();
     });
 
-    it('keeps language selection available without authenticated navigation', () => {
+    it('shows anonymous toolbar actions without a user profile icon', () => {
         const element: HTMLElement = fixture.nativeElement;
         expect(element.querySelector('.primary-nav')).toBeNull();
-        expect(element.querySelector('.profile-button')?.getAttribute('aria-label'))
-            .toBe('nav.userProfile');
-        expect(element.querySelector('.language-button')).toBeNull();
+        expect(element.querySelector('.profile-button')).toBeNull();
+        expect(element.querySelector('.sign-in-link')?.getAttribute('href')).toBe('/login');
+        expect(element.querySelector('.sign-up-link')?.getAttribute('href')).toBe('/login?signUp=true');
+        expect(element.querySelector('.desktop-actions .language-button')).not.toBeNull();
+        expect(element.querySelector('.theme-button')).not.toBeNull();
+        expect(element.querySelector('.mobile-menu-button')).not.toBeNull();
         expect(element.querySelector('.logout-button')).toBeNull();
-        expect(element.querySelector('.mobile-menu-button')).toBeNull();
     });
 
     it('marks only the current page as active', async () => {
@@ -153,15 +155,14 @@ describe('NavMenuComponent', () => {
     });
 
     it('provides an accessible theme control and reflects the dark theme', () => {
-        authenticated.set(true);
         darkMode.set(true);
         fixture.detectChanges();
 
         const element: HTMLElement = fixture.nativeElement;
-        const button = element.querySelector<HTMLButtonElement>('.theme-button');
-        expect(button?.getAttribute('aria-label')).toBe('nav.switchToLightMode');
+        const themeButton = element.querySelector<HTMLButtonElement>('.theme-button');
+        expect(themeButton?.getAttribute('aria-label')).toBe('nav.switchToLightMode');
         expect(element.querySelector('.nav-dark')).not.toBeNull();
-        button?.click();
+        themeButton?.click();
         expect(toggleTheme).toHaveBeenCalledTimes(1);
     });
 
@@ -172,6 +173,8 @@ describe('NavMenuComponent', () => {
         expect(element.querySelectorAll('.primary-nav a').length).toBe(3);
         expect(element.querySelector('.theme-button')).not.toBeNull();
         expect(element.querySelector('.profile-button')).not.toBeNull();
+        expect(element.querySelector('.desktop-actions .sign-in-link')).toBeNull();
+        expect(element.querySelector('.desktop-actions .sign-up-link')).toBeNull();
         await openMenu('.profile-button');
         expect(menu().textContent).toContain('nav.logout');
         expect(menu().querySelector('.sign-in-link')).toBeNull();
@@ -179,59 +182,79 @@ describe('NavMenuComponent', () => {
         authenticated.set(false);
         await settle();
         expect(element.querySelector('.primary-nav')).toBeNull();
-        expect(element.querySelector('.theme-button')).toBeNull();
+        expect(element.querySelector('.profile-button')).toBeNull();
+        expect(element.querySelector('.theme-button')).not.toBeNull();
+        expect(element.querySelector('.desktop-actions .sign-in-link')).not.toBeNull();
+        expect(element.querySelector('.desktop-actions .sign-up-link')).not.toBeNull();
         expect(element.querySelector('.logout-button')).toBeNull();
-        expect(element.querySelector('.profile-button')).not.toBeNull();
-        expect(menu().textContent).not.toContain('nav.logout');
-        expect(menu().textContent).toContain('nav.language');
-        expect(menu().querySelector('.sign-in-link')?.textContent).toContain('nav.signIn');
     });
 
-    for (const isAuthenticated of [false, true]) {
-        it(`selects a language through the profile submenu (authenticated: ${isAuthenticated})`, async () => {
-            authenticated.set(isAuthenticated);
-            await settle();
-            await openMenu('.profile-button');
-            expect(button('.language-button').getAttribute('aria-label')).toBe('nav.language: languages.en');
-            const panel = await openMenu('.language-button');
-            const items = panel.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
-            expect(Array.from(items, item => item.querySelector('span')?.textContent?.trim()))
-                .toEqual(['languages.en', 'languages.cs', 'languages.de']);
-            expect(panel.querySelectorAll('.active-language').length).toBe(1);
-            expect(panel.querySelector('.active-language')?.textContent).toContain('languages.en');
+    it('selects a language through the anonymous desktop language menu', async () => {
+        await settle();
+        expect(button('.desktop-actions .language-button').getAttribute('aria-label'))
+            .toBe('nav.language: languages.en');
+        const panel = await openMenu('.desktop-actions .language-button');
+        const items = panel.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
+        expect(Array.from(items, item => item.querySelector('span')?.textContent?.trim()))
+            .toEqual(['languages.en', 'languages.cs', 'languages.de']);
+        expect(panel.querySelectorAll('.active-language').length).toBe(1);
+        expect(panel.querySelector('.active-language')?.textContent).toContain('languages.en');
 
-            menuButton('languages.cs').click();
-            await settle();
-            expect(setLanguage).toHaveBeenCalledTimes(1);
-            expect(setLanguage).toHaveBeenCalledWith('cs');
-            expect(overlayContainer.getContainerElement().querySelector('[role="menu"]')).toBeNull();
-            await openMenu('.profile-button');
-            expect(button('.language-button').getAttribute('aria-label')).toBe('nav.language: languages.cs');
-            const reopened = await openMenu('.language-button');
-            expect(reopened.querySelectorAll('.active-language').length).toBe(1);
-            expect(reopened.querySelector('.active-language')?.textContent).toContain('languages.cs');
-        });
-    }
+        menuButton('languages.cs').click();
+        await settle();
+        expect(setLanguage).toHaveBeenCalledTimes(1);
+        expect(setLanguage).toHaveBeenCalledWith('cs');
+        expect(overlayContainer.getContainerElement().querySelector('[role="menu"]')).toBeNull();
+        expect(button('.desktop-actions .language-button').getAttribute('aria-label'))
+            .toBe('nav.language: languages.cs');
+    });
 
-    it('shows language selection and sign-in in the anonymous profile menu', async () => {
-        const panel = await openMenu('.profile-button');
-        expect(panel.querySelectorAll('[role="menuitem"]').length).toBe(2);
-        expect(panel.querySelector('a')?.getAttribute('href')).toBe('/login');
-        expect(panel.querySelector('a')?.textContent).toContain('nav.signIn');
-        expect(panel.querySelector('[role="separator"]')).toBeNull();
+    it('selects a language through the authenticated profile submenu', async () => {
+        authenticated.set(true);
+        await settle();
+        await openMenu('.profile-button');
+        expect(button('.language-button').getAttribute('aria-label')).toBe('nav.language: languages.en');
+        const panel = await openMenu('.language-button');
+        const items = panel.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
+        expect(Array.from(items, item => item.querySelector('span')?.textContent?.trim()))
+            .toEqual(['languages.en', 'languages.cs', 'languages.de']);
+
+        menuButton('languages.cs').click();
+        await settle();
+        expect(setLanguage).toHaveBeenCalledTimes(1);
+        expect(setLanguage).toHaveBeenCalledWith('cs');
+        expect(overlayContainer.getContainerElement().querySelector('[role="menu"]')).toBeNull();
+        await openMenu('.profile-button');
+        expect(button('.language-button').getAttribute('aria-label')).toBe('nav.language: languages.cs');
+    });
+
+    it('shows sign in, sign up, language and theme in the anonymous mobile menu', async () => {
+        const panel = await openMenu('.mobile-menu-button');
+        expect(panel.querySelectorAll('[role="menuitem"]').length).toBe(4);
+        expect(panel.querySelector('.sign-in-link')?.getAttribute('href')).toBe('/login');
+        expect(panel.querySelector('.sign-up-link')?.getAttribute('href')).toBe('/login?signUp=true');
+        expect(panel.textContent).toContain('nav.language');
+        expect(panel.textContent).toContain('nav.darkMode');
         expect(panel.textContent).not.toContain('nav.logout');
-        expect(panel.textContent).not.toContain('nav.darkMode');
-        expect(panel.textContent).not.toContain('nav.lightMode');
+        expect(panel.querySelector('[role="separator"]')).toBeNull();
     });
 
-    it('navigates to login and closes the anonymous profile menu after sign-in is selected', async () => {
-        const panel = await openMenu('.profile-button');
-        const signIn = panel.querySelector<HTMLAnchorElement>('.sign-in-link');
+    it('navigates to login from the anonymous desktop sign-in control', async () => {
+        const signIn = (fixture.nativeElement as HTMLElement)
+            .querySelector<HTMLAnchorElement>('.desktop-actions .sign-in-link');
         expect(signIn).not.toBeNull();
         signIn!.click();
         await settle();
         expect(TestBed.inject(Router).url).toBe('/login');
-        expect(overlayContainer.getContainerElement().querySelector('[role="menu"]')).toBeNull();
+    });
+
+    it('navigates to login with signUp from the anonymous desktop sign-up control', async () => {
+        const signUp = (fixture.nativeElement as HTMLElement)
+            .querySelector<HTMLAnchorElement>('.desktop-actions .sign-up-link');
+        expect(signUp).not.toBeNull();
+        signUp!.click();
+        await settle();
+        expect(TestBed.inject(Router).url).toBe('/login?signUp=true');
     });
 
     it('shows authenticated mobile navigation and theme without language or logout choices', async () => {
@@ -280,7 +303,6 @@ describe('NavMenuComponent', () => {
     });
 
     it('updates the desktop theme action name, title and icon after toggling', async () => {
-        authenticated.set(true);
         await settle();
         const trigger = button('.theme-button');
         expect(trigger.getAttribute('aria-label')).toBe('nav.switchToDarkMode');
@@ -295,7 +317,6 @@ describe('NavMenuComponent', () => {
     });
 
     it('toggles the theme from mobile and reflects the new action when reopened', async () => {
-        authenticated.set(true);
         await settle();
         await openMenu('.mobile-menu-button');
         menuButton('nav.darkMode').click();
@@ -308,6 +329,8 @@ describe('NavMenuComponent', () => {
     });
 
     it('exposes expanded state and closes on Escape with focus restored to the trigger', async () => {
+        authenticated.set(true);
+        await settle();
         const trigger = button('.profile-button');
         trigger.focus();
         expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
@@ -327,17 +350,19 @@ describe('NavMenuComponent', () => {
     });
 
     it('closes the menu when its backdrop is clicked', async () => {
-        await openMenu('.profile-button');
+        await openMenu('.mobile-menu-button');
         const backdrop = overlayContainer.getContainerElement()
             .querySelector<HTMLElement>('.cdk-overlay-backdrop');
         expect(backdrop).not.toBeNull();
         backdrop!.click();
         await settle();
-        expect(button('.profile-button').getAttribute('aria-expanded')).toBe('false');
+        expect(button('.mobile-menu-button').getAttribute('aria-expanded')).toBe('false');
         expect(overlayContainer.getContainerElement().querySelector('[role="menu"]')).toBeNull();
     });
 
     it('removes an open overlay when the component is destroyed', async () => {
+        authenticated.set(true);
+        await settle();
         await openMenu('.profile-button');
         await openMenu('.language-button');
         fixture.destroy();
