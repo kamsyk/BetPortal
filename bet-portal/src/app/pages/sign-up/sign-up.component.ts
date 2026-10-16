@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService, KsSignUpComponent } from 'ks-ag-controls';
 import { take } from 'rxjs';
 import { API_BASE_URL } from '../../../core/tokens';
 import { LanguageService } from '../../services/language.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-sign-up',
@@ -18,7 +19,11 @@ export class SignUpComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly apiBase = inject(API_BASE_URL);
   private readonly authService = inject(AuthService);
+  private readonly themeService = inject(ThemeService);
   protected readonly currentLanguage = inject(LanguageService).currentLanguage;
+  protected readonly themeMode = computed(() =>
+    this.themeService.isDarkMode() ? 'dark' : 'light',
+  );
 
   readonly googleAuthUrl = signal('');
   readonly googleReturnUrl = signal('/');

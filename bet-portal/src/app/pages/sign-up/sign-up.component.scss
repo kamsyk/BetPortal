@@ -5,15 +5,16 @@
   justify-content: center;
   min-height: calc(100vh - 64px);
   padding: 24px 16px;
-  background-color: #f5f5f5;
+  background-color: var(--surface-color);
+  color: var(--text-primary);
 }
 
 .sign-up-component {
   width: 100%;
   max-width: 468px;
-  background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgb(0 0 0 / 10%);
+  overflow: hidden;
 }
 
 [role='alert'] {
@@ -26,6 +27,11 @@
   color: #991b1b;
 }
 
+:host-context(.dark-theme) [role='alert'] {
+  background: #3f1d1d;
+  color: #fecaca;
+}
+
 .sign-in-prompt {
   margin: 24px 0 0;
   text-align: center;
@@ -34,4 +40,8 @@
     color: #1d4ed8;
     text-decoration: underline;
   }
+}
+
+:host-context(.dark-theme) .sign-in-prompt a {
+  color: #93c5fd;
 }

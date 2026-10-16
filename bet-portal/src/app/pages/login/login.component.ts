@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { API_BASE_URL } from '../../../core/tokens';
 import { AuthService, KsLoginComponent, KsSignUpComponent } from 'ks-ag-controls';
@@ -6,6 +6,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { asapScheduler, observeOn, take } from 'rxjs';
 import { LanguageService } from '../../services/language.service';
+import { ThemeService } from '../../services/theme.service';
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
@@ -21,7 +22,11 @@ export class LoginComponent implements OnInit {
   private router = inject(Router);
   private apiBase = inject(API_BASE_URL);
   private authService = inject(AuthService);
+  private readonly themeService = inject(ThemeService);
   protected readonly currentLanguage = inject(LanguageService).currentLanguage;
+  protected readonly themeMode = computed(() =>
+    this.themeService.isDarkMode() ? 'dark' : 'light',
+  );
 
   loading = false;
   error = '';
