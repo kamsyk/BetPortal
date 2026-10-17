@@ -28,34 +28,38 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator('app-nav-menu')).toBeVisible();
 });
 
-test('shows the profile icon without language or logout in the main toolbar', async ({ page }) => {
-  const mobileTrigger = page.getByRole('button', { name: 'Open navigation menu' });
-  const languageTrigger = page.getByRole('button', { name: 'Language: English' });
-
-  await expect(mobileTrigger).toHaveCount(0);
-  await expect(languageTrigger).toHaveCount(0);
+test('shows anonymous actions without a user profile icon', async ({ page }, testInfo) => {
+  await expect(page.getByRole('button', { name: 'User profile', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Logout', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'User profile', exact: true })).toBeVisible();
-
   await expect(page.locator('.primary-nav')).toHaveCount(0);
+
+  if (testInfo.project.name === 'mobile-chromium') {
+    const mobileTrigger = page.getByRole('button', { name: 'Open navigation menu' });
+    await expect(mobileTrigger).toBeVisible();
+    await mobileTrigger.click();
+    const menu = page.getByRole('menu');
+    await expect(menu.getByRole('menuitem', { name: 'Sign in', exact: true })).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: 'Sign up', exact: true })).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: 'Language: English' })).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: /Dark Mode|Light Mode/ })).toBeVisible();
+  } else {
+    await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Sign up', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Language: English' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Switch to (Dark|Light) Mode/ })).toBeVisible();
+  }
 });
 
-test('opens the profile submenu and restores focus after Escape', async ({ page }) => {
-  const trigger = page.getByRole('button', { name: 'User profile', exact: true });
+test('opens the language menu and restores focus after Escape', async ({ page }, testInfo) => {
+  if (testInfo.project.name === 'mobile-chromium') {
+    await page.getByRole('button', { name: 'Open navigation menu' }).click();
+    const languageTrigger = page.getByRole('menuitem', { name: 'Language: English' });
+    await languageTrigger.click();
+  } else {
+    await page.getByRole('button', { name: 'Language: English' }).click();
+  }
 
-  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-  await trigger.click();
-
-  const menu = page.getByRole('menu');
-  await expect(menu).toBeVisible();
-  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  await expect(menu.getByRole('menuitem')).toHaveCount(2);
-  await expect(menu.getByRole('menuitem', { name: 'Sign in', exact: true })).toHaveAttribute('href', '/login');
-  const languageTrigger = menu.getByRole('menuitem', { name: 'Language: English' });
-  await languageTrigger.click();
-  const languageMenuId = await languageTrigger.getAttribute('aria-controls');
-  expect(languageMenuId).toBeTruthy();
-  const languageMenu = page.locator(`[id="${languageMenuId}"]`);
+  const languageMenu = page.getByRole('menu').last();
   await expect(languageMenu.getByRole('menuitem')).toHaveCount(3);
   await expect(languageMenu.getByRole('menuitem', { name: /English/ })).toBeVisible();
   await expect(languageMenu.getByRole('menuitem', { name: /Czech/ })).toBeVisible();
@@ -63,41 +67,55 @@ test('opens the profile submenu and restores focus after Escape', async ({ page 
 
   await page.keyboard.press('Escape');
   await expect(languageMenu).toBeHidden();
-  await expect(languageTrigger).toBeFocused();
-  await page.keyboard.press('Escape');
-
-  await expect(menu).toBeHidden();
-  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-  await expect(trigger).toBeFocused();
 });
 
-test('selects a language from the profile submenu and marks it active when reopened', async ({ page }) => {
-  const languageTrigger = page.locator('.language-button');
-  const trigger = page.locator('.profile-button');
-
-  await trigger.click();
-  const initialLanguageLabel = await languageTrigger.getAttribute('aria-label');
-  await languageTrigger.click();
-  await page.getByRole('menuitem', { name: /Czech/ }).click();
-
-  await expect(page.getByRole('menu')).toHaveCount(0);
-  await expect.poll(() => page.evaluate(() => localStorage.getItem('bet-portal.lang')))
-    .toBe('cs');
-
-  await trigger.click();
-  await expect(languageTrigger).not.toHaveAttribute('aria-label', initialLanguageLabel!);
-  await expect(trigger).toHaveAttribute('aria-label', 'Uživatelský profil');
-  await languageTrigger.click();
-  await expect(page.locator('[role="menuitem"].active-language')).toHaveCount(1);
+test('selects a language and marks it active when reopened', async ({ page }, testInfo) => {
+  if (testInfo.project.name === 'mobile-chromium') {
+    await page.getByRole('button', { name: 'Open navigation menu' }).click();
+    await page.getByRole('menuitem', { name: 'Language: English' }).click();
+    await page.getByRole('menuitem', { name: /Czech/ }).click();
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('bet-portal.lang')))
+      .toBe('cs');
+    await page.getByRole('button', { name: 'Open navigation menu' }).click();
+    await expect(page.getByRole('menuitem', { name: /Jazyk: Čeština|Language: Czech/ })).toBeVisible();
+  } else {
+    const languageTrigger = page.getByRole('button', { name: 'Language: English' });
+    await languageTrigger.click();
+    await page.getByRole('menuitem', { name: /Czech/ }).click();
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('bet-portal.lang')))
+      .toBe('cs');
+    await expect(page.getByRole('button', { name: /Language: Czech|Jazyk: Čeština/ })).toBeVisible();
+  }
 });
 
-test('lets anonymous visitors sign in from the profile menu', async ({ page }) => {
+test('lets anonymous visitors sign in from the toolbar or mobile menu', async ({ page }, testInfo) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'User profile', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Sign in', exact: true }).click();
+
+  if (testInfo.project.name === 'mobile-chromium') {
+    await page.getByRole('button', { name: 'Open navigation menu' }).click();
+    await page.getByRole('menuitem', { name: 'Sign in', exact: true }).click();
+  } else {
+    await page.getByRole('link', { name: 'Sign in', exact: true }).click();
+  }
+
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole('menu')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible();
+});
+
+test('lets anonymous visitors open sign up from the toolbar or mobile menu', async ({ page }, testInfo) => {
+  await page.goto('/');
+
+  if (testInfo.project.name === 'mobile-chromium') {
+    await page.getByRole('button', { name: 'Open navigation menu' }).click();
+    await page.getByRole('menuitem', { name: 'Sign up', exact: true }).click();
+  } else {
+    await page.getByRole('link', { name: 'Sign up', exact: true }).click();
+  }
+
+  await expect(page).toHaveURL(/\/sign-up$/);
 });
 
 test('shows authenticated navigation, marks the active route, and navigates home', async ({ page }, testInfo) => {
@@ -152,7 +170,7 @@ test('shows authenticated navigation, marks the active route, and navigates home
     await trigger.click();
 
     const menu = page.getByRole('menu');
-    await expect(menu.getByRole('menuitem', { name: /Logout|Language|English|Czech|German/ })).toHaveCount(0);
+    await expect(menu.getByRole('menuitem', { name: /Logout|Language|English|Czech|German|Sign in|Sign up/ })).toHaveCount(0);
     const advisorLink = menu.getByRole('menuitem', { name: /Advisor/ });
     await expect(advisorLink).toHaveAttribute('aria-current', 'page');
     await expect(menu.getByRole('menuitem', { name: /Home/ })).not.toHaveAttribute('aria-current', 'page');

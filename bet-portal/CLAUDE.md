@@ -20,7 +20,7 @@ To update the `ks-ag-controls` local library: run `install-ks-controls-dev.bat` 
 
 Activation links use `/user-token?token=<token>`. The lazy public page posts the token to `/api/user-token` after the first browser render (never during SSR/prerender), then redirects to `/welcome` with history replacement so the token is removed from the current URL. Invalid/used tokens or server errors are shown inline. The welcome page confirms activation and links to Login; activation does not automatically sign in the user.
 
-The Sign up dialog uses `/api/auth/google/register`, separately from Google's login endpoint. Verified Google registration creates an inactive user plus an initialization token, sends a welcome email containing the portal's `/user-token?token=<token>` activation link, and redirects to the public `/sign-up-confirmation` page. Registration does not sign the user in. If email delivery fails, the API shows an explicit error while preserving the inactive account and token. Duplicate emails return to Login with an account-already-exists message and do not send another email.
+The Sign up page (`/sign-up`) embeds `lib-ks-sign-up` and uses `/api/auth/google/register`, separately from Google's login endpoint. Verified Google registration creates an inactive user plus an initialization token, sends a welcome email containing the portal's `/user-token?token=<token>` activation link, and redirects to the public `/sign-up-confirmation` page. Registration does not sign the user in. If email delivery fails, the API shows an explicit error while preserving the inactive account and token. Duplicate emails return to Login with an account-already-exists message and do not send another email.
 
 ### SSR setup
 Angular 21 app with SSR via `@angular/ssr` + Express (`src/server.ts`). The SSR entry is `src/main.server.ts`; the browser entry is `src/main.ts`. Static assets (including i18n JSON files) are served from `public/`.
@@ -46,7 +46,7 @@ Translations are in `public/i18n/{en,cs,de}.json`, loaded at runtime by `ngx-tra
 The login page binds `LanguageService.currentLanguage()` to the local library's
 `lib-ks-login` language input, so login labels update when the selected language changes.
 
-Google sign-in requires an existing active portal account with the same verified email. Unknown accounts return to `/login?googleError=account-required&returnUrl=...`, where a translated account-required alert is shown and the original destination is preserved. After the browser renders, the login page calls the library's `openSignUp()` to open the same registration dialog as the Sign up button, once per page load. Google sign-in does not register users automatically.
+Google sign-in requires an existing active portal account with the same verified email. Unknown accounts return to `/login?googleError=account-required&returnUrl=...`, which redirects to `/sign-up` with the same query params so a translated account-required alert is shown and the original destination is preserved. The login form's Sign up control also navigates to `/sign-up` instead of opening a dialog. Google sign-in does not register users automatically.
 
 ### Navigation
 The user-profile icon opens a shared desktop/mobile menu containing a nested language selector and either Sign in for anonymous users or Logout for authenticated users. Language selection remains available to guests. Main navigation and theme controls are shown only when authenticated; the mobile navigation menu does not contain language or logout actions.

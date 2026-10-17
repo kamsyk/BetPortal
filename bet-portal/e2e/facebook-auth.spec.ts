@@ -19,10 +19,10 @@ test('Facebook login preserves the destination and uses the login endpoint', asy
   });
   await page.goto('/login?returnUrl=%2Fadvisor');
   await page.getByRole('button', { name: 'Sign in with Facebook', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Sign up', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/sign-up\?.*facebookError=account-required/);
+  await expect(page.getByRole('heading', { name: 'Sign Up', exact: true })).toBeVisible();
   expect(loginStarted).toBe(true);
   await expect(page.getByRole('alert')).toContainText('Facebook');
-  await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
@@ -37,9 +37,8 @@ test('Facebook sign-up uses registration and reaches confirmation without signin
       body: '',
     });
   });
-  await page.goto('/login?returnUrl=%2Fadvisor');
-  await page.getByRole('button', { name: 'Sign up', exact: true }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Sign up with Facebook', exact: true }).click();
+  await page.goto('/sign-up?returnUrl=%2Fadvisor');
+  await page.getByRole('button', { name: 'Sign up with Facebook', exact: true }).click();
   await expect(page).toHaveURL(/\/sign-up-confirmation$/);
   expect(registrationStarted).toBe(true);
   await expect(page.getByRole('heading', { name: 'Registration received' })).toBeVisible();
