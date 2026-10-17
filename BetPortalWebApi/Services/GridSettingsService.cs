@@ -18,7 +18,7 @@ namespace BetPortalWebApi.Services
 
         public async Task<GridSettingsDto?> GetUserGridSettingsAsync(int userId, string pageIdentifier)
         {
-            var settings = await _dbContext.UserGridSettings
+            var settings = await _dbContext.BpUserGridSettings
                 .AsNoTracking()
                 .Where(ugs => ugs.UserId == userId && ugs.PageIdentifier == pageIdentifier)
                 .Select(ugs => new GridSettingsDto
@@ -41,7 +41,7 @@ namespace BetPortalWebApi.Services
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             });
 
-            var existingSettings = await _dbContext.UserGridSettings
+            var existingSettings = await _dbContext.BpUserGridSettings
                 .Where(ugs => ugs.UserId == userId && ugs.PageIdentifier == pageIdentifier)
                 .FirstOrDefaultAsync();
 
@@ -53,7 +53,7 @@ namespace BetPortalWebApi.Services
             }
             else
             {
-                existingSettings = new UserGridSettings
+                existingSettings = new BpUserGridSettings
                 {
                     UserId = userId,
                     PageIdentifier = pageIdentifier,
@@ -64,7 +64,7 @@ namespace BetPortalWebApi.Services
                     ModifiedByUserId = userId,
                 };
 
-                _dbContext.UserGridSettings.Add(existingSettings);
+                _dbContext.BpUserGridSettings.Add(existingSettings);
             }
 
             await _dbContext.SaveChangesAsync();
@@ -81,7 +81,7 @@ namespace BetPortalWebApi.Services
 
         public async Task<bool> DeleteUserGridSettingsAsync(int userId, string pageIdentifier)
         {
-            var existingSettings = await _dbContext.UserGridSettings
+            var existingSettings = await _dbContext.BpUserGridSettings
                 .Where(ugs => ugs.UserId == userId && ugs.PageIdentifier == pageIdentifier)
                 .FirstOrDefaultAsync();
 
@@ -90,7 +90,7 @@ namespace BetPortalWebApi.Services
                 return false;
             }
 
-            _dbContext.UserGridSettings.Remove(existingSettings);
+            _dbContext.BpUserGridSettings.Remove(existingSettings);
             await _dbContext.SaveChangesAsync();
 
             return true;

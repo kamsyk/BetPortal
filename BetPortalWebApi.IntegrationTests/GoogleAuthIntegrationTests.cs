@@ -215,7 +215,7 @@ public sealed class GoogleAuthIntegrationTests
                 Assert.Null(user.Password);
                 Assert.Equal("Google", user.FirstName);
                 Assert.Equal("User", user.Surname);
-                var token = await dbContext.UserTokens.SingleAsync(token => token.UserId == user.Id, cancellationToken);
+                var token = await dbContext.BpUserTokens.SingleAsync(token => token.UserId == user.Id, cancellationToken);
                 Assert.Equal(64, token.UserInitToken.Length);
                 Assert.Equal(32, Convert.FromHexString(token.UserInitToken).Length);
                 Assert.Equal(user.CreatedDate, token.CreatedDate);
@@ -234,7 +234,7 @@ public sealed class GoogleAuthIntegrationTests
                 Assert.Equal((false, false), await service.RegisterAsync(email.ToUpperInvariant(), null, null, cancellationToken));
                 Assert.Single(emails.Messages);
                 Assert.Equal(1, await dbContext.BpUsers.CountAsync(u => u.Email == email, cancellationToken));
-                Assert.Equal(token.UserInitToken, (await dbContext.UserTokens.SingleAsync(t => t.UserId == user.Id, cancellationToken)).UserInitToken);
+                Assert.Equal(token.UserInitToken, (await dbContext.BpUserTokens.SingleAsync(t => t.UserId == user.Id, cancellationToken)).UserInitToken);
                 Assert.Equal(1, await dbContext.BpUserLoginProviders.CountAsync(link => link.UserId == user.Id, cancellationToken));
             }
             else if (!accountExists)
@@ -249,7 +249,7 @@ public sealed class GoogleAuthIntegrationTests
                 if (register)
                 {
                     Assert.True(user.IsActive);
-                    Assert.False(await dbContext.UserTokens.AnyAsync(t => t.UserId == user.Id, cancellationToken));
+                    Assert.False(await dbContext.BpUserTokens.AnyAsync(t => t.UserId == user.Id, cancellationToken));
                     Assert.False(await dbContext.BpUserLoginProviders.AnyAsync(link => link.UserId == user.Id, cancellationToken));
                 }
                 Assert.False(await dbContext.BpUsers_BpRoles.AnyAsync(role => role.UserId == user.Id, cancellationToken));
@@ -386,7 +386,7 @@ public sealed class GoogleAuthIntegrationTests
                     .SingleAsync(link => link.UserId == user.Id, cancellationToken);
                 Assert.Equal("Google", link.LoginProvider.ProviderName);
                 Assert.Equal(email, link.Email);
-                savedToken = (await persisted.UserTokens.SingleAsync(t => t.UserId == user.Id, cancellationToken)).UserInitToken;
+                savedToken = (await persisted.BpUserTokens.SingleAsync(t => t.UserId == user.Id, cancellationToken)).UserInitToken;
                 var inactive = await CreateAccountService(persisted).FindExistingAsync(email, cancellationToken);
                 Assert.True(inactive.AccountExists);
                 Assert.Null(inactive.User);
@@ -409,7 +409,7 @@ public sealed class GoogleAuthIntegrationTests
             Assert.Equal((false, false), await service.RegisterAsync(email, null, null, cancellationToken));
             Assert.Single(emails.Messages);
             await using var persisted = _fixture.CreateDbContext();
-            Assert.Equal(savedToken, (await persisted.UserTokens.SingleAsync(t => t.User.Email == email, cancellationToken)).UserInitToken);
+            Assert.Equal(savedToken, (await persisted.BpUserTokens.SingleAsync(t => t.User.Email == email, cancellationToken)).UserInitToken);
             if (succeeds)
             {
                 var activationLink = new Uri(message.PlainText!.Split('\n').Single(line => line.StartsWith("https://", StringComparison.Ordinal)));
@@ -418,7 +418,7 @@ public sealed class GoogleAuthIntegrationTests
                 using var activation = await scope.Client.PostAsJsonAsync("/api/user-token", new { token = emailedToken }, cancellationToken);
                 Assert.Equal(HttpStatusCode.NoContent, activation.StatusCode);
                 Assert.True(await persisted.BpUsers.Where(u => u.Email == email).Select(u => u.IsActive).SingleAsync(cancellationToken));
-                Assert.False(await persisted.UserTokens.AnyAsync(t => t.User.Email == email, cancellationToken));
+                Assert.False(await persisted.BpUserTokens.AnyAsync(t => t.User.Email == email, cancellationToken));
                 var authenticated = await service.FindExistingAsync(email.ToUpperInvariant(), cancellationToken);
                 Assert.True(authenticated.AccountExists);
                 Assert.NotNull(authenticated.User);

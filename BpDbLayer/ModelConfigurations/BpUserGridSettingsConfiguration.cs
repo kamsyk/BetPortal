@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BpDbLayer.ModelConfigurations
 {
-    public class UserGridSettingsConfiguration : IEntityTypeConfiguration<UserGridSettings>
+    public class BpUserGridSettingsConfiguration : IEntityTypeConfiguration<BpUserGridSettings>
     {
-        public void Configure(EntityTypeBuilder<UserGridSettings> builder)
+        public void Configure(EntityTypeBuilder<BpUserGridSettings> builder)
         {
             builder.HasOne(ugs => ugs.User)
                 .WithMany()

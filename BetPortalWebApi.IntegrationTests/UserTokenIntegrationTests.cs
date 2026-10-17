@@ -23,7 +23,7 @@ public sealed class UserTokenIntegrationTests(ApiFixture fixture)
             var activated = await db.BpUsers.AsNoTracking().SingleAsync(u => u.Id == user.Id, TestContext.Current.CancellationToken);
             Assert.True(activated.IsActive);
             Assert.True(activated.ModifiedDate > user.ModifiedDate);
-            Assert.False(await db.UserTokens.AnyAsync(t => t.UserId == user.Id, TestContext.Current.CancellationToken));
+            Assert.False(await db.BpUserTokens.AnyAsync(t => t.UserId == user.Id, TestContext.Current.CancellationToken));
             using var replay = await scope.Client.PostAsJsonAsync("/api/user-token", new { token }, TestContext.Current.CancellationToken);
             Assert.Equal(HttpStatusCode.NotFound, replay.StatusCode);
         }
@@ -50,7 +50,7 @@ public sealed class UserTokenIntegrationTests(ApiFixture fixture)
                 Assert.Single(requests, response => response.StatusCode == HttpStatusCode.NotFound);
                 await using var db = fixture.CreateDbContext();
                 Assert.True(await db.BpUsers.Where(u => u.Id == user.Id).Select(u => u.IsActive).SingleAsync(TestContext.Current.CancellationToken));
-                Assert.False(await db.UserTokens.AnyAsync(t => t.UserId == user.Id, TestContext.Current.CancellationToken));
+                Assert.False(await db.BpUserTokens.AnyAsync(t => t.UserId == user.Id, TestContext.Current.CancellationToken));
             }
             finally
             {
@@ -81,7 +81,7 @@ public sealed class UserTokenIntegrationTests(ApiFixture fixture)
             Assert.Equal(expected, response.StatusCode);
             await using var db = fixture.CreateDbContext();
             Assert.False(await db.BpUsers.Where(u => u.Id == user.Id).Select(u => u.IsActive).SingleAsync(TestContext.Current.CancellationToken));
-            Assert.True(await db.UserTokens.AnyAsync(t => t.UserId == user.Id, TestContext.Current.CancellationToken));
+            Assert.True(await db.BpUserTokens.AnyAsync(t => t.UserId == user.Id, TestContext.Current.CancellationToken));
         }
         finally
         {
@@ -100,7 +100,7 @@ public sealed class UserTokenIntegrationTests(ApiFixture fixture)
                 "/api/user-token", new { token = user.UserToken!.UserInitToken.ToLowerInvariant() }, TestContext.Current.CancellationToken);
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
             await using var db = fixture.CreateDbContext();
-            Assert.True(await db.UserTokens.AnyAsync(t => t.UserId == user.Id, TestContext.Current.CancellationToken));
+            Assert.True(await db.BpUserTokens.AnyAsync(t => t.UserId == user.Id, TestContext.Current.CancellationToken));
             Assert.False(await db.BpUsers.Where(u => u.Id == user.Id).Select(u => u.IsActive).SingleAsync(TestContext.Current.CancellationToken));
         }
         finally
@@ -121,7 +121,7 @@ public sealed class UserTokenIntegrationTests(ApiFixture fixture)
             CreatedByUserId = 1,
             ModifiedByUserId = 1,
         };
-        user.UserToken = new UserToken
+        user.UserToken = new BpUserToken
         {
             User = user,
             UserInitToken = "A" + Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
@@ -136,7 +136,7 @@ public sealed class UserTokenIntegrationTests(ApiFixture fixture)
     private async Task DeleteUserAsync(int userId)
     {
         await using var db = fixture.CreateDbContext();
-        await db.UserTokens.Where(t => t.UserId == userId).ExecuteDeleteAsync();
+        await db.BpUserTokens.Where(t => t.UserId == userId).ExecuteDeleteAsync();
         await db.BpUsers.Where(u => u.Id == userId).ExecuteDeleteAsync();
     }
 }

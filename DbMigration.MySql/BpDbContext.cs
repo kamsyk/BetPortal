@@ -10,7 +10,7 @@ namespace DbMigration.MySql
 
         public DbSet<BpRole> BpRoles { get; set; }
 
-        public DbSet<UserToken> UserTokens { get; set; }
+        public DbSet<BpUserToken> BpUserTokens { get; set; }
 
         public DbSet<Competitor> Competitors { get; set; }
 

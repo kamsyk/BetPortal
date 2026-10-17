@@ -1,12 +1,12 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, inject, OnInit, signal, viewChild } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { API_BASE_URL } from '../../../core/tokens';
 import { AuthService, KsLoginComponent, KsSignUpComponent } from 'ks-ag-controls';
 import { MatDialog } from '@angular/material/dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
 import { asapScheduler, observeOn, take } from 'rxjs';
 import { LanguageService } from '../../services/language.service';
+import { ThemeService } from '../../services/theme.service';
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
@@ -22,7 +22,11 @@ export class LoginComponent implements OnInit {
   private router = inject(Router);
   private apiBase = inject(API_BASE_URL);
   private authService = inject(AuthService);
+  private readonly themeService = inject(ThemeService);
   protected readonly currentLanguage = inject(LanguageService).currentLanguage;
+  protected readonly themeMode = computed(() =>
+    this.themeService.isDarkMode() ? 'dark' : 'light',
+  );
 
   loading = false;
   error = '';
@@ -35,33 +39,47 @@ export class LoginComponent implements OnInit {
   readonly facebookAuthUrl = signal<string>('');
   readonly facebookAccountRequired = signal(false);
   readonly facebookAccountExists = signal(false);
-  private readonly loginControl = viewChild.required(KsLoginComponent);
 
   constructor() {
+    // lib-ks-login still opens Sign up in a dialog; route to the page instead.
     inject(MatDialog).afterOpened.pipe(observeOn(asapScheduler), takeUntilDestroyed()).subscribe(dialog => {
       if (dialog.componentInstance instanceof KsSignUpComponent) {
-        dialog.componentRef?.setInput('googleAuthUrl', `${this.apiBase}/auth/google/register`);
-        dialog.componentRef?.setInput('facebookAuthUrl', `${this.apiBase}/auth/facebook/register`);
-      }
-    });
-    afterNextRender(() => {
-      if (this.googleAccountRequired() || this.facebookAccountRequired()) {
-        this.loginControl().openSignUp();
+        const returnUrl = this.redirectUrl() || '/';
+        dialog.close();
+        void this.router.navigate(['/sign-up'], {
+          queryParams: returnUrl === '/' ? undefined : { returnUrl },
+        });
       }
     });
   }
 
   ngOnInit(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
-    this.googleAccountRequired.set(this.route.snapshot.queryParamMap.get('googleError') === 'account-required');
-    this.googleAccountExists.set(this.route.snapshot.queryParamMap.get('googleError') === 'account-exists');
-    this.facebookAccountRequired.set(this.route.snapshot.queryParamMap.get('facebookError') === 'account-required');
-    this.facebookAccountExists.set(this.route.snapshot.queryParamMap.get('facebookError') === 'account-exists');
+    const googleError = this.route.snapshot.queryParamMap.get('googleError');
+    const facebookError = this.route.snapshot.queryParamMap.get('facebookError');
+    const openSignUp = this.route.snapshot.queryParamMap.get('signUp') === 'true';
+
+    this.googleAccountRequired.set(googleError === 'account-required');
+    this.googleAccountExists.set(googleError === 'account-exists');
+    this.facebookAccountRequired.set(facebookError === 'account-required');
+    this.facebookAccountExists.set(facebookError === 'account-exists');
     this.redirectUrl.set(returnUrl);
     this.loginUrl.set(`${this.apiBase}/auth/login`);
     this.googleAuthUrl.set(`${this.apiBase}/auth/google`);
     this.facebookAuthUrl.set(`${this.apiBase}/auth/facebook`);
     this.googleReturnUrl.set(returnUrl);
+
+    if (openSignUp || this.googleAccountRequired() || this.facebookAccountRequired()) {
+      void this.router.navigate(['/sign-up'], {
+        queryParams: {
+          ...(returnUrl !== '/' ? { returnUrl } : {}),
+          ...(googleError ? { googleError } : {}),
+          ...(facebookError ? { facebookError } : {}),
+        },
+        replaceUrl: true,
+      });
+      return;
+    }
 
     this.authService
       .checkAuthStatus()

@@ -175,7 +175,7 @@ public sealed class FacebookAuthIntegrationTests(ApiFixture fixture)
                     .SingleAsync(link => link.UserId == savedUser.Id, cancellationToken);
                 Assert.Equal("Facebook", link.LoginProvider.ProviderName);
                 Assert.Equal(email.ToUpperInvariant(), link.Email);
-                var token = await persisted.UserTokens.SingleAsync(t => t.UserId == savedUser.Id, cancellationToken);
+                var token = await persisted.BpUserTokens.SingleAsync(t => t.UserId == savedUser.Id, cancellationToken);
                 Assert.Equal(64, token.UserInitToken.Length);
                 Assert.Contains(token.UserInitToken, Assert.Single(emails.Messages).PlainText!);
                 if (emailSent)
@@ -201,7 +201,7 @@ public sealed class FacebookAuthIntegrationTests(ApiFixture fixture)
                 else
                 {
                     Assert.NotNull(savedUser);
-                    Assert.False(await persisted.UserTokens.AnyAsync(t => t.UserId == savedUser.Id, cancellationToken));
+                    Assert.False(await persisted.BpUserTokens.AnyAsync(t => t.UserId == savedUser.Id, cancellationToken));
                     Assert.Equal(existingProvider.Length > 0 ? 1 : 0,
                         await persisted.BpUserLoginProviders.CountAsync(link => link.UserId == savedUser.Id, cancellationToken));
                 }

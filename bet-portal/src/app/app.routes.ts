@@ -18,6 +18,11 @@ export const routes: Routes = [
       import('./pages/sign-up-confirmation/sign-up-confirmation.component').then((m) => m.SignUpConfirmationComponent),
   },
   {
+    path: 'sign-up',
+    loadComponent: () =>
+      import('./pages/sign-up/sign-up.component').then((m) => m.SignUpComponent),
+  },
+  {
     path: 'login',
     loadComponent: () =>
       import('./pages/login/login.component').then((m) => m.LoginComponent),

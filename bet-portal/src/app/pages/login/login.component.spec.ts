@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
-import { AuthService, KsLoginComponent, KsSignUpComponent } from 'ks-ag-controls';
+import { AuthService, KsLoginComponent } from 'ks-ag-controls';
 import { MatDialog } from '@angular/material/dialog';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
@@ -28,7 +28,10 @@ describe('LoginComponent', () => {
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
       providers: [
-        provideRouter([]),
+        provideRouter([
+          { path: 'login', component: LoginComponent },
+          { path: 'sign-up', component: LoginComponent },
+        ]),
         provideNoopAnimations(),
         provideTranslateService(),
         {
@@ -54,12 +57,12 @@ describe('LoginComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('shows the account-required message and preserves the destination after Google rejects an unknown account', () => {
-    queryParams = { googleError: 'account-required', returnUrl: '/advisor' };
+  it('shows the account-exists message and preserves the destination after Google rejects a duplicate account', () => {
+    queryParams = { googleError: 'account-exists', returnUrl: '/advisor' };
     component.ngOnInit();
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent)
-      .toContain('login.googleAccountRequired');
+      .toContain('login.googleAccountExists');
     expect(loginControl().redirectUrl()).toBe('/advisor');
     expect(loginControl().googleReturnUrl()).toBe('/advisor');
   });
@@ -68,42 +71,57 @@ describe('LoginComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')).toBeNull();
   });
 
-  it('opens the existing Sign up dialog after Google returns an unknown account', async () => {
+  it('redirects to the sign-up page after Google returns an unknown account', async () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture.destroy();
     queryParams = { googleError: 'account-required', returnUrl: '/advisor' };
     fixture = TestBed.createComponent(LoginComponent);
     fixture.detectChanges();
-    TestBed.tick();
     await fixture.whenStable();
-    const dialogs = TestBed.inject(MatDialog).openDialogs;
-    expect(dialogs).toHaveLength(1);
-    const dialog = dialogs[0];
-    expect(dialog.componentInstance).toBeInstanceOf(KsSignUpComponent);
-    const signUp: KsSignUpComponent = dialog.componentInstance;
-    expect(signUp.language()).toBe('cs');
-    expect(signUp.googleReturnUrl()).toBe('/advisor');
-    expect(signUp.googleAuthUrl()).toBe('http://localhost:5026/api/auth/google/register');
-    expect(signUp.facebookAuthUrl()).toBe('http://localhost:5026/api/auth/facebook/register');
-    expect(signUp.facebookReturnUrl()).toBe('/advisor');
-    fixture.detectChanges();
-    TestBed.tick();
-    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(1);
-  });
-
-  it('does not automatically open Sign up on a normal login visit', async () => {
-    TestBed.tick();
-    await fixture.whenStable();
+    expect(navigateSpy).toHaveBeenCalledWith(['/sign-up'], {
+      queryParams: { returnUrl: '/advisor', googleError: 'account-required' },
+      replaceUrl: true,
+    });
     expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
   });
 
-  it('uses the registration endpoint when Sign up is opened manually without changing Google login', async () => {
+  it('does not navigate to Sign up on a normal login visit', async () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate');
+    await fixture.whenStable();
+    expect(navigateSpy).not.toHaveBeenCalledWith(
+      ['/sign-up'],
+      expect.anything(),
+    );
+    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
+  });
+
+  it('redirects to the sign-up page when opened with signUp=true', async () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    fixture.destroy();
+    queryParams = { signUp: 'true' };
+    fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(navigateSpy).toHaveBeenCalledWith(['/sign-up'], {
+      queryParams: {},
+      replaceUrl: true,
+    });
+  });
+
+  it('routes the library Sign up dialog to the sign-up page', async () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     loginControl().openSignUp();
     await fixture.whenStable();
-    const signUp: KsSignUpComponent = TestBed.inject(MatDialog).openDialogs[0].componentInstance;
-    expect(signUp.googleAuthUrl()).toBe('http://localhost:5026/api/auth/google/register');
-    expect(loginControl().googleAuthUrl()).toBe('http://localhost:5026/api/auth/google');
-    expect(signUp.facebookAuthUrl()).toBe('http://localhost:5026/api/auth/facebook/register');
-    expect(loginControl().facebookAuthUrl()).toBe('http://localhost:5026/api/auth/facebook');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(navigateSpy).toHaveBeenCalledWith(['/sign-up'], {
+      queryParams: undefined,
+    });
+    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
   });
 
   it('passes the selected language and preserves login URLs', () => {
@@ -116,18 +134,18 @@ describe('LoginComponent', () => {
     expect(loginControl().facebookReturnUrl()).toBe('/');
   });
 
-  it('opens Sign up after Facebook rejects an unknown account and preserves the return URL', async () => {
+  it('redirects to Sign up after Facebook rejects an unknown account and preserves the return URL', async () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture.destroy();
     queryParams = { facebookError: 'account-required', returnUrl: '/advisor' };
     fixture = TestBed.createComponent(LoginComponent);
     fixture.detectChanges();
-    TestBed.tick();
     await fixture.whenStable();
-    const signUp: KsSignUpComponent = TestBed.inject(MatDialog).openDialogs[0].componentInstance;
-    expect(signUp.facebookAuthUrl()).toBe('http://localhost:5026/api/auth/facebook/register');
-    expect(signUp.facebookReturnUrl()).toBe('/advisor');
-    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent)
-      .toContain('login.facebookAccountRequired');
+    expect(navigateSpy).toHaveBeenCalledWith(['/sign-up'], {
+      queryParams: { returnUrl: '/advisor', facebookError: 'account-required' },
+      replaceUrl: true,
+    });
   });
 
   it('shows an existing Facebook account message without opening Sign up', async () => {

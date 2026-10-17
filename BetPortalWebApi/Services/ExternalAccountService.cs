@@ -47,7 +47,7 @@ namespace BetPortalWebApi.Services
                 CreatedByUserId = BpUserConfiguration.AdminUserId,
                 ModifiedByUserId = BpUserConfiguration.AdminUserId,
             };
-            user.UserToken = new UserToken
+            user.UserToken = new BpUserToken
             {
                 User = user,
                 UserInitToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),

@@ -4,14 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BpDbLayer.ModelConfigurations
 {
-    public class UserTokenConfiguration : IEntityTypeConfiguration<UserToken>
+    public class BpUserTokenConfiguration : IEntityTypeConfiguration<BpUserToken>
     {
-        public void Configure(EntityTypeBuilder<UserToken> builder)
+        public void Configure(EntityTypeBuilder<BpUserToken> builder)
         {
-            // One-to-one: BpUser <-> UserToken
+            // One-to-one: BpUser <-> BpUserToken
             builder.HasOne(t => t.User)
                 .WithOne(u => u.UserToken)
-                .HasForeignKey<UserToken>(t => t.UserId)
+                .HasForeignKey<BpUserToken>(t => t.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }
