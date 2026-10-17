@@ -3,35 +3,43 @@ import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
-import { AuthService, KsLoginComponent } from 'ks-ag-controls';
-import { MatDialog } from '@angular/material/dialog';
+import { AuthService, KsLoginComponent, KsSignUpComponent } from 'ks-ag-controls';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 
 import { LoginComponent } from './login.component';
 import { API_BASE_URL } from '../../../core/tokens';
 import { AppLanguage, LanguageService } from '../../services/language.service';
+import { AuthDialogService } from '../../services/auth-dialog.service';
 
 describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
   const currentLanguage = signal<AppLanguage>('cs');
+  const openSignUp = vi.fn<AuthDialogService['openSignUp']>();
+  const dialogClose = vi.fn();
   let queryParams: Record<string, string>;
 
   function loginControl(): KsLoginComponent {
     return fixture.debugElement.query(By.directive(KsLoginComponent)).componentInstance;
   }
 
+  function signUpDialogCount(): number {
+    return TestBed.inject(MatDialog).openDialogs
+      .filter((dialog) => dialog.componentInstance instanceof KsSignUpComponent)
+      .length;
+  }
+
   beforeEach(async () => {
     currentLanguage.set('cs');
     queryParams = {};
+    openSignUp.mockClear();
+    dialogClose.mockClear();
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
       providers: [
-        provideRouter([
-          { path: 'login', component: LoginComponent },
-          { path: 'sign-up', component: LoginComponent },
-        ]),
+        provideRouter([]),
         provideNoopAnimations(),
         provideTranslateService(),
         {
@@ -41,6 +49,8 @@ describe('LoginComponent', () => {
         { provide: API_BASE_URL, useValue: 'http://localhost:5026/api' },
         { provide: AuthService, useValue: { checkAuthStatus: () => of({ isAuthenticated: false }) } },
         { provide: LanguageService, useValue: { currentLanguage } },
+        { provide: AuthDialogService, useValue: { openSignUp, openLogin: vi.fn() } },
+        { provide: MatDialogRef, useValue: { close: dialogClose, id: 'login-dialog' } },
       ],
     }).compileComponents();
 
@@ -57,6 +67,14 @@ describe('LoginComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('closes the dialog without leaving the current page', () => {
+    const navigateSpy = vi.spyOn(TestBed.inject(Router), 'navigateByUrl');
+    expect((fixture.nativeElement as HTMLElement).querySelector('lib-ks-login')).not.toBeNull();
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.login-dialog-close')?.click();
+    expect(dialogClose).toHaveBeenCalled();
+    expect(navigateSpy).not.toHaveBeenCalled();
+  });
+
   it('shows the account-exists message and preserves the destination after Google rejects a duplicate account', () => {
     queryParams = { googleError: 'account-exists', returnUrl: '/advisor' };
     component.ngOnInit();
@@ -69,59 +87,44 @@ describe('LoginComponent', () => {
 
   it('does not show an account-required message on normal sign-in', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')).toBeNull();
+    expect(openSignUp).not.toHaveBeenCalled();
   });
 
-  it('redirects to the sign-up page after Google returns an unknown account', async () => {
-    const router = TestBed.inject(Router);
-    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
-    fixture.destroy();
+  it('opens the sign-up dialog after Google returns an unknown account', () => {
+    const navigateSpy = vi.spyOn(TestBed.inject(Router), 'navigate');
     queryParams = { googleError: 'account-required', returnUrl: '/advisor' };
-    fixture = TestBed.createComponent(LoginComponent);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    expect(navigateSpy).toHaveBeenCalledWith(['/sign-up'], {
-      queryParams: { returnUrl: '/advisor', googleError: 'account-required' },
-      replaceUrl: true,
+    component.ngOnInit();
+    expect(openSignUp).toHaveBeenCalledWith({
+      returnUrl: '/advisor',
+      googleError: 'account-required',
+      facebookError: null,
     });
-    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
+    expect(navigateSpy).not.toHaveBeenCalled();
   });
 
-  it('does not navigate to Sign up on a normal login visit', async () => {
-    const router = TestBed.inject(Router);
-    const navigateSpy = vi.spyOn(router, 'navigate');
+  it('does not open Sign up on a normal login visit', async () => {
     await fixture.whenStable();
-    expect(navigateSpy).not.toHaveBeenCalledWith(
-      ['/sign-up'],
-      expect.anything(),
-    );
-    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
+    expect(openSignUp).not.toHaveBeenCalled();
+    expect(signUpDialogCount()).toBe(0);
   });
 
-  it('redirects to the sign-up page when opened with signUp=true', async () => {
-    const router = TestBed.inject(Router);
-    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
-    fixture.destroy();
+  it('opens the sign-up dialog when opened with signUp=true', () => {
     queryParams = { signUp: 'true' };
-    fixture = TestBed.createComponent(LoginComponent);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    expect(navigateSpy).toHaveBeenCalledWith(['/sign-up'], {
-      queryParams: {},
-      replaceUrl: true,
+    component.ngOnInit();
+    expect(openSignUp).toHaveBeenCalledWith({
+      returnUrl: '/',
+      googleError: null,
+      facebookError: null,
     });
   });
 
-  it('routes the library Sign up dialog to the sign-up page', async () => {
-    const router = TestBed.inject(Router);
-    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+  it('routes the library Sign up dialog to the portal sign-up dialog', async () => {
     loginControl().openSignUp();
     await fixture.whenStable();
     TestBed.tick();
     await fixture.whenStable();
-    expect(navigateSpy).toHaveBeenCalledWith(['/sign-up'], {
-      queryParams: undefined,
-    });
-    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
+    expect(openSignUp).toHaveBeenCalledWith({ returnUrl: '/' });
+    expect(signUpDialogCount()).toBe(0);
   });
 
   it('passes the selected language and preserves login URLs', () => {
@@ -134,17 +137,13 @@ describe('LoginComponent', () => {
     expect(loginControl().facebookReturnUrl()).toBe('/');
   });
 
-  it('redirects to Sign up after Facebook rejects an unknown account and preserves the return URL', async () => {
-    const router = TestBed.inject(Router);
-    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
-    fixture.destroy();
+  it('opens the sign-up dialog after Facebook rejects an unknown account and preserves the return URL', () => {
     queryParams = { facebookError: 'account-required', returnUrl: '/advisor' };
-    fixture = TestBed.createComponent(LoginComponent);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    expect(navigateSpy).toHaveBeenCalledWith(['/sign-up'], {
-      queryParams: { returnUrl: '/advisor', facebookError: 'account-required' },
-      replaceUrl: true,
+    component.ngOnInit();
+    expect(openSignUp).toHaveBeenCalledWith({
+      returnUrl: '/advisor',
+      googleError: null,
+      facebookError: 'account-required',
     });
   });
 
@@ -155,7 +154,7 @@ describe('LoginComponent', () => {
     await fixture.whenStable();
     expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent)
       .toContain('login.facebookAccountExists');
-    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
+    expect(openSignUp).not.toHaveBeenCalled();
   });
 
   it('updates the login labels when the selected language changes', async () => {
@@ -169,8 +168,7 @@ describe('LoginComponent', () => {
       await fixture.whenStable();
 
       expect(loginControl().language()).toBe(language);
-      const element: HTMLElement = fixture.nativeElement;
-      expect(element.querySelector('h2')?.textContent?.trim()).toBe(heading);
+      expect((fixture.nativeElement as HTMLElement).querySelector('h2')?.textContent?.trim()).toBe(heading);
     }
   });
 });

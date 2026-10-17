@@ -59,6 +59,7 @@ describe('AppComponent session restoration', () => {
     await fixture.whenStable();
 
     expect(TestBed.inject(AuthService).isAuthenticated()).toBe(true);
+    fixture.detectChanges();
     expect(element.querySelectorAll('.primary-nav a')).toHaveLength(3);
     expect(element.querySelector('.theme-button')).not.toBeNull();
     expect(element.querySelector('.profile-button')).not.toBeNull();
@@ -72,10 +73,13 @@ describe('AppComponent session restoration', () => {
     TestBed.tick();
     http.expectOne('http://localhost:5026/api/auth/check').flush({ isAuthenticated: false });
     await fixture.whenStable();
+    fixture.detectChanges();
 
     const element: HTMLElement = fixture.nativeElement;
     expect(element.querySelector('.primary-nav')).toBeNull();
-    expect(element.querySelector('.profile-button')).not.toBeNull();
+    expect(element.querySelector('.profile-button')).toBeNull();
+    expect(element.querySelector('.sign-in-link')).not.toBeNull();
+    expect(element.querySelector('.sign-up-link')).not.toBeNull();
     expect(TestBed.inject(AuthService).isAuthenticated()).toBe(false);
     http.expectNone('http://localhost:5026/api/auth/me');
   });

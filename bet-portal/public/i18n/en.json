@@ -13,6 +13,7 @@
     "message": "Your account is active. You can now sign in."
   },
   "login": {
+    "close": "Close",
     "facebookAccountExists": "An account with this email already exists. Please sign in instead.",
     "facebookAccountRequired": "No portal account matches your Facebook email address. Sign up with Facebook to register. No account has been created automatically.",
     "googleAccountExists": "An account with this email already exists. Please sign in instead.",

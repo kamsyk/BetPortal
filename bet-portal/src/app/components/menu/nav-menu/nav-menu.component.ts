@@ -6,6 +6,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from 'ks-ag-controls';
+import { AuthDialogService } from '../../../services/auth-dialog.service';
 import { ThemeService } from '../../../services/theme.service';
 import { LanguageService } from '../../../services/language.service';
 
@@ -26,6 +27,7 @@ import { LanguageService } from '../../../services/language.service';
 })
 export class NavMenuComponent {
   private authService = inject(AuthService);
+  private authDialog = inject(AuthDialogService);
   private router = inject(Router);
   themeService = inject(ThemeService);
   languageService = inject(LanguageService);
@@ -39,12 +41,20 @@ export class NavMenuComponent {
       next: (response) => {
         console.log('Logout response:', response);
         this.authService.logout();
-        this.router.navigateByUrl('/login');
+        void this.router.navigateByUrl('/').then(() => this.authDialog.openLogin());
       },
     });
   }
 
   toggleTheme(): void {
     this.themeService.toggleTheme();
+  }
+
+  signIn(): void {
+    this.authDialog.openLogin();
+  }
+
+  signUp(): void {
+    this.authDialog.openSignUp();
   }
 }

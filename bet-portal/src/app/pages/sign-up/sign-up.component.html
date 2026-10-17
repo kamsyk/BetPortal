@@ -1,4 +1,14 @@
-<main class="sign-up-page">
+<div class="sign-up-page">
+  <div class="login-dialog-toolbar">
+    <button
+      type="button"
+      class="login-dialog-close"
+      (click)="closeDialog()"
+      [attr.aria-label]="'login.close' | translate"
+    >
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
   @if (googleAccountRequired()) {
     <p role="alert">{{ 'login.googleAccountRequired' | translate }}</p>
   }
@@ -16,6 +26,6 @@
   ></lib-ks-sign-up>
 
   <p class="sign-in-prompt">
-    <a routerLink="/login">{{ 'nav.signIn' | translate }}</a>
+    <button type="button" (click)="openLogin()">{{ 'nav.signIn' | translate }}</button>
   </p>
-</main>
+</div>

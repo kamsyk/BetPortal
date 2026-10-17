@@ -1,17 +1,24 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 
 import { HomeComponent } from './home.component';
+import { AuthDialogService } from '../../services/auth-dialog.service';
 
 describe('HomeComponent', () => {
   let component: HomeComponent;
   let fixture: ComponentFixture<HomeComponent>;
+  const openLogin = vi.fn<AuthDialogService['openLogin']>();
 
   beforeEach(async () => {
+    openLogin.mockClear();
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
-      providers: [provideRouter([]), provideTranslateService()],
+      providers: [
+        provideRouter([]),
+        provideTranslateService(),
+        { provide: AuthDialogService, useValue: { openLogin } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HomeComponent);
@@ -28,11 +35,14 @@ describe('HomeComponent', () => {
     expect(element.querySelector('footer')?.textContent).toContain('home.disclaimer');
   });
 
-  it('offers advisor access and sign-in with the advisor return URL', () => {
+  it('offers advisor access and opens sign-in over the current page', () => {
     const element: HTMLElement = fixture.nativeElement;
     expect(element.querySelector('.primary')?.getAttribute('href')).toBe('/advisor');
-    expect(element.querySelector('.sign-in')?.getAttribute('href'))
-      .toBe('/login?returnUrl=%2Fadvisor');
+    const signIn = element.querySelector<HTMLButtonElement>('.sign-in');
+    expect(signIn?.tagName).toBe('BUTTON');
+    signIn?.click();
+    expect(openLogin).toHaveBeenCalledWith({ returnUrl: '/advisor' });
+    expect(TestBed.inject(Router).url).toBe('/');
     expect(element.querySelector('.secondary')?.getAttribute('href')).toBe('#portal-features');
   });
 

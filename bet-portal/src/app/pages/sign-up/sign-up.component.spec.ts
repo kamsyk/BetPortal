@@ -9,11 +9,13 @@ import { of } from 'rxjs';
 import { SignUpComponent } from './sign-up.component';
 import { API_BASE_URL } from '../../../core/tokens';
 import { AppLanguage, LanguageService } from '../../services/language.service';
+import { AuthDialogService } from '../../services/auth-dialog.service';
 
 describe('SignUpComponent', () => {
   let component: SignUpComponent;
   let fixture: ComponentFixture<SignUpComponent>;
   const currentLanguage = signal<AppLanguage>('cs');
+  const openLogin = vi.fn<AuthDialogService['openLogin']>();
   let queryParams: Record<string, string>;
 
   function signUpControl(): KsSignUpComponent {
@@ -23,6 +25,7 @@ describe('SignUpComponent', () => {
   beforeEach(async () => {
     currentLanguage.set('cs');
     queryParams = {};
+    openLogin.mockClear();
     await TestBed.configureTestingModule({
       imports: [SignUpComponent],
       providers: [
@@ -35,6 +38,7 @@ describe('SignUpComponent', () => {
         { provide: API_BASE_URL, useValue: 'http://localhost:5026/api' },
         { provide: AuthService, useValue: { checkAuthStatus: () => of({ isAuthenticated: false }) } },
         { provide: LanguageService, useValue: { currentLanguage } },
+        { provide: AuthDialogService, useValue: { openLogin, openSignUp: vi.fn() } },
       ],
     }).compileComponents();
 
@@ -47,13 +51,15 @@ describe('SignUpComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('renders the sign-up form as a page component with registration endpoints', () => {
+  it('renders the sign-up form for the dialog with registration endpoints', () => {
     expect(signUpControl().language()).toBe('cs');
     expect(signUpControl().googleAuthUrl()).toBe('http://localhost:5026/api/auth/google/register');
     expect(signUpControl().facebookAuthUrl()).toBe('http://localhost:5026/api/auth/facebook/register');
     expect(signUpControl().googleReturnUrl()).toBe('/');
     expect(signUpControl().facebookReturnUrl()).toBe('/');
     expect((fixture.nativeElement as HTMLElement).querySelector('[role="dialog"]')).toBeNull();
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.sign-in-prompt button')?.click();
+    expect(openLogin).toHaveBeenCalledWith({ returnUrl: '/' });
   });
 
   it('preserves the return URL and shows Google account-required messaging', () => {

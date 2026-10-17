@@ -45,6 +45,12 @@ body {
 }
 
 // Apply theme to Material components
+.login-dialog-panel .mat-mdc-dialog-surface {
+  background-color: var(--card-background);
+  color: var(--text-primary);
+  overflow: visible;
+}
+
 .dark-theme {
   .mat-mdc-card {
     background-color: var(--card-background);

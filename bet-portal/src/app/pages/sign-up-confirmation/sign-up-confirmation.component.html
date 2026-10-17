@@ -1,5 +1,5 @@
 <main>
   <h2>{{ 'signUpConfirmation.title' | translate }}</h2>
   <p>{{ 'signUpConfirmation.message' | translate }}</p>
-  <a routerLink="/login">{{ 'nav.signIn' | translate }}</a>
+  <button type="button" (click)="signIn()">{{ 'nav.signIn' | translate }}</button>
 </main>

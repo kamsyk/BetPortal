@@ -27,12 +27,12 @@
 
     <div class="utility-actions">
       @if (!isLoggedIn()) {
-        <a mat-button class="sign-in-link" routerLink="/login">
+        <button mat-button type="button" class="sign-in-link" (click)="signIn()">
           {{ 'nav.signIn' | translate }}
-        </a>
-        <a mat-button class="sign-up-link" routerLink="/sign-up">
+        </button>
+        <button mat-button type="button" class="sign-up-link" (click)="signUp()">
           {{ 'nav.signUp' | translate }}
-        </a>
+        </button>
         <button mat-button type="button" class="language-button" [matMenuTriggerFor]="languageMenu"
           [attr.aria-label]="('nav.language' | translate) + ': ' + ('languages.' + languageService.currentLanguage() | translate)">
           <mat-icon aria-hidden="true">language</mat-icon>
@@ -104,14 +104,14 @@
     </a>
     <div class="menu-divider" role="separator"></div>
   } @else {
-    <a mat-menu-item class="sign-in-link" routerLink="/login">
+    <button mat-menu-item type="button" class="sign-in-link" (click)="signIn()">
       <mat-icon aria-hidden="true">login</mat-icon>
       <span>{{ 'nav.signIn' | translate }}</span>
-    </a>
-    <a mat-menu-item class="sign-up-link" routerLink="/sign-up">
+    </button>
+    <button mat-menu-item type="button" class="sign-up-link" (click)="signUp()">
       <mat-icon aria-hidden="true">person_add</mat-icon>
       <span>{{ 'nav.signUp' | translate }}</span>
-    </a>
+    </button>
     <button mat-menu-item type="button" class="language-button" [matMenuTriggerFor]="languageMenu"
       [attr.aria-label]="('nav.language' | translate) + ': ' + ('languages.' + languageService.currentLanguage() | translate)">
       <mat-icon aria-hidden="true">language</mat-icon>

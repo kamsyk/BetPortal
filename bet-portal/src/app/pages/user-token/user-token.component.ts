@@ -1,14 +1,15 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { afterNextRender, ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { API_BASE_URL } from '../../../core/tokens';
+import { AuthDialogService } from '../../services/auth-dialog.service';
 
 @Component({
   selector: 'app-user-token',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe, RouterLink],
+  imports: [TranslatePipe],
   template: `
     <main aria-live="polite" [attr.aria-busy]="pending()">
       <h1>{{ 'userToken.title' | translate }}</h1>
@@ -16,7 +17,7 @@ import { API_BASE_URL } from '../../../core/tokens';
         <p role="status">{{ 'userToken.pending' | translate }}</p>
       } @else if (errorKey()) {
         <p role="alert">{{ errorKey() | translate }}</p>
-        <a routerLink="/login">{{ 'nav.signIn' | translate }}</a>
+        <button type="button" (click)="signIn()">{{ 'nav.signIn' | translate }}</button>
       }
     </main>
   `,
@@ -27,6 +28,11 @@ export class UserTokenComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly authDialog = inject(AuthDialogService);
+  signIn(): void {
+    this.authDialog.openLogin();
+  }
+
   readonly pending = signal(true);
   readonly errorKey = signal('');
 

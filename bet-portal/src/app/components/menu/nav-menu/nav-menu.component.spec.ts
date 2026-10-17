@@ -8,6 +8,7 @@ import { provideTranslateService, TranslateLoader, provideTranslateLoader, } fro
 import { Observable, of, Subject } from 'rxjs';
 
 import { NavMenuComponent } from './nav-menu.component';
+import { AuthDialogService } from '../../../services/auth-dialog.service';
 import { AppLanguage, LanguageService } from '../../../services/language.service';
 import { ThemeService } from '../../../services/theme.service';
 
@@ -26,6 +27,8 @@ describe('NavMenuComponent', () => {
     const toggleTheme = vi.fn<ThemeService['toggleTheme']>();
     const setLanguage = vi.fn<(language: AppLanguage) => void>();
     const logout = vi.fn<AuthService['logout']>();
+    const openLogin = vi.fn<AuthDialogService['openLogin']>();
+    const openSignUp = vi.fn<AuthDialogService['openSignUp']>();
     let logoutResponse: Subject<{
         success: boolean;
         message: string;
@@ -83,6 +86,8 @@ describe('NavMenuComponent', () => {
         setLanguage.mockClear();
         setLanguage.mockImplementation(language => currentLanguage.set(language));
         logout.mockClear();
+        openLogin.mockClear();
+        openSignUp.mockClear();
         logoutResponse = new Subject();
         logout.mockReturnValue(logoutResponse);
         await TestBed.configureTestingModule({
@@ -96,6 +101,7 @@ describe('NavMenuComponent', () => {
                 ]),
                 provideNoopAnimations(),
                 { provide: AuthService, useValue: { isAuthenticated: authenticated, logout } },
+                { provide: AuthDialogService, useValue: { openLogin, openSignUp } },
                 {
                     provide: ThemeService,
                     useValue: { isDarkMode: darkMode, toggleTheme },
@@ -133,8 +139,8 @@ describe('NavMenuComponent', () => {
         const element: HTMLElement = fixture.nativeElement;
         expect(element.querySelector('.primary-nav')).toBeNull();
         expect(element.querySelector('.profile-button')).toBeNull();
-        expect(element.querySelector('.sign-in-link')?.getAttribute('href')).toBe('/login');
-        expect(element.querySelector('.sign-up-link')?.getAttribute('href')).toBe('/sign-up');
+        expect(element.querySelector('.sign-in-link')?.tagName).toBe('BUTTON');
+        expect(element.querySelector('.sign-up-link')?.tagName).toBe('BUTTON');
         expect(element.querySelector('.desktop-actions .language-button')).not.toBeNull();
         expect(element.querySelector('.theme-button')).not.toBeNull();
         expect(element.querySelector('.mobile-menu-button')).not.toBeNull();
@@ -232,30 +238,32 @@ describe('NavMenuComponent', () => {
     it('shows sign in, sign up, language and theme in the anonymous mobile menu', async () => {
         const panel = await openMenu('.mobile-menu-button');
         expect(panel.querySelectorAll('[role="menuitem"]').length).toBe(4);
-        expect(panel.querySelector('.sign-in-link')?.getAttribute('href')).toBe('/login');
-        expect(panel.querySelector('.sign-up-link')?.getAttribute('href')).toBe('/sign-up');
+        expect(panel.querySelector('.sign-in-link')?.tagName).toBe('BUTTON');
+        expect(panel.querySelector('.sign-up-link')?.tagName).toBe('BUTTON');
         expect(panel.textContent).toContain('nav.language');
         expect(panel.textContent).toContain('nav.darkMode');
         expect(panel.textContent).not.toContain('nav.logout');
         expect(panel.querySelector('[role="separator"]')).toBeNull();
     });
 
-    it('navigates to login from the anonymous desktop sign-in control', async () => {
+    it('opens login over the current page from the anonymous desktop sign-in control', async () => {
         const signIn = (fixture.nativeElement as HTMLElement)
-            .querySelector<HTMLAnchorElement>('.desktop-actions .sign-in-link');
+            .querySelector<HTMLButtonElement>('.desktop-actions .sign-in-link');
         expect(signIn).not.toBeNull();
         signIn!.click();
         await settle();
-        expect(TestBed.inject(Router).url).toBe('/login');
+        expect(openLogin).toHaveBeenCalledWith();
+        expect(TestBed.inject(Router).url).toBe('/');
     });
 
-    it('navigates to sign-up from the anonymous desktop sign-up control', async () => {
+    it('opens sign-up over the current page from the anonymous desktop sign-up control', async () => {
         const signUp = (fixture.nativeElement as HTMLElement)
-            .querySelector<HTMLAnchorElement>('.desktop-actions .sign-up-link');
+            .querySelector<HTMLButtonElement>('.desktop-actions .sign-up-link');
         expect(signUp).not.toBeNull();
         signUp!.click();
         await settle();
-        expect(TestBed.inject(Router).url).toBe('/sign-up');
+        expect(openSignUp).toHaveBeenCalledWith();
+        expect(TestBed.inject(Router).url).toBe('/');
     });
 
     it('shows authenticated mobile navigation and theme without language or logout choices', async () => {
@@ -384,7 +392,8 @@ describe('NavMenuComponent', () => {
 
         logoutResponse.next({ success: true, message: 'Logged out' });
         await settle();
-        expect(TestBed.inject(Router).url).toBe('/login');
+        expect(TestBed.inject(Router).url).toBe('/');
+        expect(openLogin).toHaveBeenCalledWith();
         expect(overlayContainer.getContainerElement().querySelector('[role="menu"]')).toBeNull();
     });
 });
