@@ -60,7 +60,7 @@ Login writes both cookies (`SessionId` + `AuthCookie`). The `GET /api/auth/check
 
 `AdminAccess` policy requires claim `Permission = "AdminAccess"`, granted only to users with the active `Admin` role. Google sign-in (`/api/auth/google`) requires an active user with a matching `BpUserLoginProvider` for the `Google` provider and verified email (case-insensitive, up to 150 characters). A matching local email alone is not sufficient and never automatically links an account. Unknown emails return to `/login` with an account-required message; no user or session is created.
 
-Explicit Google sign-up (`/api/auth/google/register`) creates an inactive user, a `UserToken`, and a `BpUserLoginProvider` for the existing `Google` provider atomically and redirects to `/sign-up-confirmation`; existing local or Google-linked emails are rejected without changes. Apply the login-provider migration before registration. No authenticated session is created by registration.
+Explicit Google sign-up (`/api/auth/google/register`) creates an inactive user, a `BpUserToken`, and a `BpUserLoginProvider` for the existing `Google` provider atomically and redirects to `/sign-up-confirmation`; existing local or Google-linked emails are rejected without changes. Apply the login-provider migration before registration. No authenticated session is created by registration.
 
 Facebook uses the same provider-link and activation rules through `/api/auth/facebook` and `/api/auth/facebook/register`. Configure `Authentication:Facebook:AppId`, `AppSecret`, and `FrontendOrigin` on the backend and allow its `/signin-facebook` callback in Meta. Unlike Google, Facebook does not return an `email_verified` claim; the activation email verifies mailbox access for registration. Existing Google accounts are not automatically linked to Facebook. See `BetPortalWebApi/CLAUDE.md` for the full flow.
 
@@ -91,7 +91,7 @@ dotnet user-secrets set "Claude:ApiKey" "sk-ant-..."
 ```
 
 ### ag-Grid settings persistence (`bet-portal-admin`)
-`GridSettingsService` / `GET|POST|DELETE /api/gridsettings/{pageIdentifier}` persists column state, filters, and page size per user per page in `UserGridSettings` table. Components debounce saves by 1 s and apply saved settings in `onGridReady`. See `GRID_SETTINGS_README.md` for integration pattern.
+`GridSettingsService` / `GET|POST|DELETE /api/gridsettings/{pageIdentifier}` persists column state, filters, and page size per user per page in `BpUserGridSettings` table. Components debounce saves by 1 s and apply saved settings in `onGridReady`. See `GRID_SETTINGS_README.md` for integration pattern.
 
 ### DB model conventions
 All entities implement `ICreatedFields` / `IModifiedFields` (CreatedDate, CreatedByUserId, ModifiedDate, ModifiedByUserId). EF config lives in `ModelConfigurations/` using `IEntityTypeConfiguration<T>`.

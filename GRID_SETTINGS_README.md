@@ -4,11 +4,11 @@ This feature allows users to save and restore their ag-grid settings (page size,
 
 ## Database Changes
 
-A new table `UserGridSettings` has been added to store user-specific grid settings.
+A new table `BpUserGridSettings` has been added to store user-specific grid settings.
 
 ### Creating the Migration
 
-To create the database migration for the new `UserGridSettings` table:
+To create the database migration for the new `BpUserGridSettings` table:
 
 #### For SQL Server (MsSql):
 ```bash
@@ -171,7 +171,7 @@ To add grid settings to other pages:
 ## Database Schema
 
 ```sql
-CREATE TABLE UserGridSettings (
+CREATE TABLE BpUserGridSettings (
     Id INT PRIMARY KEY IDENTITY(1,1),
     UserId INT NOT NULL,
     PageIdentifier NVARCHAR(100) NOT NULL,
@@ -180,8 +180,8 @@ CREATE TABLE UserGridSettings (
     CreatedByUserId INT NOT NULL,
     ModifiedDate DATETIME2 NOT NULL,
     ModifiedByUserId INT NOT NULL,
-    CONSTRAINT FK_UserGridSettings_User FOREIGN KEY (UserId) REFERENCES BpUsers(Id) ON DELETE CASCADE,
-    CONSTRAINT UQ_UserGridSettings_UserPage UNIQUE (UserId, PageIdentifier)
+    CONSTRAINT FK_BpUserGridSettings_User FOREIGN KEY (UserId) REFERENCES BpUsers(Id) ON DELETE CASCADE,
+    CONSTRAINT UQ_BpUserGridSettings_UserPage UNIQUE (UserId, PageIdentifier)
 );
 ```
 

@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BpDbLayer.Models;
 
-public partial class UserToken
+public partial class BpUserToken
 {
     [Key]
     public int UserId { get; set; }

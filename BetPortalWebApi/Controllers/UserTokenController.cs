@@ -26,7 +26,7 @@ namespace BetPortalWebApi.Controllers
             }
 
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-            var matches = await dbContext.UserTokens.AsNoTracking()
+            var matches = await dbContext.BpUserTokens.AsNoTracking()
                 .Where(token => token.UserInitToken == request.Token)
                 .Take(2)
                 .ToListAsync(cancellationToken);
@@ -39,7 +39,7 @@ namespace BetPortalWebApi.Controllers
             var userId = matches[0].UserId;
 
             // Deleting first locks the token until commit so concurrent requests cannot activate twice.
-            var consumed = await dbContext.UserTokens
+            var consumed = await dbContext.BpUserTokens
                 .Where(token => token.UserId == userId && token.UserInitToken == request.Token)
                 .ExecuteDeleteAsync(cancellationToken);
             if (consumed != 1)
