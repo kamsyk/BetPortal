@@ -253,6 +253,45 @@ namespace DbMigration.MsSql.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BpDbLayer.Models.BpUserGridSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ModifiedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PageIdentifier")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SettingsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "PageIdentifier")
+                        .IsUnique();
+
+                    b.ToTable("BpUserGridSettings");
+                });
+
             modelBuilder.Entity("BpDbLayer.Models.BpUserLoginProvider", b =>
                 {
                     b.Property<int>("UserId")
@@ -271,6 +310,24 @@ namespace DbMigration.MsSql.Migrations
                     b.HasIndex("ProviderId");
 
                     b.ToTable("BpUserLoginProviders");
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.BpUserToken", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserInitToken")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("BpUserTokens");
                 });
 
             modelBuilder.Entity("BpDbLayer.Models.Competition", b =>
@@ -438,63 +495,6 @@ namespace DbMigration.MsSql.Migrations
                     b.ToTable("Sports");
                 });
 
-            modelBuilder.Entity("BpDbLayer.Models.UserGridSettings", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CreatedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ModifiedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PageIdentifier")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("SettingsJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId", "PageIdentifier")
-                        .IsUnique();
-
-                    b.ToTable("UserGridSettings");
-                });
-
-            modelBuilder.Entity("BpDbLayer.Models.UserToken", b =>
-                {
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UserInitToken")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("UserId");
-
-                    b.ToTable("UserTokens");
-                });
-
             modelBuilder.Entity("BpDbLayer.Models.BpUserBpRole", b =>
                 {
                     b.HasOne("BpDbLayer.Models.BpRole", "Role")
@@ -569,6 +569,17 @@ namespace DbMigration.MsSql.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("BpDbLayer.Models.BpUserGridSettings", b =>
+                {
+                    b.HasOne("BpDbLayer.Models.BpUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("BpDbLayer.Models.BpUserLoginProvider", b =>
                 {
                     b.HasOne("BpDbLayer.Models.LoginProvider", "LoginProvider")
@@ -584,6 +595,17 @@ namespace DbMigration.MsSql.Migrations
                         .IsRequired();
 
                     b.Navigation("LoginProvider");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.BpUserToken", b =>
+                {
+                    b.HasOne("BpDbLayer.Models.BpUser", "User")
+                        .WithOne("UserToken")
+                        .HasForeignKey("BpDbLayer.Models.BpUserToken", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
@@ -662,28 +684,6 @@ namespace DbMigration.MsSql.Migrations
                         .IsRequired();
 
                     b.Navigation("ModifiedByUser");
-                });
-
-            modelBuilder.Entity("BpDbLayer.Models.UserGridSettings", b =>
-                {
-                    b.HasOne("BpDbLayer.Models.BpUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("BpDbLayer.Models.UserToken", b =>
-                {
-                    b.HasOne("BpDbLayer.Models.BpUser", "User")
-                        .WithOne("UserToken")
-                        .HasForeignKey("BpDbLayer.Models.UserToken", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("BpDbLayer.Models.BpRole", b =>

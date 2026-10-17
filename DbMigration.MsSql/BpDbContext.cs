@@ -12,7 +12,7 @@ namespace DbMigration.MsSql
 
         public DbSet<BpUserBpRole> BpUsers_BpRoles { get; set; }
 
-        public DbSet<UserToken> UserTokens { get; set; }
+        public DbSet<BpUserToken> BpUserTokens { get; set; }
 
         public DbSet<Sport> Sports { get; set; }
 
@@ -24,7 +24,7 @@ namespace DbMigration.MsSql
 
         public DbSet<BpUserFavorites> BpUserFavorites { get; set; }
 
-        public DbSet<UserGridSettings> UserGridSettings { get; set; }
+        public DbSet<BpUserGridSettings> BpUserGridSettings { get; set; }
 
         public DbSet<BpUserLoginProvider> BpUserLoginProviders { get; set; }
 

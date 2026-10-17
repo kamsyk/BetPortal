@@ -39,7 +39,7 @@ public partial class BpUser : ICreatedFields
     [Required]
     public int ModifiedByUserId { get; set; }
 
-    public UserToken? UserToken { get; set; }
+    public BpUserToken? UserToken { get; set; }
 
     public virtual ICollection<BpUserBpRole> BpUser_BpRole { get; set; } = new List<BpUserBpRole>();
 

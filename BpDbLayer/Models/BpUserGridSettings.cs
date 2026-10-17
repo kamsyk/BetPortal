@@ -3,7 +3,7 @@ using BpDbLayer.Models.Interfaces;
 
 namespace BpDbLayer.Models;
 
-public partial class UserGridSettings : ICreatedFields
+public partial class BpUserGridSettings : ICreatedFields
 {
     [Key]
     public int Id { get; set; }
