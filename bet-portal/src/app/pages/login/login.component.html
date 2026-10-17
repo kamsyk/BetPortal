@@ -1,24 +1,38 @@
-@if (googleAccountRequired()) {
-  <p role="alert">{{ 'login.googleAccountRequired' | translate }}</p>
-}
-@if (googleAccountExists()) {
-  <p role="alert">{{ 'login.googleAccountExists' | translate }}</p>
-}
-@if (facebookAccountRequired()) {
-  <p role="alert">{{ 'login.facebookAccountRequired' | translate }}</p>
-}
-@if (facebookAccountExists()) {
-  <p role="alert">{{ 'login.facebookAccountExists' | translate }}</p>
-}
-<lib-ks-login
-  class="login-component"
-  [language]="currentLanguage()"
-  [themeMode]="themeMode()"
-  [loginUrl]="loginUrl()"
-  [redirectUrl]="redirectUrl()"
-  [googleAuthUrl]="googleAuthUrl()"
-  [googleReturnUrl]="googleReturnUrl()"
-  [facebookAuthUrl]="facebookAuthUrl()"
-  [facebookReturnUrl]="redirectUrl()"
-  (loginSuccess)="onLoginSuccess($event)"
-></lib-ks-login>
+<ng-template #loginDialog>
+  <div class="login-dialog">
+    <div class="login-dialog-toolbar">
+      <button
+        type="button"
+        class="login-dialog-close"
+        (click)="closeDialog()"
+        [attr.aria-label]="'login.close' | translate"
+      >
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    @if (googleAccountRequired()) {
+      <p role="alert">{{ 'login.googleAccountRequired' | translate }}</p>
+    }
+    @if (googleAccountExists()) {
+      <p role="alert">{{ 'login.googleAccountExists' | translate }}</p>
+    }
+    @if (facebookAccountRequired()) {
+      <p role="alert">{{ 'login.facebookAccountRequired' | translate }}</p>
+    }
+    @if (facebookAccountExists()) {
+      <p role="alert">{{ 'login.facebookAccountExists' | translate }}</p>
+    }
+    <lib-ks-login
+      class="login-component"
+      [language]="currentLanguage()"
+      [themeMode]="themeMode()"
+      [loginUrl]="loginUrl()"
+      [redirectUrl]="redirectUrl()"
+      [googleAuthUrl]="googleAuthUrl()"
+      [googleReturnUrl]="googleReturnUrl()"
+      [facebookAuthUrl]="facebookAuthUrl()"
+      [facebookReturnUrl]="redirectUrl()"
+      (loginSuccess)="onLoginSuccess($event)"
+    ></lib-ks-login>
+  </div>
+</ng-template>

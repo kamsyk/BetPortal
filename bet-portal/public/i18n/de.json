@@ -13,6 +13,7 @@
     "message": "Ihr Konto ist aktiv. Sie können sich jetzt anmelden."
   },
   "login": {
+    "close": "Schließen",
     "facebookAccountExists": "Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an.",
     "facebookAccountRequired": "Zu Ihrer Facebook-E-Mail-Adresse gibt es kein Portalkonto. Registrieren Sie sich mit Facebook. Es wurde kein Konto automatisch erstellt.",
     "googleAccountExists": "Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an.",

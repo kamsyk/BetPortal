@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
-import { By } from '@angular/platform-browser';
+import { getDebugNode, signal } from '@angular/core';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
-import { AuthService, KsLoginComponent } from 'ks-ag-controls';
+import { AuthService, KsLoginComponent, KsSignUpComponent } from 'ks-ag-controls';
+import { OverlayContainer } from '@angular/cdk/overlay';
 import { MatDialog } from '@angular/material/dialog';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
@@ -18,8 +18,23 @@ describe('LoginComponent', () => {
   const currentLanguage = signal<AppLanguage>('cs');
   let queryParams: Record<string, string>;
 
+  function dialogElement(): HTMLElement {
+    return TestBed.inject(OverlayContainer).getContainerElement();
+  }
+
   function loginControl(): KsLoginComponent {
-    return fixture.debugElement.query(By.directive(KsLoginComponent)).componentInstance;
+    const element = dialogElement().querySelector('lib-ks-login');
+    const instance = element ? getDebugNode(element)?.componentInstance : null;
+    if (!(instance instanceof KsLoginComponent)) {
+      throw new Error('Login dialog did not render the login form');
+    }
+    return instance;
+  }
+
+  function signUpDialogCount(): number {
+    return TestBed.inject(MatDialog).openDialogs
+      .filter((dialog) => dialog.componentInstance instanceof KsSignUpComponent)
+      .length;
   }
 
   beforeEach(async () => {
@@ -57,18 +72,25 @@ describe('LoginComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('shows the login form in a dialog and returns home when the dialog is dismissed', () => {
+    const navigateSpy = vi.spyOn(TestBed.inject(Router), 'navigateByUrl');
+    expect(dialogElement().querySelector('lib-ks-login')).not.toBeNull();
+    dialogElement().querySelector<HTMLButtonElement>('.login-dialog-close')?.click();
+    expect(navigateSpy).toHaveBeenCalledWith('/');
+  });
+
   it('shows the account-exists message and preserves the destination after Google rejects a duplicate account', () => {
     queryParams = { googleError: 'account-exists', returnUrl: '/advisor' };
     component.ngOnInit();
     fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent)
+    expect(dialogElement().querySelector('[role="alert"]')?.textContent)
       .toContain('login.googleAccountExists');
     expect(loginControl().redirectUrl()).toBe('/advisor');
     expect(loginControl().googleReturnUrl()).toBe('/advisor');
   });
 
   it('does not show an account-required message on normal sign-in', () => {
-    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')).toBeNull();
+    expect(dialogElement().querySelector('[role="alert"]')).toBeNull();
   });
 
   it('redirects to the sign-up page after Google returns an unknown account', async () => {
@@ -94,7 +116,8 @@ describe('LoginComponent', () => {
       ['/sign-up'],
       expect.anything(),
     );
-    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
+    expect(dialogElement().querySelector('[role="dialog"]')).not.toBeNull();
+    expect(signUpDialogCount()).toBe(0);
   });
 
   it('redirects to the sign-up page when opened with signUp=true', async () => {
@@ -153,9 +176,9 @@ describe('LoginComponent', () => {
     component.ngOnInit();
     fixture.detectChanges();
     await fixture.whenStable();
-    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent)
+    expect(dialogElement().querySelector('[role="alert"]')?.textContent)
       .toContain('login.facebookAccountExists');
-    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
+    expect(signUpDialogCount()).toBe(0);
   });
 
   it('updates the login labels when the selected language changes', async () => {
@@ -169,8 +192,7 @@ describe('LoginComponent', () => {
       await fixture.whenStable();
 
       expect(loginControl().language()).toBe(language);
-      const element: HTMLElement = fixture.nativeElement;
-      expect(element.querySelector('h2')?.textContent?.trim()).toBe(heading);
+      expect(dialogElement().querySelector('h2')?.textContent?.trim()).toBe(heading);
     }
   });
 });
