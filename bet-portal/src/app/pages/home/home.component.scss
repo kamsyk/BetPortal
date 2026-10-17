@@ -72,9 +72,12 @@ h3 { font-size: 1.15rem; font-weight: 700; }
   gap: 18px;
   min-height: 48px;
   padding: 12px 20px;
+  border: 0;
   border-radius: 10px;
+  font: inherit;
   font-weight: 700;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .primary { background: #5eead4; color: #0f172a; }
@@ -115,7 +118,7 @@ h3 { font-size: 1.15rem; font-weight: 700; }
 .home-footer { border-top: 1px solid var(--border-color); padding-block: 28px; }
 .home-footer > span { font-weight: 700; }
 .home-footer p { font-size: .85rem; line-height: 1.7; color: var(--text-secondary); margin: 12px 0 0; }
-:is(a, main):focus-visible { outline: 3px solid #0f766e; outline-offset: 4px; }
+:is(a, button, main):focus-visible { outline: 3px solid #0f766e; outline-offset: 4px; }
 .hero a:focus-visible { outline-color: #5eead4; }
 
 :host-context(body:not(.dark-theme)) {

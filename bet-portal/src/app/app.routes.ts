@@ -1,5 +1,20 @@
-import { Routes } from '@angular/router';
+import { RedirectFunction, Routes } from '@angular/router';
 import { authGuard } from './auth/auth.guard';
+
+function authDialogRedirect(dialog: 'login' | 'sign-up'): RedirectFunction {
+  return ({ queryParams }) => {
+    const search = new URLSearchParams({ dialog });
+    for (const key of ['returnUrl', 'googleError', 'facebookError', 'signUp']) {
+      const value = queryParams[key];
+      const text = Array.isArray(value) ? value[0] : value;
+      if (text) {
+        search.set(key, text);
+      }
+    }
+
+    return `/?${search.toString()}`;
+  };
+}
 
 export const routes: Routes = [
   {
@@ -19,13 +34,11 @@ export const routes: Routes = [
   },
   {
     path: 'sign-up',
-    loadComponent: () =>
-      import('./pages/sign-up/sign-up.component').then((m) => m.SignUpComponent),
+    redirectTo: authDialogRedirect('sign-up'),
   },
   {
     path: 'login',
-    loadComponent: () =>
-      import('./pages/login/login.component').then((m) => m.LoginComponent),
+    redirectTo: authDialogRedirect('login'),
   },
   {
     path: '',

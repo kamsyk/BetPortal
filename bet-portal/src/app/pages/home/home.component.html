@@ -57,7 +57,7 @@
       <p class="section-kicker">{{ 'home.startEyebrow' | translate }}</p>
       <h2 id="start-title">{{ 'home.startTitle' | translate }}</h2>
       <p class="section-description">{{ 'home.startDescription' | translate }}</p>
-      <a class="action sign-in" routerLink="/login" [queryParams]="{ returnUrl: '/advisor' }">{{ 'home.signIn' | translate }} <span aria-hidden="true">&rarr;</span></a>
+      <button type="button" class="action sign-in" (click)="signIn()">{{ 'home.signIn' | translate }} <span aria-hidden="true">&rarr;</span></button>
     </div>
     <ol class="steps">
       <li><h3>{{ 'home.stepOneTitle' | translate }}</h3><p>{{ 'home.stepOneDescription' | translate }}</p></li>

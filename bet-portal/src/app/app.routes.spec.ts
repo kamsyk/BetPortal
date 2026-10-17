@@ -50,7 +50,26 @@ describe('Application routes', () => {
     await harness.navigateByUrl('/advisor');
     await harness.fixture.whenStable();
 
-    expect(TestBed.inject(Router).url).toBe('/login?returnUrl=%2Fadvisor');
+    expect(TestBed.inject(Router).url).toBe('/?dialog=login&returnUrl=%2Fadvisor');
     expect(checkAuthStatus).toHaveBeenCalled();
+  });
+
+  it('keeps an existing login link on the home page and preserves its alert', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/login?googleError=account-exists&returnUrl=%2Fadvisor', HomeComponent);
+
+    const loginUrl = new URL(TestBed.inject(Router).url, 'http://localhost');
+    expect(loginUrl.searchParams.get('dialog')).toBe('login');
+    expect(loginUrl.searchParams.get('googleError')).toBe('account-exists');
+    expect(loginUrl.searchParams.get('returnUrl')).toBe('/advisor');
+    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain('home.title');
+  });
+
+  it('keeps an existing sign-up link on the home page', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/sign-up?returnUrl=%2Fwelcome', HomeComponent);
+
+    expect(TestBed.inject(Router).url).toBe('/?dialog=sign-up&returnUrl=%2Fwelcome');
+    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain('home.title');
   });
 });
