@@ -14,7 +14,12 @@ import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dial
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { asapScheduler, observeOn, take } from 'rxjs';
 import { TranslatePipe } from '@ngx-translate/core';
-import { AuthService, KsLoginComponent, KsSignUpComponent } from 'ks-ag-controls';
+import {
+  AuthService,
+  KsLoginComponent,
+  KsSignUpComponent,
+  type KsAuthProvider,
+} from 'ks-ag-controls';
 import { API_BASE_URL } from '../../../core/tokens';
 import { AuthDialogRequest, AuthDialogService } from '../../services/auth-dialog.service';
 import { LanguageService } from '../../services/language.service';
@@ -44,6 +49,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
   readonly loginUrl = signal('');
   readonly redirectUrl = signal('');
+  readonly providers: readonly KsAuthProvider[] = ['google', 'facebook', 'microsoft'];
   readonly googleAuthUrl = signal('');
   readonly googleReturnUrl = signal('');
   readonly googleAccountRequired = signal(false);
@@ -51,6 +57,9 @@ export class LoginComponent implements OnInit, AfterViewInit {
   readonly facebookAuthUrl = signal('');
   readonly facebookAccountRequired = signal(false);
   readonly facebookAccountExists = signal(false);
+  readonly microsoftAuthUrl = signal('');
+  readonly microsoftAccountRequired = signal(false);
+  readonly microsoftAccountExists = signal(false);
 
   constructor() {
     // lib-ks-login still opens Sign up in its own dialog; switch to the portal dialog instead.
@@ -66,23 +75,28 @@ export class LoginComponent implements OnInit, AfterViewInit {
     const returnUrl = this.value('returnUrl') || '/';
     const googleError = this.value('googleError');
     const facebookError = this.value('facebookError');
+    const microsoftError = this.value('microsoftError');
     const openSignUp = this.data?.signUp === true || this.value('signUp') === 'true';
 
     this.googleAccountRequired.set(googleError === 'account-required');
     this.googleAccountExists.set(googleError === 'account-exists');
     this.facebookAccountRequired.set(facebookError === 'account-required');
     this.facebookAccountExists.set(facebookError === 'account-exists');
+    this.microsoftAccountRequired.set(microsoftError === 'account-required');
+    this.microsoftAccountExists.set(microsoftError === 'account-exists');
     this.redirectUrl.set(returnUrl);
     this.loginUrl.set(`${this.apiBase}/auth/login`);
     this.googleAuthUrl.set(`${this.apiBase}/auth/google`);
     this.facebookAuthUrl.set(`${this.apiBase}/auth/facebook`);
+    this.microsoftAuthUrl.set(`${this.apiBase}/auth/microsoft`);
     this.googleReturnUrl.set(returnUrl);
 
-    if (openSignUp || this.googleAccountRequired() || this.facebookAccountRequired()) {
+    if (openSignUp || this.googleAccountRequired() || this.facebookAccountRequired() || this.microsoftAccountRequired()) {
       this.authDialog.openSignUp({
         returnUrl,
         googleError: this.googleAccountRequired() ? googleError : null,
         facebookError: this.facebookAccountRequired() ? facebookError : null,
+        microsoftError: this.microsoftAccountRequired() ? microsoftError : null,
       });
       return;
     }
@@ -115,7 +129,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
     console.log('Login successful!', event);
   }
 
-  private value(key: 'returnUrl' | 'googleError' | 'facebookError' | 'signUp'): string | null {
+  private value(key: 'returnUrl' | 'googleError' | 'facebookError' | 'microsoftError' | 'signUp'): string | null {
     if (this.data && key !== 'signUp') {
       const provided = this.data[key];
       return typeof provided === 'string' ? provided : null;

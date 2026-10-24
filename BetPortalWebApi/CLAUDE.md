@@ -40,6 +40,24 @@ dotnet user-secrets set "Authentication:Google:ClientSecret" "<client-secret>"
 
 ## Architecture
 
+### Microsoft authentication
+
+For remote OAuth failures, the `MicrosoftAuthentication` logger records a sanitized `DiagnosticCode` (an AADSTS code, a known OAuth error, `correlation_failed`, `invalid_state`, or `unclassified_remote_failure`). Development responses also include `diagnosticCode`; production responses remain generic. Raw exception messages, credentials, tokens, and callback query values are not logged by this diagnostic handler. Restart the API and begin a fresh portal login attempt after configuration changes; do not reload an already-consumed callback URL.
+
+Microsoft login starts at `GET /api/auth/microsoft?returnUrl=/path`; sign-up starts at `GET /api/auth/microsoft/register`. Register an application in Microsoft Entra with supported account types **Accounts in any organizational directory and personal Microsoft accounts**, add the **Web** redirect URI `http://localhost:5026/signin-microsoft` (use the exact HTTPS backend URI in production), and enable delegated Microsoft Graph `User.Read`. Use the client secret **value**, not its ID:
+
+```bash
+dotnet user-secrets set "Authentication:Microsoft:ClientId" "<application-client-id>"
+dotnet user-secrets set "Authentication:Microsoft:ClientSecret" "<client-secret-value>"
+dotnet user-secrets set "Authentication:Microsoft:FrontendOrigin" "http://localhost:4200"
+```
+
+The MicrosoftAccount handler uses Microsoft's `common` v2 endpoint for personal and work/school accounts, PKCE, OAuth correlation protection, and Graph `/v1.0/me`. The protected five-minute `MicrosoftExternal` cookie is separate from application and other provider cookies. `/api/auth/microsoft/callback` requires a provider ID and Graph `mail` of at most 150 characters. It deliberately does not fall back to `userPrincipalName`: a work/school username need not be a deliverable mailbox. Accounts without `mail`, invalid tickets, cancellation, or invalid state return 401 without creating an application session.
+
+Apply SQL Server migration `20261024210000_AddMicrosoftLoginProvider` before registration. It inserts the `Microsoft` provider without changing existing Google/Facebook records; no schema snapshot change is needed. This repository has no MySQL migration baseline; a MySQL deployment must provision the equivalent provider row using its deployment migration process.
+
+`MicrosoftAccountService` reuses `ExternalAccountService`: login requires an active, unambiguous Microsoft provider link matched by email, case-insensitively. Local email matches or other providers never automatically authorize or link Microsoft login. Unknown accounts redirect to `/login?microsoftError=account-required&returnUrl=...`; existing unlinked/inactive/ambiguous accounts return 403. Explicit sign-up atomically saves an inactive user, activation token, and Microsoft link, sends an activation email, and redirects to `/sign-up-confirmation` without signing in. Duplicate accounts redirect with `microsoftError=account-exists`; email delivery failure preserves the inactive account and returns 503. The existing Azure email configuration is required. Return URLs are restricted to `Authentication:Microsoft:FrontendOrigin`. The public portal supports Microsoft on both dialogs, including localized errors in English, Czech, and German.
+
 ### Facebook authentication
 
 Facebook login starts at `GET /api/auth/facebook?returnUrl=/path`; sign-up starts at `GET /api/auth/facebook/register`. Set `Authentication:Facebook:AppId`, `Authentication:Facebook:AppSecret`, and `Authentication:Facebook:FrontendOrigin`. Development uses `http://localhost:4200` as the frontend origin. Keep secrets in user secrets or environment variables, never in committed configuration. In Meta's Facebook Login settings, allow the exact backend callback URL (`http://localhost:5026/signin-facebook` locally, or the HTTPS backend URL used by your app); use HTTPS where required by Meta. Development-mode apps only allow app administrators/developers/testers; production access and the email permission may require Meta review.

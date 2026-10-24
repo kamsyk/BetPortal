@@ -15,14 +15,20 @@
   @if (facebookAccountRequired()) {
     <p role="alert">{{ 'login.facebookAccountRequired' | translate }}</p>
   }
+  @if (microsoftAccountRequired()) {
+    <p role="alert">{{ 'login.microsoftAccountRequired' | translate }}</p>
+  }
 
   <lib-ks-sign-up
     class="sign-up-component"
     [language]="currentLanguage()"
+    [providers]="providers"
     [googleAuthUrl]="googleAuthUrl()"
     [googleReturnUrl]="googleReturnUrl()"
     [facebookAuthUrl]="facebookAuthUrl()"
     [facebookReturnUrl]="facebookReturnUrl()"
+    [microsoftAuthUrl]="microsoftAuthUrl()"
+    [microsoftReturnUrl]="microsoftReturnUrl()"
   ></lib-ks-sign-up>
 
   <p class="sign-in-prompt">

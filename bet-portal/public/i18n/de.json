@@ -15,6 +15,8 @@
   "login": {
     "close": "Schließen",
     "facebookAccountExists": "Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an.",
+    "microsoftAccountExists": "Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an.",
+    "microsoftAccountRequired": "Zu Ihrer Microsoft-E-Mail-Adresse gibt es kein Portalkonto. Registrieren Sie sich mit Microsoft. Es wurde kein Konto automatisch erstellt.",
     "facebookAccountRequired": "Zu Ihrer Facebook-E-Mail-Adresse gibt es kein Portalkonto. Registrieren Sie sich mit Facebook. Es wurde kein Konto automatisch erstellt.",
     "googleAccountExists": "Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an.",
     "googleAccountRequired": "Zu Ihrer Google-E-Mail-Adresse gibt es kein Portalkonto. Füllen Sie das Registrierungsformular aus. Es wurde kein Konto automatisch erstellt."

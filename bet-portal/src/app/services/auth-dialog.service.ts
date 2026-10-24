@@ -7,6 +7,7 @@ export interface AuthDialogRequest {
   returnUrl?: string | null;
   googleError?: string | null;
   facebookError?: string | null;
+  microsoftError?: string | null;
   signUp?: boolean;
 }
 
@@ -32,7 +33,8 @@ export class AuthDialogService {
     const showSignUp = kind === 'sign-up'
       || request.signUp
       || request.googleError === 'account-required'
-      || request.facebookError === 'account-required';
+      || request.facebookError === 'account-required'
+      || request.microsoftError === 'account-required';
     if (showSignUp) {
       this.openSignUp(request);
       return;
@@ -82,7 +84,8 @@ export class AuthDialogService {
 
   private clearDialogQuery(): void {
     const params = this.route.snapshot.queryParamMap;
-    if (!params.has('dialog') && !params.has('googleError') && !params.has('facebookError') && !params.has('signUp')) {
+    if (!params.has('dialog') && !params.has('googleError') && !params.has('facebookError')
+      && !params.has('microsoftError') && !params.has('signUp')) {
       return;
     }
 
@@ -91,6 +94,7 @@ export class AuthDialogService {
         dialog: null,
         googleError: null,
         facebookError: null,
+        microsoftError: null,
         signUp: null,
         returnUrl: null,
       },

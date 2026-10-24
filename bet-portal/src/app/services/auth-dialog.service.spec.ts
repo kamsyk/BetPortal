@@ -23,7 +23,7 @@ describe('AuthDialogService', () => {
     queryParams = {};
     refs = [];
     navigate = vi.fn();
-    dialogOpen = vi.fn((..._args: unknown[]) => {
+    dialogOpen = vi.fn(() => {
       const closed = new Subject<void>();
       const ref: FakeDialogRef = {
         close: vi.fn(),
@@ -60,12 +60,33 @@ describe('AuthDialogService', () => {
 
     await vi.waitFor(() => expect(dialogOpen).toHaveBeenCalledOnce());
     const [component, config] = dialogOpen.mock.calls[0] as [
-      { name: string },
+      unknown,
       { data: AuthDialogRequest; width: string },
     ];
-    expect(component.name).toBe('SignUpComponent');
+    expect(component).toBe((await import('../pages/sign-up/sign-up.component')).SignUpComponent);
     expect(config.data).toBe(request);
     expect(config.width).toBe('560px');
+  });
+
+  it('opens Microsoft account-required requests as sign-up', async () => {
+    const request: AuthDialogRequest = { microsoftError: 'account-required', returnUrl: '/advisor' };
+    service.openRequested('login', request);
+    await vi.waitFor(() => expect(dialogOpen).toHaveBeenCalledOnce());
+    const [component, config] = dialogOpen.mock.calls[0] as [
+      unknown, { data: AuthDialogRequest },
+    ];
+    expect(component).toBe((await import('../pages/sign-up/sign-up.component')).SignUpComponent);
+    expect(config.data).toBe(request);
+  });
+
+  it('clears Microsoft errors when the dialog closes even without a dialog parameter', async () => {
+    queryParams = { microsoftError: 'account-exists', returnUrl: '/advisor' };
+    service.openLogin();
+    await vi.waitFor(() => expect(dialogOpen).toHaveBeenCalledOnce());
+    refs[0].closed.next();
+    expect(navigate).toHaveBeenCalledWith([], expect.objectContaining({
+      queryParams: expect.objectContaining({ microsoftError: null, returnUrl: null }),
+    }));
   });
 
   it('opens only the latest dialog when lazy-loaded requests race', async () => {
@@ -74,10 +95,10 @@ describe('AuthDialogService', () => {
 
     await vi.waitFor(() => expect(dialogOpen).toHaveBeenCalledOnce());
     const [component, config] = dialogOpen.mock.calls[0] as [
-      { name: string },
+      unknown,
       { data: AuthDialogRequest },
     ];
-    expect(component.name).toBe('SignUpComponent');
+    expect(component).toBe((await import('../pages/sign-up/sign-up.component')).SignUpComponent);
     expect(config.data.returnUrl).toBe('/latest');
   });
 
@@ -102,6 +123,7 @@ describe('AuthDialogService', () => {
         dialog: null,
         googleError: null,
         facebookError: null,
+        microsoftError: null,
         signUp: null,
         returnUrl: null,
       },

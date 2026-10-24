@@ -98,6 +98,7 @@ describe('LoginComponent', () => {
       returnUrl: '/advisor',
       googleError: 'account-required',
       facebookError: null,
+      microsoftError: null,
     });
     expect(navigateSpy).not.toHaveBeenCalled();
   });
@@ -115,6 +116,7 @@ describe('LoginComponent', () => {
       returnUrl: '/',
       googleError: null,
       facebookError: null,
+      microsoftError: null,
     });
   });
 
@@ -129,12 +131,15 @@ describe('LoginComponent', () => {
 
   it('passes the selected language and preserves login URLs', () => {
     expect(loginControl().language()).toBe('cs');
+    expect(loginControl().providers()).toEqual(['google', 'facebook', 'microsoft']);
     expect(loginControl().loginUrl()).toBe('http://localhost:5026/api/auth/login');
     expect(loginControl().redirectUrl()).toBe('/');
     expect(loginControl().googleAuthUrl()).toBe('http://localhost:5026/api/auth/google');
     expect(loginControl().googleReturnUrl()).toBe('/');
     expect(loginControl().facebookAuthUrl()).toBe('http://localhost:5026/api/auth/facebook');
     expect(loginControl().facebookReturnUrl()).toBe('/');
+    expect(loginControl().microsoftAuthUrl()).toBe('http://localhost:5026/api/auth/microsoft');
+    expect(loginControl().microsoftReturnUrl()).toBe('/');
   });
 
   it('opens the sign-up dialog after Facebook rejects an unknown account and preserves the return URL', () => {
@@ -144,6 +149,7 @@ describe('LoginComponent', () => {
       returnUrl: '/advisor',
       googleError: null,
       facebookError: 'account-required',
+      microsoftError: null,
     });
   });
 
@@ -154,6 +160,27 @@ describe('LoginComponent', () => {
     await fixture.whenStable();
     expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent)
       .toContain('login.facebookAccountExists');
+    expect(openSignUp).not.toHaveBeenCalled();
+  });
+
+  it('opens sign-up after Microsoft returns an unknown account, preserving its destination', () => {
+    queryParams = { microsoftError: 'account-required', returnUrl: '/advisor' };
+    component.ngOnInit();
+    expect(openSignUp).toHaveBeenCalledWith({
+      returnUrl: '/advisor',
+      googleError: null,
+      facebookError: null,
+      microsoftError: 'account-required',
+    });
+  });
+
+  it('shows Microsoft duplicate-account messaging without opening sign-up', () => {
+    queryParams = { microsoftError: 'account-exists', returnUrl: '/advisor' };
+    component.ngOnInit();
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent)
+      .toContain('login.microsoftAccountExists');
+    expect(loginControl().microsoftReturnUrl()).toBe('/advisor');
     expect(openSignUp).not.toHaveBeenCalled();
   });
 

@@ -53,10 +53,13 @@ describe('SignUpComponent', () => {
 
   it('renders the sign-up form for the dialog with registration endpoints', () => {
     expect(signUpControl().language()).toBe('cs');
+    expect(signUpControl().providers()).toEqual(['google', 'facebook', 'microsoft']);
     expect(signUpControl().googleAuthUrl()).toBe('http://localhost:5026/api/auth/google/register');
     expect(signUpControl().facebookAuthUrl()).toBe('http://localhost:5026/api/auth/facebook/register');
     expect(signUpControl().googleReturnUrl()).toBe('/');
     expect(signUpControl().facebookReturnUrl()).toBe('/');
+    expect(signUpControl().microsoftAuthUrl()).toBe('http://localhost:5026/api/auth/microsoft/register');
+    expect(signUpControl().microsoftReturnUrl()).toBe('/');
     expect((fixture.nativeElement as HTMLElement).querySelector('[role="dialog"]')).toBeNull();
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.sign-in-prompt button')?.click();
     expect(openLogin).toHaveBeenCalledWith({ returnUrl: '/' });
@@ -80,6 +83,19 @@ describe('SignUpComponent', () => {
 
     expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent)
       .toContain('login.facebookAccountRequired');
+  });
+
+  it('shows Microsoft account-required messaging and preserves the return URL', () => {
+    queryParams = { microsoftError: 'account-required', returnUrl: '/advisor' };
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    expect(signUpControl().microsoftReturnUrl()).toBe('/advisor');
+    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent)
+      .toContain('login.microsoftAccountRequired');
+    const button = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
+      .find(element => element.textContent?.includes('Microsoft'));
+    expect(button?.disabled).toBe(false);
   });
 
   it('updates labels when the selected language changes', async () => {
