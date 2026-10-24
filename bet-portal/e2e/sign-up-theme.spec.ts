@@ -58,6 +58,18 @@ for (const theme of ['light', 'dark']) {
     await expect(labels).toHaveCount(3);
     await expectReadableText(labels);
     await expectReadableText(signUp.getByRole('button', { name: /Sign up with/ }));
+    for (const provider of ['Google', 'Facebook', 'Microsoft']) {
+      const button = signUp.getByRole('button', { name: `Sign up with ${provider}`, exact: true });
+      const icon = button.locator('svg');
+      await expect(icon).toBeVisible();
+      await expect(icon).toHaveAttribute('aria-hidden', 'true');
+      await expect(icon).toHaveAttribute('focusable', 'false');
+      expect(await icon.evaluate(element => {
+        const bounds = element.getBoundingClientRect();
+        return bounds.width >= 20 && bounds.height >= 20;
+      })).toBe(true);
+      expect(await icon.locator('path').count()).toBeGreaterThan(0);
+    }
 
     const username = signUp.getByRole('textbox', { name: 'Username', exact: true });
     const email = signUp.getByRole('textbox', { name: 'Email', exact: true });

@@ -16,6 +16,12 @@ node dist/bet-portal/server/server.mjs           # serve SSR build
 
 To update the `ks-ag-controls` local library: run `install-ks-controls-dev.bat` (dev) or `install-ks-controls-prod.bat` (prod), then `npm install`.
 
+The public portal consumes the local `ks-ag-controls-0.0.9.tgz` package, including
+the sign-up provider SVG icons and Google/Facebook registration inputs. Rebuild
+and pack the library before updating the dependency; changing library source
+alone does not update the installed package. Use a new package version when
+publishing changes so npm does not reuse an older archive's integrity/cache.
+
 ## Architecture
 
 Activation links use `/user-token?token=<token>`. The lazy public page posts the token to `/api/user-token` after the first browser render (never during SSR/prerender), then redirects to `/welcome` with history replacement so the token is removed from the current URL. Invalid/used tokens or server errors are shown inline. The welcome page confirms activation and links to Login; activation does not automatically sign in the user.

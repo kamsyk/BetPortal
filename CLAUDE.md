@@ -68,9 +68,9 @@ Facebook uses the same provider-link and activation rules through `/api/auth/fac
 `authGuard` calls `AuthService.checkAuthStatus()` (from `ks-ag-controls`) → `GET /api/auth/check`. `authInterceptor` adds `withCredentials: true` to every request; on SSR it forwards the raw `Cookie` header from the incoming request via `global.__request__`.
 
 ### `ks-ag-controls` local library
-Both Angular apps depend on `ks-ag-controls` installed from a local `.tgz`. The public portal uses 0.0.8, which adds Facebook login/sign-up URLs; the admin portal's version is unchanged. For the public portal:
+Both Angular apps depend on `ks-ag-controls` installed from a local `.tgz`. The public portal uses 0.0.9, which preserves Google/Facebook login and sign-up URLs and includes provider icons; the admin portal's version is unchanged. For the public portal:
 ```
-"ks-ag-controls": "file:../../../Angular/ks-ag-controls/ks-ag-controls-workspace/dist/ks-ag-controls/ks-ag-controls-0.0.8.tgz"
+"ks-ag-controls": "file:../../../Angular/ks-ag-controls/ks-ag-controls-workspace/dist/ks-ag-controls/ks-ag-controls-0.0.9.tgz"
 ```
 Build and pack the library in its workspace, then run `npm install` in the consuming app after updating the archive path. `AuthService` (used by auth guard) lives in this library.
 

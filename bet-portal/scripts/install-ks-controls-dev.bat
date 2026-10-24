@@ -33,7 +33,7 @@ echo Installing ks-ag-controls for Development ...
 cd /d "%PORTAL_DIR%"
 if errorlevel 1 exit /b %errorlevel%
 
-call npm install "%LIBRARY_DIR%\dist\ks-ag-controls\ks-ag-controls-0.0.8.tgz"
+call npm install "%LIBRARY_DIR%\dist\ks-ag-controls\ks-ag-controls-0.0.9.tgz"
 if errorlevel 1 (
   echo Version update failed!
   exit /b %errorlevel%
