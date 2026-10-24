@@ -11,3 +11,15 @@ GET {{baseUrl}}/api/auth/facebook/callback
 
 ### Reject an untrusted return URL
 GET {{baseUrl}}/api/auth/facebook?returnUrl=https%3A%2F%2Fevil.example%2F
+
+### Start Microsoft login (personal or work/school account)
+GET {{baseUrl}}/api/auth/microsoft?returnUrl=%2Fadvisor
+
+### Start Microsoft sign-up (requires email activation; does not log in)
+GET {{baseUrl}}/api/auth/microsoft/register?returnUrl=%2Fadvisor
+
+### A direct callback without the protected Microsoft ticket returns 401
+GET {{baseUrl}}/api/auth/microsoft/callback
+
+### Microsoft rejects an untrusted return URL
+GET {{baseUrl}}/api/auth/microsoft?returnUrl=https%3A%2F%2Fevil.example%2F

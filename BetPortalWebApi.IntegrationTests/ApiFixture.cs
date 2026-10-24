@@ -2,6 +2,7 @@ using BpDbLayer;
 using BetPortalWebApi.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.Facebook;
+using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -24,6 +25,9 @@ public sealed class ApiFixture : IAsyncLifetime
         ["Authentication__Facebook__AppId"] = "test-facebook-app-id",
         ["Authentication__Facebook__AppSecret"] = "test-facebook-app-secret",
         ["Authentication__Facebook__FrontendOrigin"] = "http://localhost:4200",
+        ["Authentication__Microsoft__ClientId"] = "test-microsoft-client-id",
+        ["Authentication__Microsoft__ClientSecret"] = "test-microsoft-client-secret",
+        ["Authentication__Microsoft__FrontendOrigin"] = "http://localhost:4200",
     };
     private readonly Dictionary<string, string?> _previousExternalAuthEnvironment = new();
     private readonly string _databaseName = $"BetPortal_IntegrationTests_{Guid.NewGuid():N}";
@@ -167,6 +171,12 @@ public sealed class ApiFixture : IAsyncLifetime
         HttpMessageHandler backchannel, IEmailService? emailService = null, string frontendOrigin = "http://localhost:4200")
     {
         return CreateExternalClient<FacebookOptions>("Facebook", backchannel, emailService, frontendOrigin);
+    }
+
+    internal HttpClient CreateMicrosoftClient(
+        HttpMessageHandler backchannel, IEmailService? emailService = null, string frontendOrigin = "http://localhost:4200")
+    {
+        return CreateExternalClient<MicrosoftAccountOptions>("Microsoft", backchannel, emailService, frontendOrigin);
     }
 
     private HttpClient CreateExternalClient<TOptions>(

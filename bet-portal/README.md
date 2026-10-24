@@ -4,7 +4,7 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 
 ## Local controls dependency
 
-This portal uses Angular 21 and the local `ks-ag-controls-0.0.7.tgz` package
+This portal uses Angular 21 and the local `ks-ag-controls-0.0.10.tgz` package
 referenced by [package.json](./package.json). Use Node.js 22.12 or newer in the
 22.x release line (Node.js 22.19 is supported).
 
@@ -24,6 +24,26 @@ Do not use `--force` or `--legacy-peer-deps` to install this library on Angular 
 version 0.0.7 requires Angular 21. The published npm version 0.0.6 does not export
 `AuthService` or `KsLoginComponent`; use the local package rather than the
 production install script for this checkout.
+
+## Microsoft login and sign-up
+
+Both authentication dialogs support personal Microsoft and work/school accounts.
+Login starts at `/api/auth/microsoft`, and explicit registration starts at
+`/api/auth/microsoft/register`. Registration creates an inactive account and sends
+an activation email; it does not sign the user in or automatically link an
+existing local, Google, or Facebook account. Microsoft must supply a Graph `mail`
+address; a work/school username alone is not sufficient.
+
+Configure the Microsoft Entra Web application, backend secrets, and provider
+migration as described in [API setup](../BetPortalWebApi/CLAUDE.md#microsoft-authentication).
+The shared library archive above must be built and installed for the sign-up
+button to work. The admin portal's library version is unchanged.
+
+Focused mocked browser coverage (desktop and mobile):
+
+```powershell
+npm run test:e2e -- microsoft-auth.spec.ts
+```
 
 ## Development server
 

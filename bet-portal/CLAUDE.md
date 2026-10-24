@@ -16,8 +16,8 @@ node dist/bet-portal/server/server.mjs           # serve SSR build
 
 To update the `ks-ag-controls` local library: run `install-ks-controls-dev.bat` (dev) or `install-ks-controls-prod.bat` (prod), then `npm install`.
 
-The public portal consumes the local `ks-ag-controls-0.0.9.tgz` package, including
-the sign-up provider SVG icons and Google/Facebook registration inputs. Rebuild
+The public portal consumes the local `ks-ag-controls-0.0.10.tgz` package, including
+the sign-up provider SVG icons and Google/Facebook/Microsoft registration inputs. Rebuild
 and pack the library before updating the dependency; changing library source
 alone does not update the installed package. Use a new package version when
 publishing changes so npm does not reuse an older archive's integrity/cache.
@@ -27,6 +27,8 @@ publishing changes so npm does not reuse an older archive's integrity/cache.
 Activation links use `/user-token?token=<token>`. The lazy public page posts the token to `/api/user-token` after the first browser render (never during SSR/prerender), then redirects to `/welcome` with history replacement so the token is removed from the current URL. Invalid/used tokens or server errors are shown inline. The welcome page confirms activation and links to Login; activation does not automatically sign in the user.
 
 The Sign up page (`/sign-up`) embeds `lib-ks-sign-up` and uses `/api/auth/google/register`, separately from Google's login endpoint. Verified Google registration creates an inactive user plus an initialization token, sends a welcome email containing the portal's `/user-token?token=<token>` activation link, and redirects to the public `/sign-up-confirmation` page. Registration does not sign the user in. If email delivery fails, the API shows an explicit error while preserving the inactive account and token. Duplicate emails return to Login with an account-already-exists message and do not send another email.
+
+Microsoft is available alongside Google and Facebook in both auth dialogs. Login uses `/api/auth/microsoft`; sign-up uses `/api/auth/microsoft/register` and the same email-activation flow. `microsoftError=account-required` opens Sign up, while `microsoftError=account-exists` shows the duplicate-account message on Login. Legacy `/login` and `/sign-up` URLs redirect to home with dialog/error/return URL parameters preserved. Closing the dialog removes these parameters. Microsoft supports personal and work/school accounts with a Graph mailbox email, but never links an existing local or other-provider account automatically. See `../BetPortalWebApi/CLAUDE.md` for Entra configuration and the required database migration.
 
 ### SSR setup
 Angular 21 app with SSR via `@angular/ssr` + Express (`src/server.ts`). The SSR entry is `src/main.server.ts`; the browser entry is `src/main.ts`. Static assets (including i18n JSON files) are served from `public/`.

@@ -65,6 +65,15 @@ describe('Application routes', () => {
     expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain('home.title');
   });
 
+  it('preserves Microsoft callback errors and destination when opening the login dialog', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/login?microsoftError=account-required&returnUrl=%2Fadvisor', HomeComponent);
+    const url = new URL(TestBed.inject(Router).url, 'http://localhost');
+    expect(url.searchParams.get('dialog')).toBe('login');
+    expect(url.searchParams.get('microsoftError')).toBe('account-required');
+    expect(url.searchParams.get('returnUrl')).toBe('/advisor');
+  });
+
   it('keeps an existing sign-up link on the home page', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/sign-up?returnUrl=%2Fwelcome', HomeComponent);

@@ -64,13 +64,15 @@ Explicit Google sign-up (`/api/auth/google/register`) creates an inactive user, 
 
 Facebook uses the same provider-link and activation rules through `/api/auth/facebook` and `/api/auth/facebook/register`. Configure `Authentication:Facebook:AppId`, `AppSecret`, and `FrontendOrigin` on the backend and allow its `/signin-facebook` callback in Meta. Unlike Google, Facebook does not return an `email_verified` claim; the activation email verifies mailbox access for registration. Existing Google accounts are not automatically linked to Facebook. See `BetPortalWebApi/CLAUDE.md` for the full flow.
 
+Microsoft follows the same explicit provider-link and activation rules at `/api/auth/microsoft` and `/api/auth/microsoft/register`, supporting personal and work/school accounts. Configure `Authentication:Microsoft:ClientId`, `ClientSecret`, and `FrontendOrigin`, register the Web callback `/signin-microsoft` in Microsoft Entra, and apply `20261024210000_AddMicrosoftLoginProvider` before registration. A Graph `mail` address is required; `userPrincipalName` is not treated as a mailbox. See `BetPortalWebApi/CLAUDE.md` for setup and error behavior.
+
 ### Angular auth flow
 `authGuard` calls `AuthService.checkAuthStatus()` (from `ks-ag-controls`) → `GET /api/auth/check`. `authInterceptor` adds `withCredentials: true` to every request; on SSR it forwards the raw `Cookie` header from the incoming request via `global.__request__`.
 
 ### `ks-ag-controls` local library
-Both Angular apps depend on `ks-ag-controls` installed from a local `.tgz`. The public portal uses 0.0.9, which preserves Google/Facebook login and sign-up URLs and includes provider icons; the admin portal's version is unchanged. For the public portal:
+Both Angular apps depend on `ks-ag-controls` installed from a local `.tgz`. The public portal uses 0.0.10, which supports Google/Facebook/Microsoft login and sign-up URLs and includes provider icons; the admin portal's version is unchanged. For the public portal:
 ```
-"ks-ag-controls": "file:../../../Angular/ks-ag-controls/ks-ag-controls-workspace/dist/ks-ag-controls/ks-ag-controls-0.0.9.tgz"
+"ks-ag-controls": "file:../../../Angular/ks-ag-controls/ks-ag-controls-workspace/dist/ks-ag-controls/ks-ag-controls-0.0.10.tgz"
 ```
 Build and pack the library in its workspace, then run `npm install` in the consuming app after updating the archive path. `AuthService` (used by auth guard) lives in this library.
 

@@ -20,6 +20,7 @@ namespace BetPortalWebApi.Controllers
         private readonly ISessionService _sessionService;
         private readonly IGoogleAccountService _googleAccountService;
         private readonly IFacebookAccountService _facebookAccountService;
+        private readonly IMicrosoftAccountService _microsoftAccountService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
 
@@ -28,6 +29,7 @@ namespace BetPortalWebApi.Controllers
             ISessionService sessionService,
             IGoogleAccountService googleAccountService,
             IFacebookAccountService facebookAccountService,
+            IMicrosoftAccountService microsoftAccountService,
             IConfiguration configuration,
             ILogger<AuthController> logger)
         {
@@ -35,6 +37,7 @@ namespace BetPortalWebApi.Controllers
             _sessionService = sessionService;
             _googleAccountService = googleAccountService;
             _facebookAccountService = facebookAccountService;
+            _microsoftAccountService = microsoftAccountService;
             _configuration = configuration;
             _logger = logger;
         }
@@ -113,6 +116,46 @@ namespace BetPortalWebApi.Controllers
         public async Task<IActionResult> FacebookCallback(CancellationToken cancellationToken)
         {
             return await CompleteExternalAsync("Facebook", _facebookAccountService, cancellationToken);
+        }
+
+        /// <summary>Starts Microsoft sign-in for personal and work/school accounts.</summary>
+        [HttpGet("microsoft")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status302Found)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+        public async Task<IActionResult> Microsoft(
+            [FromQuery] string? returnUrl,
+            [FromServices] IAuthenticationSchemeProvider schemes,
+            CancellationToken cancellationToken)
+        {
+            return await StartExternalAsync("Microsoft", returnUrl, schemes, false, cancellationToken);
+        }
+
+        /// <summary>Starts Microsoft registration; accounts require email activation before login.</summary>
+        [HttpGet("microsoft/register")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status302Found)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+        public async Task<IActionResult> MicrosoftRegister(
+            [FromQuery] string? returnUrl,
+            [FromServices] IAuthenticationSchemeProvider schemes,
+            CancellationToken cancellationToken)
+        {
+            return await StartExternalAsync("Microsoft", returnUrl, schemes, true, cancellationToken);
+        }
+
+        /// <summary>Completes Microsoft login or registration using the protected external ticket.</summary>
+        [HttpGet("microsoft/callback")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status302Found)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+        public async Task<IActionResult> MicrosoftCallback(CancellationToken cancellationToken)
+        {
+            return await CompleteExternalAsync("Microsoft", _microsoftAccountService, cancellationToken);
         }
 
         [HttpPost("login")]
@@ -315,10 +358,16 @@ namespace BetPortalWebApi.Controllers
                 || !TryGetExternalReturnUrl(provider, returnUrl, out var destination))
             {
                 _logger.LogWarning("{Provider} sign-in rejected an invalid external authentication ticket or missing email.", provider);
+                var detail = provider switch
+                {
+                    "Facebook" => "Sign in again and allow access to your Facebook email. An email address is required.",
+                    "Microsoft" => "Sign in with a Microsoft account that supplies a mailbox email address and allow access to your profile.",
+                    _ => null,
+                };
                 return Problem(
                     statusCode: StatusCodes.Status401Unauthorized,
                     title: $"{provider} sign-in could not be verified",
-                    detail: provider == "Facebook" ? "Sign in again and allow access to your Facebook email. An email address is required." : null);
+                    detail: detail);
             }
 
             if (external.Properties.Items.TryGetValue($"{provider.ToLowerInvariant()}Flow", out var flow) && flow == "register")
@@ -413,7 +462,7 @@ namespace BetPortalWebApi.Controllers
             await HttpContext.SignOutAsync($"{provider}External");
             var properties = new AuthenticationProperties
             {
-                RedirectUri = Url.Action(provider == "Google" ? nameof(GoogleCallback) : nameof(FacebookCallback)),
+                RedirectUri = Url.Action($"{provider}Callback"),
             };
             properties.Items["returnUrl"] = destination;
             properties.Items[$"{provider.ToLowerInvariant()}Flow"] = register ? "register" : "login";

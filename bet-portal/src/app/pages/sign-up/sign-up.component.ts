@@ -30,22 +30,28 @@ export class SignUpComponent implements OnInit {
     this.themeService.isDarkMode() ? 'dark' : 'light',
   );
 
-  readonly providers: readonly KsAuthProvider[] = ['google', 'facebook'];
+  readonly providers: readonly KsAuthProvider[] = ['google', 'facebook', 'microsoft'];
   readonly googleAuthUrl = signal('');
   readonly googleReturnUrl = signal('/');
   readonly facebookAuthUrl = signal('');
   readonly facebookReturnUrl = signal('/');
   readonly googleAccountRequired = signal(false);
   readonly facebookAccountRequired = signal(false);
+  readonly microsoftAuthUrl = signal('');
+  readonly microsoftReturnUrl = signal('/');
+  readonly microsoftAccountRequired = signal(false);
 
   ngOnInit(): void {
     const returnUrl = this.value('returnUrl') || '/';
     this.googleAccountRequired.set(this.value('googleError') === 'account-required');
     this.facebookAccountRequired.set(this.value('facebookError') === 'account-required');
+    this.microsoftAccountRequired.set(this.value('microsoftError') === 'account-required');
     this.googleReturnUrl.set(returnUrl);
     this.facebookReturnUrl.set(returnUrl);
+    this.microsoftReturnUrl.set(returnUrl);
     this.googleAuthUrl.set(`${this.apiBase}/auth/google/register`);
     this.facebookAuthUrl.set(`${this.apiBase}/auth/facebook/register`);
+    this.microsoftAuthUrl.set(`${this.apiBase}/auth/microsoft/register`);
 
     this.authService
       .checkAuthStatus()
@@ -66,7 +72,7 @@ export class SignUpComponent implements OnInit {
     this.authDialog.openLogin({ returnUrl: this.googleReturnUrl() });
   }
 
-  private value(key: 'returnUrl' | 'googleError' | 'facebookError'): string | null {
+  private value(key: 'returnUrl' | 'googleError' | 'facebookError' | 'microsoftError'): string | null {
     if (this.data) {
       return this.data[key] ?? null;
     }

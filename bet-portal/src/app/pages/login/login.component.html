@@ -21,6 +21,12 @@
   @if (facebookAccountExists()) {
     <p role="alert">{{ 'login.facebookAccountExists' | translate }}</p>
   }
+  @if (microsoftAccountRequired()) {
+    <p role="alert">{{ 'login.microsoftAccountRequired' | translate }}</p>
+  }
+  @if (microsoftAccountExists()) {
+    <p role="alert">{{ 'login.microsoftAccountExists' | translate }}</p>
+  }
   <lib-ks-login
     class="login-component"
     [language]="currentLanguage()"
@@ -32,6 +38,8 @@
     [googleReturnUrl]="googleReturnUrl()"
     [facebookAuthUrl]="facebookAuthUrl()"
     [facebookReturnUrl]="redirectUrl()"
+    [microsoftAuthUrl]="microsoftAuthUrl()"
+    [microsoftReturnUrl]="redirectUrl()"
     (loginSuccess)="onLoginSuccess($event)"
   ></lib-ks-login>
 </div>

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using BetPortalWebApi.Middleware;
 using BetPortalWebApi.Services;
 using BetPortalWebApi.Services.Interfaces;
+using BetPortalWebApi.Utils;
 using BpDbLayer;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +48,8 @@ builder.Services.AddScoped<ISessionService, SessionService>();
 builder.Services.AddScoped<IGoogleAccountService, GoogleAccountService>();
 
 builder.Services.AddScoped<IFacebookAccountService, FacebookAccountService>();
+
+builder.Services.AddScoped<IMicrosoftAccountService, MicrosoftAccountService>();
 
 builder.Services.AddSingleton<IEmailService, AzureCommunicationEmailService>();
 
@@ -167,6 +170,14 @@ var authentication = builder.Services.AddAuthentication(options =>
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
     })
+    .AddCookie("MicrosoftExternal", options =>
+    {
+        options.Cookie.Name = "MicrosoftExternal";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+    })
     .AddCookie("FacebookExternal", options =>
     {
         options.Cookie.Name = "FacebookExternal";
@@ -231,6 +242,44 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["Authentication:Facebook:Ap
                 Title = "Facebook authentication failed",
                 Detail = "Facebook sign-in was cancelled or could not be verified. Please try again and allow access to your email.",
             };
+            await context.Response.WriteAsJsonAsync(problem, context.HttpContext.RequestAborted);
+        };
+    });
+}
+
+if (!string.IsNullOrWhiteSpace(builder.Configuration["Authentication:Microsoft:ClientId"])
+    && !string.IsNullOrWhiteSpace(builder.Configuration["Authentication:Microsoft:ClientSecret"]))
+{
+    authentication.AddMicrosoftAccount(options =>
+    {
+        options.ClientId = builder.Configuration["Authentication:Microsoft:ClientId"] ?? string.Empty;
+        options.ClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"] ?? string.Empty;
+        options.SignInScheme = "MicrosoftExternal";
+        options.CallbackPath = "/signin-microsoft";
+        options.UsePkce = true;
+
+        // A work/school userPrincipalName is not necessarily a mailbox address.
+        options.ClaimActions.Remove(ClaimTypes.Email);
+        options.ClaimActions.MapJsonKey(ClaimTypes.Email, "mail");
+        options.Events.OnRemoteFailure = async context =>
+        {
+            var failureCode = MicrosoftAuthenticationDiagnostics.GetFailureCode(context.Failure);
+            context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("MicrosoftAuthentication")
+                .LogWarning("Microsoft authentication failed. DiagnosticCode: {DiagnosticCode}", failureCode);
+            context.HandleResponse();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            var problem = new Microsoft.AspNetCore.Mvc.ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Microsoft authentication failed",
+                Detail = "Microsoft sign-in was cancelled or could not be verified. Please try again and allow access to your profile.",
+            };
+            if (builder.Environment.IsDevelopment())
+            {
+                problem.Extensions["diagnosticCode"] = failureCode;
+            }
+
             await context.Response.WriteAsJsonAsync(problem, context.HttpContext.RequestAborted);
         };
     });
