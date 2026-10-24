@@ -1,3 +1,5 @@
+@use '@angular/material' as mat;
+
 @import "@angular/material/prebuilt-themes/indigo-pink.css";
 @import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
 /* AG Grid CSS is loaded via angular.json `styles` so Vite/ng serve always includes themes. */
@@ -20,6 +22,14 @@
 }
 
 .dark-theme {
+  @include mat.all-component-colors(mat.m2-define-dark-theme((
+    color: (
+      primary: mat.m2-define-palette(mat.$m2-indigo-palette, 200),
+      accent: mat.m2-define-palette(mat.$m2-pink-palette, A100),
+      warn: mat.m2-define-palette(mat.$m2-red-palette, 200),
+    ),
+  )));
+
   // Dark theme colors
   --background-color: #121212;
   --surface-color: #1e1e1e;

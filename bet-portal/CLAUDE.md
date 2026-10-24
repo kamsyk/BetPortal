@@ -57,6 +57,11 @@ The user-profile icon opens a shared desktop/mobile menu containing a nested lan
 ### Global styles
 Bootstrap 5 CSS is imported in `src/styles.scss`; Bootstrap JS bundle is loaded as a script via `angular.json`. Angular Material theme is also applied globally. Component styles use `.scss`.
 
+The light theme uses Material's prebuilt indigo-pink theme. Under `.dark-theme`,
+Material's M2 dark color theme supplies matching input, label, validation, and
+button colors, including controls embedded from `ks-ag-controls`. Keep these
+Material colors in sync with the app's dark background variables.
+
 ## Angular Coding Rules
 
 See `.claude/CLAUDE.md` in this directory for the full set. Non-obvious rules specific to this project:
