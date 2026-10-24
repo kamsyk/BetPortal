@@ -53,6 +53,7 @@ describe('SignUpComponent', () => {
 
   it('renders the sign-up form for the dialog with registration endpoints', () => {
     expect(signUpControl().language()).toBe('cs');
+    expect(signUpControl().providers()).toEqual(['google', 'facebook']);
     expect(signUpControl().googleAuthUrl()).toBe('http://localhost:5026/api/auth/google/register');
     expect(signUpControl().facebookAuthUrl()).toBe('http://localhost:5026/api/auth/facebook/register');
     expect(signUpControl().googleReturnUrl()).toBe('/');

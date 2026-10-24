@@ -14,7 +14,12 @@ import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dial
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { asapScheduler, observeOn, take } from 'rxjs';
 import { TranslatePipe } from '@ngx-translate/core';
-import { AuthService, KsLoginComponent, KsSignUpComponent } from 'ks-ag-controls';
+import {
+  AuthService,
+  KsLoginComponent,
+  KsSignUpComponent,
+  type KsAuthProvider,
+} from 'ks-ag-controls';
 import { API_BASE_URL } from '../../../core/tokens';
 import { AuthDialogRequest, AuthDialogService } from '../../services/auth-dialog.service';
 import { LanguageService } from '../../services/language.service';
@@ -44,6 +49,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
   readonly loginUrl = signal('');
   readonly redirectUrl = signal('');
+  readonly providers: readonly KsAuthProvider[] = ['google', 'facebook'];
   readonly googleAuthUrl = signal('');
   readonly googleReturnUrl = signal('');
   readonly googleAccountRequired = signal(false);

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { ActivatedRoute, Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { TranslatePipe } from '@ngx-translate/core';
-import { AuthService, KsSignUpComponent } from 'ks-ag-controls';
+import { AuthService, KsSignUpComponent, type KsAuthProvider } from 'ks-ag-controls';
 import { take } from 'rxjs';
 import { API_BASE_URL } from '../../../core/tokens';
 import { AuthDialogRequest, AuthDialogService } from '../../services/auth-dialog.service';
@@ -30,6 +30,7 @@ export class SignUpComponent implements OnInit {
     this.themeService.isDarkMode() ? 'dark' : 'light',
   );
 
+  readonly providers: readonly KsAuthProvider[] = ['google', 'facebook'];
   readonly googleAuthUrl = signal('');
   readonly googleReturnUrl = signal('/');
   readonly facebookAuthUrl = signal('');

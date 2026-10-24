@@ -129,6 +129,7 @@ describe('LoginComponent', () => {
 
   it('passes the selected language and preserves login URLs', () => {
     expect(loginControl().language()).toBe('cs');
+    expect(loginControl().providers()).toEqual(['google', 'facebook']);
     expect(loginControl().loginUrl()).toBe('http://localhost:5026/api/auth/login');
     expect(loginControl().redirectUrl()).toBe('/');
     expect(loginControl().googleAuthUrl()).toBe('http://localhost:5026/api/auth/google');
