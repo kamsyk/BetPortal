@@ -49,3 +49,52 @@
 :host-context(.dark-theme) .login-dialog-close:focus-visible {
   outline-color: #93c5fd;
 }
+
+.login-external-error {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid #b91c1c;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #7f1d1d;
+
+  p {
+    margin: 0;
+  }
+
+  .error-reference {
+    margin-top: 8px;
+  }
+
+  .external-error-details {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    margin: 8px 0 0;
+
+    dt {
+      font-weight: 600;
+    }
+
+    dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+  }
+
+  code {
+    color: inherit;
+    user-select: all;
+  }
+}
+
+:host-context(.dark-theme) .login-external-error {
+  border-color: #fca5a5;
+  background: #3f1d1d;
+  color: #fecaca;
+}

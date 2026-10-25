@@ -1,14 +1,31 @@
 using System.Security.Claims;
+using BetPortalWebApi.ErrorHandling;
+using BetPortalWebApi.Logging;
 using BetPortalWebApi.Middleware;
 using BetPortalWebApi.Services;
 using BetPortalWebApi.Services.Interfaces;
-using BetPortalWebApi.Utils;
 using BpDbLayer;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSerilog((services, loggerConfiguration) =>
+    SerilogConfiguration.Configure(loggerConfiguration, services.GetRequiredService<IConfiguration>()));
+
+builder.Services.AddProblemDetails(options =>
+{
+    // Expose a support reference instead of the raw W3C traceparent value.
+    options.CustomizeProblemDetails = context =>
+    {
+        context.ProblemDetails.Extensions.Remove("traceId");
+        context.ProblemDetails.Extensions["errorId"] = ErrorReference.Get(context.HttpContext);
+    };
+});
+
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -50,6 +67,8 @@ builder.Services.AddScoped<IGoogleAccountService, GoogleAccountService>();
 builder.Services.AddScoped<IFacebookAccountService, FacebookAccountService>();
 
 builder.Services.AddScoped<IMicrosoftAccountService, MicrosoftAccountService>();
+
+builder.Services.AddScoped<IExternalAuthErrorDetailsService, ExternalAuthErrorDetailsService>();
 
 builder.Services.AddSingleton<IEmailService, AzureCommunicationEmailService>();
 
@@ -198,21 +217,7 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["Authentication:Google:Clie
         options.CallbackPath = "/signin-google";
         options.UsePkce = true;
         options.ClaimActions.MapJsonKey("google:email_verified", "email_verified");
-        options.Events.OnRemoteFailure = async context =>
-        {
-            context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("GoogleAuthentication")
-                .LogWarning("Google authentication failed.");
-            context.HandleResponse();
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            var problem = new Microsoft.AspNetCore.Mvc.ProblemDetails
-            {
-                Status = StatusCodes.Status401Unauthorized,
-                Title = "Google authentication failed",
-                Detail = "Google sign-in was cancelled or could not be verified. Please try again.",
-            };
-            await context.Response.WriteAsJsonAsync(problem, context.HttpContext.RequestAborted);
-        };
+        options.Events.OnRemoteFailure = context => ExternalAuthRemoteFailureHandler.HandleAsync(context, "Google");
     });
 }
 
@@ -229,21 +234,7 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["Authentication:Facebook:Ap
         options.Fields.Add("last_name");
         options.ClaimActions.MapJsonKey(ClaimTypes.GivenName, "first_name");
         options.ClaimActions.MapJsonKey(ClaimTypes.Surname, "last_name");
-        options.Events.OnRemoteFailure = async context =>
-        {
-            context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("FacebookAuthentication")
-                .LogWarning("Facebook authentication failed.");
-            context.HandleResponse();
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            var problem = new Microsoft.AspNetCore.Mvc.ProblemDetails
-            {
-                Status = StatusCodes.Status401Unauthorized,
-                Title = "Facebook authentication failed",
-                Detail = "Facebook sign-in was cancelled or could not be verified. Please try again and allow access to your email.",
-            };
-            await context.Response.WriteAsJsonAsync(problem, context.HttpContext.RequestAborted);
-        };
+        options.Events.OnRemoteFailure = context => ExternalAuthRemoteFailureHandler.HandleAsync(context, "Facebook");
     });
 }
 
@@ -261,27 +252,7 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["Authentication:Microsoft:C
         // A work/school userPrincipalName is not necessarily a mailbox address.
         options.ClaimActions.Remove(ClaimTypes.Email);
         options.ClaimActions.MapJsonKey(ClaimTypes.Email, "mail");
-        options.Events.OnRemoteFailure = async context =>
-        {
-            var failureCode = MicrosoftAuthenticationDiagnostics.GetFailureCode(context.Failure);
-            context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("MicrosoftAuthentication")
-                .LogWarning("Microsoft authentication failed. DiagnosticCode: {DiagnosticCode}", failureCode);
-            context.HandleResponse();
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            var problem = new Microsoft.AspNetCore.Mvc.ProblemDetails
-            {
-                Status = StatusCodes.Status401Unauthorized,
-                Title = "Microsoft authentication failed",
-                Detail = "Microsoft sign-in was cancelled or could not be verified. Please try again and allow access to your profile.",
-            };
-            if (builder.Environment.IsDevelopment())
-            {
-                problem.Extensions["diagnosticCode"] = failureCode;
-            }
-
-            await context.Response.WriteAsJsonAsync(problem, context.HttpContext.RequestAborted);
-        };
+        options.Events.OnRemoteFailure = context => ExternalAuthRemoteFailureHandler.HandleAsync(context, "Microsoft");
     });
 }
 
@@ -335,7 +306,11 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseSerilogRequestLogging();
+
 app.UseCors("DefaultCors");
+
+app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -352,6 +327,8 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseAuthentication();
+
+app.UseUserLogContext();
 
 app.UseAuthorization();
 

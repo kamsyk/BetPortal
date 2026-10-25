@@ -1,9 +1,11 @@
 import { isPlatformBrowser } from '@angular/common';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   OnInit,
   PLATFORM_ID,
@@ -12,7 +14,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { asapScheduler, observeOn, take } from 'rxjs';
+import { asapScheduler, catchError, observeOn, of, take } from 'rxjs';
 import { TranslatePipe } from '@ngx-translate/core';
 import {
   AuthService,
@@ -21,9 +23,27 @@ import {
   type KsAuthProvider,
 } from 'ks-ag-controls';
 import { API_BASE_URL } from '../../../core/tokens';
+import { SKIP_ERROR_NOTIFICATION } from '../../http/error.interceptor';
 import { AuthDialogRequest, AuthDialogService } from '../../services/auth-dialog.service';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
+
+/** Masked email and sign-in methods of the existing account, returned for an `account-not-linked` error. */
+export interface ExternalAuthErrorDetails {
+  email: string;
+  signInMethods: string[];
+}
+
+function isExternalAuthErrorDetails(value: unknown): value is ExternalAuthErrorDetails {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const details = value as Partial<ExternalAuthErrorDetails>;
+  return typeof details.email === 'string'
+    && Array.isArray(details.signInMethods)
+    && details.signInMethods.every((method) => typeof method === 'string');
+}
 
 @Component({
   selector: 'app-login',
@@ -35,6 +55,8 @@ import { ThemeService } from '../../services/theme.service';
 export class LoginComponent implements OnInit, AfterViewInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly http = inject(HttpClient);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly apiBase = inject(API_BASE_URL);
   private readonly authService = inject(AuthService);
   private readonly authDialog = inject(AuthDialogService);
@@ -54,12 +76,40 @@ export class LoginComponent implements OnInit, AfterViewInit {
   readonly googleReturnUrl = signal('');
   readonly googleAccountRequired = signal(false);
   readonly googleAccountExists = signal(false);
+  private readonly googleErrorCode = signal<string | null>(null);
   readonly facebookAuthUrl = signal('');
   readonly facebookAccountRequired = signal(false);
   readonly facebookAccountExists = signal(false);
+  private readonly facebookErrorCode = signal<string | null>(null);
   readonly microsoftAuthUrl = signal('');
   readonly microsoftAccountRequired = signal(false);
   readonly microsoftAccountExists = signal(false);
+  private readonly microsoftErrorCode = signal<string | null>(null);
+  readonly errorId = signal<string | null>(null);
+  readonly accountDetails = signal<ExternalAuthErrorDetails | null>(null);
+  readonly externalAuthError = computed(() => {
+    if (this.googleAccountRequired() || this.googleAccountExists()
+      || this.facebookAccountRequired() || this.facebookAccountExists()
+      || this.microsoftAccountRequired() || this.microsoftAccountExists()) {
+      return null;
+    }
+
+    const providerError = [
+      { provider: 'Google', code: this.googleErrorCode() },
+      { provider: 'Facebook', code: this.facebookErrorCode() },
+      { provider: 'Microsoft', code: this.microsoftErrorCode() },
+    ].find((candidate) => candidate.code !== null);
+    if (!providerError?.code) {
+      return null;
+    }
+
+    const supportedCodes = [
+      'account-not-linked', 'account-inactive', 'account-unavailable', 'email-unavailable',
+      'sign-in-failed', 'activation-email-failed', 'not-configured',
+    ];
+    const code = supportedCodes.includes(providerError.code) ? providerError.code : 'sign-in-failed';
+    return { code, messageKey: `login.externalErrors.${code}`, provider: providerError.provider };
+  });
 
   constructor() {
     // lib-ks-login still opens Sign up in its own dialog; switch to the portal dialog instead.
@@ -76,6 +126,11 @@ export class LoginComponent implements OnInit, AfterViewInit {
     const googleError = this.value('googleError');
     const facebookError = this.value('facebookError');
     const microsoftError = this.value('microsoftError');
+    this.googleErrorCode.set(googleError);
+    this.facebookErrorCode.set(facebookError);
+    this.microsoftErrorCode.set(microsoftError);
+    this.errorId.set(this.value('errorId'));
+    this.loadAccountDetails(this.value('errorDetails'));
     const openSignUp = this.data?.signUp === true || this.value('signUp') === 'true';
 
     this.googleAccountRequired.set(googleError === 'account-required');
@@ -129,13 +184,34 @@ export class LoginComponent implements OnInit, AfterViewInit {
     console.log('Login successful!', event);
   }
 
-  private value(key: 'returnUrl' | 'googleError' | 'facebookError' | 'microsoftError' | 'signUp'): string | null {
+  private value(
+    key: 'returnUrl' | 'googleError' | 'facebookError' | 'microsoftError' | 'errorId' | 'errorDetails' | 'signUp',
+  ): string | null {
     if (this.data && key !== 'signUp') {
       const provided = this.data[key];
       return typeof provided === 'string' ? provided : null;
     }
 
     return this.route.snapshot.queryParamMap.get(key);
+  }
+
+  /** Fetches the masked email and available sign-in methods behind the opaque, short-lived `errorDetails` token. */
+  private loadAccountDetails(token: string | null): void {
+    if (!this.isBrowser || !token || this.externalAuthError()?.code !== 'account-not-linked') {
+      return;
+    }
+
+    this.http
+      .get<unknown>(`${this.apiBase}/auth/external-error-details`, {
+        params: { token },
+        context: new HttpContext().set(SKIP_ERROR_NOTIFICATION, true),
+      })
+      .pipe(
+        take(1),
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((details) => this.accountDetails.set(isExternalAuthErrorDetails(details) ? details : null));
   }
 
   private labelDialog(dialogId: string): void {

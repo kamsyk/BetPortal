@@ -19,7 +19,23 @@
     "microsoftAccountRequired": "Pro váš e-mail Microsoft neexistuje účet v portálu. Zaregistrujte se přes Microsoft. Žádný účet nebyl vytvořen automaticky.",
     "facebookAccountRequired": "Pro váš e-mail Facebook neexistuje účet v portálu. Zaregistrujte se přes Facebook. Žádný účet nebyl vytvořen automaticky.",
     "googleAccountExists": "Účet s tímto e-mailem již existuje. Přihlaste se prosím.",
-    "googleAccountRequired": "Pro váš e-mail Google neexistuje účet v portálu. Vyplňte registrační formulář. Žádný účet nebyl vytvořen automaticky."
+    "googleAccountRequired": "Pro váš e-mail Google neexistuje účet v portálu. Vyplňte registrační formulář. Žádný účet nebyl vytvořen automaticky.",
+    "errorReference": "Referenční kód chyby",
+    "externalErrors": {
+      "account-not-linked": "Tento účet není propojen s poskytovatelem {{provider}}. Přihlaste se původním způsobem, například heslem nebo jiným poskytovatelem.",
+      "account-inactive": "Váš účet u poskytovatele {{provider}} ještě není aktivován. Zkontrolujte prosím doručenou poštu, zda vám přišel aktivační e-mail.",
+      "account-unavailable": "Tento účet nelze použít k přihlášení přes poskytovatele {{provider}}. Obraťte se prosím na podporu a uveďte níže uvedený referenční kód chyby.",
+      "email-unavailable": "Poskytovatel {{provider}} neposkytl ověřenou e-mailovou adresu. Zkuste to prosím znovu a povolte přístup ke své e-mailové adrese.",
+      "sign-in-failed": "Přihlášení přes {{provider}} bylo zrušeno nebo se ho nepodařilo dokončit. Zkuste to prosím znovu.",
+      "activation-email-failed": "Váš účet u poskytovatele {{provider}} byl vytvořen, ale aktivační e-mail se nepodařilo odeslat. Obraťte se prosím na podporu a uveďte referenční kód chyby.",
+      "not-configured": "Přihlášení přes {{provider}} momentálně není dostupné. Použijte prosím jiný způsob přihlášení."
+    },
+    "externalErrorDetails": {
+      "email": "E-mail pou?it? u poskytovatele {{provider}}",
+      "methods": "Dostupn? zp?soby p?ihl??en?",
+      "password": "U?ivatelsk? jm?no a heslo",
+      "noMethods": "K tomuto ??tu nen? nastaven ??dn? jin? zp?sob p?ihl??en?. Kontaktujte pros?m podporu a uve?te n??e uveden? referen?n? k?d chyby."
+    }
   },
   "signUpConfirmation": {
     "title": "Registrace přijata",
@@ -93,5 +109,11 @@
     "stepThreeTitle": "Začněte rozhovor",
     "stepThreeDescription": "Ptejte se na data portálu a navazujícími otázkami je prozkoumejte podrobněji.",
     "disclaimer": "Odpovědi AI mohou obsahovat chyby. Důležité informace si ověřte. Portál nezaručuje výsledky sázek; jeho obsah berte jako informace, nikoli jako sázkové poradenství."
+  },
+  "httpErrors": {
+    "connection": "Server není dostupný. Zkontrolujte připojení a zkuste to znovu.",
+    "server": "Na naší straně došlo k chybě. Zkuste to prosím později.",
+    "reference": "Referenční kód chyby: {{errorId}}",
+    "forbidden": "K provedení této akce nemáte oprávnění."
   }
 }

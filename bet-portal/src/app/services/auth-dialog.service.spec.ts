@@ -54,6 +54,7 @@ describe('AuthDialogService', () => {
     const request: AuthDialogRequest = {
       returnUrl: '/advisor',
       googleError: 'account-required',
+      errorId: '0123456789abcdef0123456789abcdef',
     };
 
     service.openRequested('login', request);
@@ -80,12 +81,12 @@ describe('AuthDialogService', () => {
   });
 
   it('clears Microsoft errors when the dialog closes even without a dialog parameter', async () => {
-    queryParams = { microsoftError: 'account-exists', returnUrl: '/advisor' };
+    queryParams = { microsoftError: 'account-not-linked', returnUrl: '/advisor', errorId: '0123456789abcdef0123456789abcdef', errorDetails: 'token' };
     service.openLogin();
     await vi.waitFor(() => expect(dialogOpen).toHaveBeenCalledOnce());
     refs[0].closed.next();
     expect(navigate).toHaveBeenCalledWith([], expect.objectContaining({
-      queryParams: expect.objectContaining({ microsoftError: null, returnUrl: null }),
+      queryParams: expect.objectContaining({ microsoftError: null, errorId: null, errorDetails: null, returnUrl: null }),
     }));
   });
 
@@ -124,6 +125,8 @@ describe('AuthDialogService', () => {
         googleError: null,
         facebookError: null,
         microsoftError: null,
+        errorId: null,
+        errorDetails: null,
         signUp: null,
         returnUrl: null,
       },

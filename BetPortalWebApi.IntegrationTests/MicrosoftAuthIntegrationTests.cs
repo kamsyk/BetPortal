@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BpDbLayer.Models;
@@ -39,7 +39,7 @@ public sealed class MicrosoftAuthIntegrationTests(ApiFixture fixture)
         await using var scope = fixture.CreateTestScope();
         using var response = await scope.Client.GetAsync(
             "/api/auth/microsoft?returnUrl=" + Uri.EscapeDataString(returnUrl), TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        ExternalAuthAssert.LoginErrorRedirect(response, "microsoftError", "sign-in-failed", "/");
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public sealed class MicrosoftAuthIntegrationTests(ApiFixture fixture)
         using var backchannel = new MicrosoftBackchannel("unused@example.test");
         using var client = fixture.CreateMicrosoftClient(backchannel, frontendOrigin: string.Empty);
         using var response = await client.GetAsync("/api/auth/microsoft", TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        await ExternalAuthAssert.SanitizedProblemAsync(response, HttpStatusCode.ServiceUnavailable);
     }
 
     [Theory]
@@ -59,26 +59,26 @@ public sealed class MicrosoftAuthIntegrationTests(ApiFixture fixture)
     {
         await using var scope = fixture.CreateTestScope();
         using var response = await scope.Client.GetAsync(path, TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        ExternalAuthAssert.LoginErrorRedirect(response, "microsoftError", "sign-in-failed", "/");
         AssertNoApplicationCookies(response);
     }
 
     [Theory]
     [InlineData(false, null, true, 50, true, HttpStatusCode.Redirect, "account-required")]
     [InlineData(false, "Microsoft", true, 50, true, HttpStatusCode.Redirect, null)]
-    [InlineData(false, "Microsoft", false, 50, true, HttpStatusCode.Forbidden, null)]
-    [InlineData(false, "Google", true, 50, true, HttpStatusCode.Forbidden, null)]
-    [InlineData(false, "Facebook", true, 50, true, HttpStatusCode.Forbidden, null)]
-    [InlineData(false, "", true, 50, true, HttpStatusCode.Forbidden, null)]
+    [InlineData(false, "Microsoft", false, 50, true, HttpStatusCode.Redirect, "account-inactive")]
+    [InlineData(false, "Google", true, 50, true, HttpStatusCode.Redirect, "account-not-linked")]
+    [InlineData(false, "Facebook", true, 50, true, HttpStatusCode.Redirect, "account-not-linked")]
+    [InlineData(false, "", true, 50, true, HttpStatusCode.Redirect, "account-not-linked")]
     [InlineData(true, null, true, 50, true, HttpStatusCode.Redirect, null)]
     [InlineData(true, "Microsoft", true, 50, true, HttpStatusCode.Redirect, "account-exists")]
     [InlineData(true, "", true, 50, true, HttpStatusCode.Redirect, "account-exists")]
     [InlineData(true, "Google", true, 50, true, HttpStatusCode.Redirect, "account-exists")]
-    [InlineData(true, null, true, 0, true, HttpStatusCode.Unauthorized, null)]
-    [InlineData(false, null, true, 0, true, HttpStatusCode.Unauthorized, null)]
+    [InlineData(true, null, true, 0, true, HttpStatusCode.Redirect, "email-unavailable")]
+    [InlineData(false, null, true, 0, true, HttpStatusCode.Redirect, "email-unavailable")]
     [InlineData(true, null, true, 150, true, HttpStatusCode.Redirect, null)]
-    [InlineData(true, null, true, 151, true, HttpStatusCode.Unauthorized, null)]
-    [InlineData(true, null, true, 50, false, HttpStatusCode.ServiceUnavailable, null)]
+    [InlineData(true, null, true, 151, true, HttpStatusCode.Redirect, "email-unavailable")]
+    [InlineData(true, null, true, 50, false, HttpStatusCode.Redirect, "activation-email-failed")]
     public async Task Round_trip_enforces_provider_links_activation_and_registration_intent(
         bool register, string? existingProvider, bool active, int emailLength, bool emailSent,
         HttpStatusCode expectedStatus, string? expectedError)
@@ -103,6 +103,7 @@ public sealed class MicrosoftAuthIntegrationTests(ApiFixture fixture)
                     ModifiedDate = DateTime.UtcNow,
                     CreatedByUserId = 1,
                     ModifiedByUserId = 1,
+                    Password = existingProvider.Length == 0 ? "password-hash" : null,
                 };
                 if (existingProvider.Length > 0)
                 {
@@ -131,10 +132,12 @@ public sealed class MicrosoftAuthIntegrationTests(ApiFixture fixture)
             Assert.Equal(expectedStatus, callback.StatusCode);
             if (expectedError is not null)
             {
-                Assert.Equal("http://localhost:4200/login", callback.Headers.Location!.GetLeftPart(UriPartial.Path));
-                var query = QueryHelpers.ParseQuery(callback.Headers.Location.Query);
-                Assert.Equal(expectedError, query["microsoftError"]);
-                Assert.Equal("/advisor", query["returnUrl"]);
+                ExternalAuthAssert.LoginErrorRedirect(callback, "microsoftError", expectedError, "/advisor");
+                if (expectedError == "account-not-linked")
+                {
+                    await ExternalAuthAssert.NotLinkedDetailsAsync(
+                        client, callback, email.ToUpperInvariant(), existingProvider!.Length > 0 ? [existingProvider] : ["Password"]);
+                }
             }
 
             var loggedIn = !register && existingProvider == "Microsoft" && active && emailLength > 0;
@@ -209,7 +212,7 @@ public sealed class MicrosoftAuthIntegrationTests(ApiFixture fixture)
             Assert.Equal(1, backchannel.TokenRequests);
             Assert.Equal(1, backchannel.ProfileRequests);
             using var replay = await client.GetAsync("/api/auth/microsoft/callback", cancellationToken);
-            Assert.Equal(HttpStatusCode.Unauthorized, replay.StatusCode);
+            ExternalAuthAssert.LoginErrorRedirect(replay, "microsoftError", "sign-in-failed", "/");
             AssertNoApplicationCookies(replay);
         }
         finally

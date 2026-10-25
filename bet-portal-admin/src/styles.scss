@@ -79,3 +79,7 @@ body {
     }
   }
 }
+
+.http-error-snackbar .mdc-snackbar__label {
+  white-space: pre-line;
+}

@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
-import { provideTranslateService } from '@ngx-translate/core';
+import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { AuthService, KsLoginComponent, KsSignUpComponent } from 'ks-ag-controls';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -12,6 +14,7 @@ import { LoginComponent } from './login.component';
 import { API_BASE_URL } from '../../../core/tokens';
 import { AppLanguage, LanguageService } from '../../services/language.service';
 import { AuthDialogService } from '../../services/auth-dialog.service';
+import { SKIP_ERROR_NOTIFICATION } from '../../http/error.interceptor';
 
 describe('LoginComponent', () => {
   let component: LoginComponent;
@@ -42,6 +45,8 @@ describe('LoginComponent', () => {
         provideRouter([]),
         provideNoopAnimations(),
         provideTranslateService(),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { get queryParamMap() { return convertToParamMap(queryParams); } } },
@@ -61,6 +66,7 @@ describe('LoginComponent', () => {
 
   afterEach(() => {
     TestBed.inject(MatDialog).closeAll();
+    TestBed.inject(HttpTestingController).verify();
   });
 
   it('should create', () => {
@@ -182,6 +188,140 @@ describe('LoginComponent', () => {
       .toContain('login.microsoftAccountExists');
     expect(loginControl().microsoftReturnUrl()).toBe('/advisor');
     expect(openSignUp).not.toHaveBeenCalled();
+  });
+
+
+  it.each([
+    ['account-not-linked', 'Google'],
+    ['account-inactive', 'Facebook'],
+    ['account-unavailable', 'Microsoft'],
+    ['email-unavailable', 'Google'],
+    ['sign-in-failed', 'Facebook'],
+    ['activation-email-failed', 'Microsoft'],
+    ['not-configured', 'Google'],
+  ])('renders a localized %s external-login error for %s', (code, provider) => {
+    queryParams = { googleError: code };
+    if (provider === 'Facebook') {
+      queryParams = { facebookError: code };
+    } else if (provider === 'Microsoft') {
+      queryParams = { microsoftError: code };
+    }
+    component.ngOnInit();
+    expect(component.externalAuthError()).toEqual({
+      code,
+      messageKey: `login.externalErrors.${code}`,
+      provider,
+    });
+  });
+
+  it('localizes an unrecognized external error, interpolates the provider, and shows its reference once', async () => {
+    const reference = '0123456789abcdef0123456789abcdef';
+    queryParams = { googleError: 'unknown-error', facebookError: 'account-inactive', errorId: reference };
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('en', {
+      login: {
+        errorReference: 'Error reference',
+        externalErrors: { 'sign-in-failed': 'Sign-in with {{provider}} failed.' },
+      },
+    });
+    await translate.use('en').toPromise();
+    component.ngOnInit();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const alerts = (fixture.nativeElement as HTMLElement).querySelectorAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].textContent).toContain('Sign-in with Google failed.');
+    expect(alerts[0].textContent).toContain('Error reference');
+    expect(alerts[0].querySelector('code')?.textContent).toBe(reference);
+  });
+
+  describe('account-not-linked details', () => {
+    const detailsUrl = 'http://localhost:5026/api/auth/external-error-details';
+
+    async function useEnglish(): Promise<void> {
+      const translate = TestBed.inject(TranslateService);
+      translate.setTranslation('en', {
+        login: {
+          externalErrors: { 'account-not-linked': 'Not connected to {{provider}}.' },
+          externalErrorDetails: {
+            email: 'Email used with {{provider}}',
+            methods: 'Available sign-in methods',
+            password: 'Username and password',
+            noMethods: 'No other sign-in method.',
+          },
+        },
+      });
+      await translate.use('en').toPromise();
+    }
+
+    function alertElement(): HTMLElement {
+      return (fixture.nativeElement as HTMLElement).querySelector('[role="alert"]') as HTMLElement;
+    }
+
+    it('shows the masked email and the account sign-in methods fetched with the opaque token', async () => {
+      await useEnglish();
+      queryParams = { googleError: 'account-not-linked', errorId: 'ref', errorDetails: 'opaque+token' };
+      component.ngOnInit();
+
+      const request = TestBed.inject(HttpTestingController).expectOne(
+        (candidate) => candidate.url === detailsUrl,
+      );
+      expect(request.request.params.get('token')).toBe('opaque+token');
+      expect(request.request.context.get(SKIP_ERROR_NOTIFICATION)).toBe(true);
+      request.flush({ email: 'k***@gmail.com', signInMethods: ['Password', 'Microsoft'] });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const alert = alertElement();
+      expect(alert.textContent).toContain('Email used with Google');
+      expect(alert.textContent).toContain('k***@gmail.com');
+      expect(alert.textContent).toContain('Available sign-in methods');
+      expect(Array.from(alert.querySelectorAll('li'), (item) => item.textContent?.trim()))
+        .toEqual(['Username and password', 'Microsoft']);
+    });
+
+    it('explains when the account has no other sign-in method', async () => {
+      await useEnglish();
+      queryParams = { facebookError: 'account-not-linked', errorDetails: 'token' };
+      component.ngOnInit();
+
+      TestBed.inject(HttpTestingController).expectOne((candidate) => candidate.url === detailsUrl)
+        .flush({ email: 'k***@gmail.com', signInMethods: [] });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(alertElement().textContent).toContain('No other sign-in method.');
+      expect(alertElement().querySelector('li')).toBeNull();
+    });
+
+    it('keeps the generic message when the token is expired or the response is malformed', async () => {
+      await useEnglish();
+      queryParams = { googleError: 'account-not-linked', errorDetails: 'expired' };
+      component.ngOnInit();
+      TestBed.inject(HttpTestingController).expectOne((candidate) => candidate.url === detailsUrl)
+        .flush({ title: 'gone' }, { status: 404, statusText: 'Not Found' });
+      expect(component.accountDetails()).toBeNull();
+
+      component.ngOnInit();
+      TestBed.inject(HttpTestingController).expectOne((candidate) => candidate.url === detailsUrl)
+        .flush({ email: 42, signInMethods: 'Password' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(component.accountDetails()).toBeNull();
+      expect(alertElement().textContent).toContain('Not connected to Google.');
+      expect(alertElement().querySelector('dl')).toBeNull();
+    });
+
+    it('does not request details for other errors or without a token', () => {
+      queryParams = { googleError: 'account-inactive', errorDetails: 'token' };
+      component.ngOnInit();
+      queryParams = { googleError: 'account-not-linked' };
+      component.ngOnInit();
+
+      TestBed.inject(HttpTestingController).expectNone(detailsUrl);
+    });
   });
 
   it('updates the login labels when the selected language changes', async () => {

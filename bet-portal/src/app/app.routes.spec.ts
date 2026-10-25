@@ -67,11 +67,13 @@ describe('Application routes', () => {
 
   it('preserves Microsoft callback errors and destination when opening the login dialog', async () => {
     const harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/login?microsoftError=account-required&returnUrl=%2Fadvisor', HomeComponent);
+    await harness.navigateByUrl('/login?microsoftError=account-not-linked&returnUrl=%2Fadvisor&errorId=0123456789abcdef0123456789abcdef&errorDetails=opaque-token', HomeComponent);
     const url = new URL(TestBed.inject(Router).url, 'http://localhost');
     expect(url.searchParams.get('dialog')).toBe('login');
-    expect(url.searchParams.get('microsoftError')).toBe('account-required');
+    expect(url.searchParams.get('microsoftError')).toBe('account-not-linked');
     expect(url.searchParams.get('returnUrl')).toBe('/advisor');
+    expect(url.searchParams.get('errorId')).toBe('0123456789abcdef0123456789abcdef');
+    expect(url.searchParams.get('errorDetails')).toBe('opaque-token');
   });
 
   it('keeps an existing sign-up link on the home page', async () => {

@@ -179,6 +179,30 @@ public sealed class ApiFixture : IAsyncLifetime
         return CreateExternalClient<MicrosoftAccountOptions>("Microsoft", backchannel, emailService, frontendOrigin);
     }
 
+    internal HttpClient CreateClient(Action<IServiceCollection> configureServices, IDictionary<string, string?>? settings = null)
+    {
+        if (_factory is null)
+        {
+            throw new InvalidOperationException("The API fixture has not been initialized.");
+        }
+
+        var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            if (settings is not null)
+            {
+                builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(settings));
+            }
+
+            builder.ConfigureTestServices(configureServices);
+        });
+        return factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            HandleCookies = false,
+            AllowAutoRedirect = false,
+        });
+    }
+
     private HttpClient CreateExternalClient<TOptions>(
         string provider, HttpMessageHandler backchannel, IEmailService? emailService, string? frontendOrigin = null)
         where TOptions : OAuthOptions
