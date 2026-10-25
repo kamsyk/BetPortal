@@ -44,6 +44,7 @@ export class AppComponent {
           facebookError: params.get('facebookError'),
           microsoftError: params.get('microsoftError'),
           errorId: params.get('errorId'),
+          errorDetails: params.get('errorDetails'),
           signUp: params.get('signUp') === 'true',
         });
       });

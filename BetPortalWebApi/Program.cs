@@ -68,6 +68,8 @@ builder.Services.AddScoped<IFacebookAccountService, FacebookAccountService>();
 
 builder.Services.AddScoped<IMicrosoftAccountService, MicrosoftAccountService>();
 
+builder.Services.AddScoped<IExternalAuthErrorDetailsService, ExternalAuthErrorDetailsService>();
+
 builder.Services.AddSingleton<IEmailService, AzureCommunicationEmailService>();
 
 builder.Services.AddScoped<IChatService, ChatService>();

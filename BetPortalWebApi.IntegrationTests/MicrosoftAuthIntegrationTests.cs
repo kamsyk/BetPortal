@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BpDbLayer.Models;
@@ -103,6 +103,7 @@ public sealed class MicrosoftAuthIntegrationTests(ApiFixture fixture)
                     ModifiedDate = DateTime.UtcNow,
                     CreatedByUserId = 1,
                     ModifiedByUserId = 1,
+                    Password = existingProvider.Length == 0 ? "password-hash" : null,
                 };
                 if (existingProvider.Length > 0)
                 {
@@ -132,6 +133,11 @@ public sealed class MicrosoftAuthIntegrationTests(ApiFixture fixture)
             if (expectedError is not null)
             {
                 ExternalAuthAssert.LoginErrorRedirect(callback, "microsoftError", expectedError, "/advisor");
+                if (expectedError == "account-not-linked")
+                {
+                    await ExternalAuthAssert.NotLinkedDetailsAsync(
+                        client, callback, email.ToUpperInvariant(), existingProvider!.Length > 0 ? [existingProvider] : ["Password"]);
+                }
             }
 
             var loggedIn = !register && existingProvider == "Microsoft" && active && emailLength > 0;

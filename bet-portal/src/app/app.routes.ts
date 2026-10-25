@@ -4,7 +4,7 @@ import { authGuard } from './auth/auth.guard';
 function authDialogRedirect(dialog: 'login' | 'sign-up'): RedirectFunction {
   return ({ queryParams }) => {
     const search = new URLSearchParams({ dialog });
-    for (const key of ['returnUrl', 'googleError', 'facebookError', 'microsoftError', 'errorId', 'signUp']) {
+    for (const key of ['returnUrl', 'googleError', 'facebookError', 'microsoftError', 'errorId', 'errorDetails', 'signUp']) {
       const value = queryParams[key];
       const text = Array.isArray(value) ? value[0] : value;
       if (text) {

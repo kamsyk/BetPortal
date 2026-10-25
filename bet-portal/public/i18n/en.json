@@ -29,6 +29,12 @@
       "sign-in-failed": "Sign-in with {{provider}} was cancelled or could not be completed. Please try again.",
       "activation-email-failed": "Your {{provider}} account was created, but we could not send the activation email. Please contact support and provide the error reference below.",
       "not-configured": "Sign-in with {{provider}} is currently unavailable. Please use another sign-in method."
+    },
+    "externalErrorDetails": {
+      "email": "Email used with {{provider}}",
+      "methods": "Available sign-in methods",
+      "password": "Username and password",
+      "noMethods": "No other sign-in method is set up for this account. Please contact support and provide the error reference below."
     }
   },
   "signUpConfirmation": {

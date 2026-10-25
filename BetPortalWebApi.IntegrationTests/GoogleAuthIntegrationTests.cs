@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BetPortalWebApi.Services;
@@ -137,6 +137,10 @@ public sealed class GoogleAuthIntegrationTests
                     : !emailSent ? "activation-email-failed"
                     : "account-not-linked";
                 ExternalAuthAssert.LoginErrorRedirect(callback, "googleError", expectedError, returnUrl ?? "/");
+                if (expectedError == "account-not-linked")
+                {
+                    await ExternalAuthAssert.NotLinkedDetailsAsync(client, callback, email);
+                }
                 Assert.False(callback.Headers.TryGetValues("Set-Cookie", out var headers)
                     && headers.Any(header => header.StartsWith("AuthCookie=", StringComparison.Ordinal)
                         || header.StartsWith("SessionId=", StringComparison.Ordinal)));

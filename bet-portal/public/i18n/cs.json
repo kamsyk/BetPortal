@@ -29,6 +29,12 @@
       "sign-in-failed": "Přihlášení přes {{provider}} bylo zrušeno nebo se ho nepodařilo dokončit. Zkuste to prosím znovu.",
       "activation-email-failed": "Váš účet u poskytovatele {{provider}} byl vytvořen, ale aktivační e-mail se nepodařilo odeslat. Obraťte se prosím na podporu a uveďte referenční kód chyby.",
       "not-configured": "Přihlášení přes {{provider}} momentálně není dostupné. Použijte prosím jiný způsob přihlášení."
+    },
+    "externalErrorDetails": {
+      "email": "E-mail pou?it? u poskytovatele {{provider}}",
+      "methods": "Dostupn? zp?soby p?ihl??en?",
+      "password": "U?ivatelsk? jm?no a heslo",
+      "noMethods": "K tomuto ??tu nen? nastaven ??dn? jin? zp?sob p?ihl??en?. Kontaktujte pros?m podporu a uve?te n??e uveden? referen?n? k?d chyby."
     }
   },
   "signUpConfirmation": {

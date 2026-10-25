@@ -41,15 +41,27 @@ namespace BetPortalWebApi.ErrorHandling
             return false;
         }
 
+        public static bool TryCreate(
+            IConfiguration configuration,
+            string provider,
+            string errorCode,
+            string? errorId,
+            string? destination,
+            [NotNullWhen(true)] out string? url)
+        {
+            return TryCreate(configuration, provider, errorCode, errorId, null, destination, out url);
+        }
+
         /// <summary>
-        /// Creates <c>{origin}/login?{provider}Error=code&amp;returnUrl=path[&amp;errorId=id]</c>. A destination outside the
-        /// configured frontend origin is replaced by <c>/</c>.
+        /// Creates <c>{origin}/login?{provider}Error=code&amp;returnUrl=path[&amp;errorId=id][&amp;errorDetails=token]</c>. A
+        /// destination outside the configured frontend origin is replaced by <c>/</c>.
         /// </summary>
         public static bool TryCreate(
             IConfiguration configuration,
             string provider,
             string errorCode,
             string? errorId,
+            string? errorDetails,
             string? destination,
             [NotNullWhen(true)] out string? url)
         {
@@ -75,6 +87,11 @@ namespace BetPortalWebApi.ErrorHandling
             if (!string.IsNullOrEmpty(errorId))
             {
                 query["errorId"] = errorId;
+            }
+
+            if (!string.IsNullOrEmpty(errorDetails))
+            {
+                query["errorDetails"] = errorDetails;
             }
 
             url = QueryHelpers.AddQueryString(new Uri(origin, "/login").AbsoluteUri, query);

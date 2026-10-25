@@ -22,6 +22,7 @@ namespace BetPortalWebApi.Controllers
         private readonly IGoogleAccountService _googleAccountService;
         private readonly IFacebookAccountService _facebookAccountService;
         private readonly IMicrosoftAccountService _microsoftAccountService;
+        private readonly IExternalAuthErrorDetailsService _externalAuthErrorDetailsService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
 
@@ -31,6 +32,7 @@ namespace BetPortalWebApi.Controllers
             IGoogleAccountService googleAccountService,
             IFacebookAccountService facebookAccountService,
             IMicrosoftAccountService microsoftAccountService,
+            IExternalAuthErrorDetailsService externalAuthErrorDetailsService,
             IConfiguration configuration,
             ILogger<AuthController> logger)
         {
@@ -39,6 +41,7 @@ namespace BetPortalWebApi.Controllers
             _googleAccountService = googleAccountService;
             _facebookAccountService = facebookAccountService;
             _microsoftAccountService = microsoftAccountService;
+            _externalAuthErrorDetailsService = externalAuthErrorDetailsService;
             _configuration = configuration;
             _logger = logger;
         }
@@ -264,6 +267,26 @@ namespace BetPortalWebApi.Controllers
             }
         }
 
+        /// <summary>Returns the masked email and available sign-in methods for an <c>account-not-linked</c> error token.</summary>
+        [HttpGet("external-error-details")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ExternalAuthErrorDetails), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult ExternalErrorDetails([FromQuery] string? token)
+        {
+            Response.Headers.CacheControl = "no-store";
+            var details = _externalAuthErrorDetailsService.Read(token);
+            if (details == null)
+            {
+                return Problem(
+                    statusCode: StatusCodes.Status404NotFound,
+                    title: "The sign-in details are no longer available",
+                    detail: "Please try signing in again.");
+            }
+
+            return Ok(details);
+        }
+
         [HttpGet("me")]
         [Authorize]
         public IActionResult GetCurrentUser()
@@ -388,13 +411,18 @@ namespace BetPortalWebApi.Controllers
             }
 
             var (user, status) = await accountService.FindExistingAsync(email, cancellationToken);
+            if (status == ExternalAccountStatus.NotLinked)
+            {
+                var errorDetails = await _externalAuthErrorDetailsService.CreateTokenAsync(email, cancellationToken);
+                return ExternalErrorRedirect(provider, ExternalAuthErrorCodes.AccountNotLinked, destination, errorDetails: errorDetails);
+            }
+
             if (user == null || status != ExternalAccountStatus.Found)
             {
                 return status switch
                 {
                     ExternalAccountStatus.NotFound => ExternalErrorRedirect(
                         provider, ExternalAuthErrorCodes.AccountRequired, destination, includeErrorId: false),
-                    ExternalAccountStatus.NotLinked => ExternalErrorRedirect(provider, ExternalAuthErrorCodes.AccountNotLinked, destination),
                     ExternalAccountStatus.Inactive => ExternalErrorRedirect(provider, ExternalAuthErrorCodes.AccountInactive, destination),
                     _ => ExternalErrorRedirect(provider, ExternalAuthErrorCodes.AccountUnavailable, destination),
                 };
@@ -463,11 +491,12 @@ namespace BetPortalWebApi.Controllers
         /// Returns the user to the portal login dialog with an error code. External sign-in is a browser navigation, so a
         /// JSON response would be shown to the user as raw text. Problem Details are used only when no portal is configured.
         /// </summary>
-        private IActionResult ExternalErrorRedirect(string provider, string errorCode, string? destination, bool includeErrorId = true)
+        private IActionResult ExternalErrorRedirect(
+            string provider, string errorCode, string? destination, bool includeErrorId = true, string? errorDetails = null)
         {
             var errorId = ErrorReference.Get(HttpContext);
             if (ExternalAuthErrorRedirect.TryCreate(
-                _configuration, provider, errorCode, includeErrorId ? errorId : null, destination, out var url))
+                _configuration, provider, errorCode, includeErrorId ? errorId : null, errorDetails, destination, out var url))
             {
                 return Redirect(url);
             }

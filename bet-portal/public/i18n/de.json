@@ -29,6 +29,12 @@
       "sign-in-failed": "Die Anmeldung mit {{provider}} wurde abgebrochen oder konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.",
       "activation-email-failed": "Ihr {{provider}}-Konto wurde erstellt, aber die Aktivierungs-E-Mail konnte nicht gesendet werden. Bitte wenden Sie sich mit der Fehlerreferenz an den Support.",
       "not-configured": "Die Anmeldung mit {{provider}} ist derzeit nicht verfügbar. Bitte verwenden Sie eine andere Anmeldemethode."
+    },
+    "externalErrorDetails": {
+      "email": "Bei {{provider}} verwendete E-Mail-Adresse",
+      "methods": "Verf?gbare Anmeldemethoden",
+      "password": "Benutzername und Passwort",
+      "noMethods": "F?r dieses Konto ist keine andere Anmeldemethode eingerichtet. Bitte wenden Sie sich an den Support und geben Sie die unten stehende Fehlerreferenz an."
     }
   },
   "signUpConfirmation": {

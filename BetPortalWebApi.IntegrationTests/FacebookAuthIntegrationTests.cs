@@ -128,6 +128,11 @@ public sealed class FacebookAuthIntegrationTests(ApiFixture fixture)
             if (expectedError is not null)
             {
                 ExternalAuthAssert.LoginErrorRedirect(callback, "facebookError", expectedError, "/advisor");
+                if (expectedError == "account-not-linked")
+                {
+                    await ExternalAuthAssert.NotLinkedDetailsAsync(
+                        client, callback, email.ToUpperInvariant(), existingProvider!.Length > 0 ? [existingProvider] : []);
+                }
             }
 
             var loggedIn = !register && existingProvider == "Facebook" && active && hasEmail;

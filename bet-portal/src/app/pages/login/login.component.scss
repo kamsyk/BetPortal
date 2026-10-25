@@ -66,6 +66,27 @@
     margin-top: 8px;
   }
 
+  .external-error-details {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    margin: 8px 0 0;
+
+    dt {
+      font-weight: 600;
+    }
+
+    dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+  }
+
   code {
     color: inherit;
     user-select: all;
