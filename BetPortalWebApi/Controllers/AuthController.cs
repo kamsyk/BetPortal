@@ -1,4 +1,6 @@
 ﻿using System.Security.Claims;
+using BetPortalWebApi.ErrorHandling;
+using BetPortalWebApi.Services;
 using BetPortalWebApi.Services.Interfaces;
 using BpDbLayer;
 using BpDbLayer.Models;
@@ -7,7 +9,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace BetPortalWebApi.Controllers
@@ -46,7 +47,6 @@ namespace BetPortalWebApi.Controllers
         [HttpGet("google")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status302Found)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
         public async Task<IActionResult> Google(
             [FromQuery] string? returnUrl,
@@ -59,7 +59,6 @@ namespace BetPortalWebApi.Controllers
         [HttpGet("google/register")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status302Found)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
         public async Task<IActionResult> GoogleRegister(
             [FromQuery] string? returnUrl,
@@ -73,8 +72,6 @@ namespace BetPortalWebApi.Controllers
         [HttpGet("google/callback")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status302Found)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
         public async Task<IActionResult> GoogleCallback(CancellationToken cancellationToken)
         {
@@ -84,7 +81,6 @@ namespace BetPortalWebApi.Controllers
         [HttpGet("facebook")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status302Found)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
         public async Task<IActionResult> Facebook(
             [FromQuery] string? returnUrl,
@@ -97,7 +93,6 @@ namespace BetPortalWebApi.Controllers
         [HttpGet("facebook/register")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status302Found)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
         public async Task<IActionResult> FacebookRegister(
             [FromQuery] string? returnUrl,
@@ -110,8 +105,6 @@ namespace BetPortalWebApi.Controllers
         [HttpGet("facebook/callback")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status302Found)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
         public async Task<IActionResult> FacebookCallback(CancellationToken cancellationToken)
         {
@@ -122,7 +115,6 @@ namespace BetPortalWebApi.Controllers
         [HttpGet("microsoft")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status302Found)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
         public async Task<IActionResult> Microsoft(
             [FromQuery] string? returnUrl,
@@ -136,7 +128,6 @@ namespace BetPortalWebApi.Controllers
         [HttpGet("microsoft/register")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status302Found)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
         public async Task<IActionResult> MicrosoftRegister(
             [FromQuery] string? returnUrl,
@@ -150,8 +141,6 @@ namespace BetPortalWebApi.Controllers
         [HttpGet("microsoft/callback")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status302Found)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
         public async Task<IActionResult> MicrosoftCallback(CancellationToken cancellationToken)
         {
@@ -185,10 +174,15 @@ namespace BetPortalWebApi.Controllers
                     user = new { username = user.UserName, fullName = user.FirstName + " " + user.Surname },
                 });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // _logger.LogError(ex, "Error during login for user {Username}", request.Username);
-                return StatusCode(500, new { success = false, message = "Internal server error" });
+                _logger.LogError(ex, "Unexpected error during password login.");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Sign-in is temporarily unavailable. Please try again later.",
+                    errorId = ErrorReference.Get(HttpContext),
+                });
             }
 
             /*if (_dbContext is null)
@@ -263,8 +257,9 @@ namespace BetPortalWebApi.Controllers
 
                 return Ok(new { success = true, message = "Logout successful" });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogWarning(ex, "Session cleanup failed during logout.");
                 return Ok(new { success = true, message = "Logout successful" });
             }
         }
@@ -346,31 +341,32 @@ namespace BetPortalWebApi.Controllers
         {
             var external = await HttpContext.AuthenticateAsync($"{provider}External");
             await HttpContext.SignOutAsync($"{provider}External");
-            var email = external.Principal?.FindFirstValue(ClaimTypes.Email);
-            if (!external.Succeeded
-                || (provider == "Google"
-                    && (!bool.TryParse(external.Principal?.FindFirstValue("google:email_verified"), out var verified) || !verified))
-                || string.IsNullOrWhiteSpace(external.Principal?.FindFirstValue(ClaimTypes.NameIdentifier))
-                || string.IsNullOrWhiteSpace(email)
-                || email.Length > 150
-                || external.Properties == null
-                || !external.Properties.Items.TryGetValue("returnUrl", out var returnUrl)
-                || !TryGetExternalReturnUrl(provider, returnUrl, out var destination))
+            string? destination = null;
+            if (external.Properties?.Items.TryGetValue("returnUrl", out var returnUrl) == true
+                && TryGetExternalReturnUrl(provider, returnUrl, out var validatedReturnUrl))
             {
-                _logger.LogWarning("{Provider} sign-in rejected an invalid external authentication ticket or missing email.", provider);
-                var detail = provider switch
-                {
-                    "Facebook" => "Sign in again and allow access to your Facebook email. An email address is required.",
-                    "Microsoft" => "Sign in with a Microsoft account that supplies a mailbox email address and allow access to your profile.",
-                    _ => null,
-                };
-                return Problem(
-                    statusCode: StatusCodes.Status401Unauthorized,
-                    title: $"{provider} sign-in could not be verified",
-                    detail: detail);
+                destination = validatedReturnUrl;
             }
 
-            if (external.Properties.Items.TryGetValue($"{provider.ToLowerInvariant()}Flow", out var flow) && flow == "register")
+            if (!external.Succeeded
+                || destination == null
+                || string.IsNullOrWhiteSpace(external.Principal?.FindFirstValue(ClaimTypes.NameIdentifier)))
+            {
+                _logger.LogWarning("{Provider} sign-in rejected an invalid or expired external authentication ticket.", provider);
+                return ExternalErrorRedirect(provider, ExternalAuthErrorCodes.SignInFailed, destination);
+            }
+
+            var email = external.Principal?.FindFirstValue(ClaimTypes.Email);
+            if ((provider == "Google"
+                    && (!bool.TryParse(external.Principal?.FindFirstValue("google:email_verified"), out var verified) || !verified))
+                || string.IsNullOrWhiteSpace(email)
+                || email.Length > 150)
+            {
+                _logger.LogWarning("{Provider} sign-in rejected because the provider did not supply a usable verified email address.", provider);
+                return ExternalErrorRedirect(provider, ExternalAuthErrorCodes.EmailUnavailable, destination);
+            }
+
+            if (external.Properties!.Items.TryGetValue($"{provider.ToLowerInvariant()}Flow", out var flow) && flow == "register")
             {
                 var (created, emailSent) = await accountService.RegisterAsync(
                     email,
@@ -379,30 +375,29 @@ namespace BetPortalWebApi.Controllers
                     cancellationToken);
                 if (!created)
                 {
-                    return ExternalLoginRedirect(provider, "account-exists", destination);
+                    return ExternalErrorRedirect(provider, ExternalAuthErrorCodes.AccountExists, destination, includeErrorId: false);
                 }
 
                 if (!emailSent)
                 {
-                    return Problem(
-                        statusCode: StatusCodes.Status503ServiceUnavailable,
-                        title: "Your account was registered, but the welcome email could not be sent",
-                        detail: "Your account is inactive. Please contact support to receive an activation link.");
+                    return ExternalErrorRedirect(provider, ExternalAuthErrorCodes.ActivationEmailFailed, destination);
                 }
 
                 TryGetExternalReturnUrl(provider, "/sign-up-confirmation", out var confirmationUrl);
                 return Redirect(confirmationUrl);
             }
 
-            var (user, accountExists) = await accountService.FindExistingAsync(email, cancellationToken);
-            if (!accountExists)
+            var (user, status) = await accountService.FindExistingAsync(email, cancellationToken);
+            if (user == null || status != ExternalAccountStatus.Found)
             {
-                return ExternalLoginRedirect(provider, "account-required", destination);
-            }
-
-            if (user == null)
-            {
-                return Problem(statusCode: StatusCodes.Status403Forbidden, title: "This account cannot sign in");
+                return status switch
+                {
+                    ExternalAccountStatus.NotFound => ExternalErrorRedirect(
+                        provider, ExternalAuthErrorCodes.AccountRequired, destination, includeErrorId: false),
+                    ExternalAccountStatus.NotLinked => ExternalErrorRedirect(provider, ExternalAuthErrorCodes.AccountNotLinked, destination),
+                    ExternalAccountStatus.Inactive => ExternalErrorRedirect(provider, ExternalAuthErrorCodes.AccountInactive, destination),
+                    _ => ExternalErrorRedirect(provider, ExternalAuthErrorCodes.AccountUnavailable, destination),
+                };
             }
 
             await SignInUserAsync(user, cancellationToken);
@@ -412,12 +407,7 @@ namespace BetPortalWebApi.Controllers
         private bool TryGetExternalReturnUrl(string provider, string? returnUrl, out string destination)
         {
             destination = string.Empty;
-            if (!Uri.TryCreate(_configuration[$"Authentication:{provider}:FrontendOrigin"], UriKind.Absolute, out var origin)
-                || (origin.Scheme != Uri.UriSchemeHttps && origin.Scheme != Uri.UriSchemeHttp)
-                || !string.IsNullOrEmpty(origin.UserInfo)
-                || origin.AbsolutePath != "/"
-                || !string.IsNullOrEmpty(origin.Query)
-                || !string.IsNullOrEmpty(origin.Fragment)
+            if (!ExternalAuthErrorRedirect.TryGetFrontendOrigin(_configuration, provider, out var origin)
                 || string.IsNullOrWhiteSpace(returnUrl))
             {
                 return false;
@@ -450,13 +440,13 @@ namespace BetPortalWebApi.Controllers
             if (await schemes.GetSchemeAsync(provider) == null || !TryGetExternalReturnUrl(provider, "/", out _))
             {
                 _logger.LogWarning("{Provider} sign-in is not configured.", provider);
-                return Problem(statusCode: StatusCodes.Status503ServiceUnavailable, title: $"{provider} sign-in is not configured");
+                return ExternalErrorRedirect(provider, ExternalAuthErrorCodes.NotConfigured, null);
             }
 
             if (!TryGetExternalReturnUrl(provider, returnUrl ?? "/", out var destination))
             {
                 _logger.LogWarning("{Provider} sign-in rejected an invalid return URL.", provider);
-                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid return URL");
+                return ExternalErrorRedirect(provider, ExternalAuthErrorCodes.SignInFailed, null);
             }
 
             await HttpContext.SignOutAsync($"{provider}External");
@@ -469,14 +459,23 @@ namespace BetPortalWebApi.Controllers
             return Challenge(properties, provider);
         }
 
-        private IActionResult ExternalLoginRedirect(string provider, string error, string destination)
+        /// <summary>
+        /// Returns the user to the portal login dialog with an error code. External sign-in is a browser navigation, so a
+        /// JSON response would be shown to the user as raw text. Problem Details are used only when no portal is configured.
+        /// </summary>
+        private IActionResult ExternalErrorRedirect(string provider, string errorCode, string? destination, bool includeErrorId = true)
         {
-            TryGetExternalReturnUrl(provider, "/login", out var loginUrl);
-            return Redirect(QueryHelpers.AddQueryString(loginUrl, new Dictionary<string, string?>
+            var errorId = ErrorReference.Get(HttpContext);
+            if (ExternalAuthErrorRedirect.TryCreate(
+                _configuration, provider, errorCode, includeErrorId ? errorId : null, destination, out var url))
             {
-                [$"{provider.ToLowerInvariant()}Error"] = error,
-                ["returnUrl"] = new Uri(destination).PathAndQuery + new Uri(destination).Fragment,
-            }));
+                return Redirect(url);
+            }
+
+            return Problem(
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: $"{provider} sign-in is currently unavailable",
+                detail: "Please try again later or use another sign-in method.");
         }
 
         private async Task SignInUserAsync(BpUser user, CancellationToken cancellationToken)

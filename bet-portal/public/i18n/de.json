@@ -19,7 +19,17 @@
     "microsoftAccountRequired": "Zu Ihrer Microsoft-E-Mail-Adresse gibt es kein Portalkonto. Registrieren Sie sich mit Microsoft. Es wurde kein Konto automatisch erstellt.",
     "facebookAccountRequired": "Zu Ihrer Facebook-E-Mail-Adresse gibt es kein Portalkonto. Registrieren Sie sich mit Facebook. Es wurde kein Konto automatisch erstellt.",
     "googleAccountExists": "Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an.",
-    "googleAccountRequired": "Zu Ihrer Google-E-Mail-Adresse gibt es kein Portalkonto. Füllen Sie das Registrierungsformular aus. Es wurde kein Konto automatisch erstellt."
+    "googleAccountRequired": "Zu Ihrer Google-E-Mail-Adresse gibt es kein Portalkonto. Füllen Sie das Registrierungsformular aus. Es wurde kein Konto automatisch erstellt.",
+    "errorReference": "Fehlerreferenz",
+    "externalErrors": {
+      "account-not-linked": "Dieses Konto ist nicht mit {{provider}} verknüpft. Melden Sie sich mit der ursprünglich verwendeten Methode an, zum Beispiel mit Ihrem Passwort oder einem anderen Anbieter.",
+      "account-inactive": "Ihr {{provider}}-Konto ist noch nicht aktiviert. Bitte prüfen Sie Ihren Posteingang auf die Aktivierungs-E-Mail.",
+      "account-unavailable": "Dieses Konto kann nicht für die Anmeldung mit {{provider}} verwendet werden. Bitte wenden Sie sich mit der unten angegebenen Fehlerreferenz an den Support.",
+      "email-unavailable": "{{provider}} hat keine bestätigte E-Mail-Adresse übermittelt. Bitte versuchen Sie es erneut und erlauben Sie den Zugriff auf Ihre E-Mail-Adresse.",
+      "sign-in-failed": "Die Anmeldung mit {{provider}} wurde abgebrochen oder konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.",
+      "activation-email-failed": "Ihr {{provider}}-Konto wurde erstellt, aber die Aktivierungs-E-Mail konnte nicht gesendet werden. Bitte wenden Sie sich mit der Fehlerreferenz an den Support.",
+      "not-configured": "Die Anmeldung mit {{provider}} ist derzeit nicht verfügbar. Bitte verwenden Sie eine andere Anmeldemethode."
+    }
   },
   "signUpConfirmation": {
     "title": "Registrierung erhalten",
@@ -93,5 +103,11 @@
     "stepThreeTitle": "Beginnen Sie ein Gespräch",
     "stepThreeDescription": "Stellen Sie Fragen zu Portaldaten und erkunden Sie diese mit weiteren Fragen.",
     "disclaimer": "KI-Antworten können Fehler enthalten. Prüfen Sie wichtige Informationen. Dieses Portal garantiert keine Wettergebnisse; verstehen Sie die Inhalte als Informationen, nicht als Wettberatung."
+  },
+  "httpErrors": {
+    "connection": "Der Server ist nicht erreichbar. Bitte prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "server": "Auf unserer Seite ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut.",
+    "reference": "Fehlerreferenz: {{errorId}}",
+    "forbidden": "Sie sind nicht berechtigt, diese Aktion auszuführen."
   }
 }

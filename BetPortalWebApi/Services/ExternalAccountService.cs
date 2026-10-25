@@ -83,7 +83,7 @@ namespace BetPortalWebApi.Services
             return (true, emailSent);
         }
 
-        public async Task<(BpUser? User, bool AccountExists)> FindExistingAsync(string email, CancellationToken cancellationToken)
+        public async Task<(BpUser? User, ExternalAccountStatus Status)> FindExistingAsync(string email, CancellationToken cancellationToken)
         {
             var normalizedEmail = email.ToLowerInvariant();
             var matches = await dbContext.BpUserLoginProviders
@@ -93,25 +93,31 @@ namespace BetPortalWebApi.Services
                 .Take(2)
                 .ToListAsync(cancellationToken);
 
-            if (matches.Count > 1 || (matches.Count == 1 && !matches[0].IsActive))
+            if (matches.Count > 1)
             {
-                logger.LogWarning("{Provider} sign-in rejected because the linked account is inactive or the provider email is ambiguous.", providerName);
-                return (null, true);
+                logger.LogWarning("{Provider} sign-in rejected because the provider email is linked to multiple accounts.", providerName);
+                return (null, ExternalAccountStatus.Ambiguous);
+            }
+
+            if (matches.Count == 1 && !matches[0].IsActive)
+            {
+                logger.LogWarning("{Provider} sign-in rejected because the linked account {UserId} is inactive.", providerName, matches[0].Id);
+                return (null, ExternalAccountStatus.Inactive);
             }
 
             if (matches.Count == 1)
             {
-                return (matches[0], true);
+                return (matches[0], ExternalAccountStatus.Found);
             }
 
             if (await dbContext.BpUsers.AnyAsync(user => user.Email.ToLower() == normalizedEmail, cancellationToken))
             {
                 logger.LogWarning("{Provider} sign-in rejected because the local account has no matching provider link.", providerName);
-                return (null, true);
+                return (null, ExternalAccountStatus.NotLinked);
             }
 
             logger.LogInformation("{Provider} sign-in requires an existing local account.", providerName);
-            return (null, false);
+            return (null, ExternalAccountStatus.NotFound);
         }
     }
 }

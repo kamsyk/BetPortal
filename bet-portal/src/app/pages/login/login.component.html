@@ -12,20 +12,31 @@
   @if (googleAccountRequired()) {
     <p role="alert">{{ 'login.googleAccountRequired' | translate }}</p>
   }
-  @if (googleAccountExists()) {
+  @else if (googleAccountExists()) {
     <p role="alert">{{ 'login.googleAccountExists' | translate }}</p>
   }
-  @if (facebookAccountRequired()) {
+  @else if (facebookAccountRequired()) {
     <p role="alert">{{ 'login.facebookAccountRequired' | translate }}</p>
   }
-  @if (facebookAccountExists()) {
+  @else if (facebookAccountExists()) {
     <p role="alert">{{ 'login.facebookAccountExists' | translate }}</p>
   }
-  @if (microsoftAccountRequired()) {
+  @else if (microsoftAccountRequired()) {
     <p role="alert">{{ 'login.microsoftAccountRequired' | translate }}</p>
   }
-  @if (microsoftAccountExists()) {
+  @else if (microsoftAccountExists()) {
     <p role="alert">{{ 'login.microsoftAccountExists' | translate }}</p>
+  }
+  @if (externalAuthError(); as externalError) {
+    <div class="login-external-error" role="alert">
+      <p>{{ externalError.messageKey | translate: { provider: externalError.provider } }}</p>
+      @if (errorId(); as reference) {
+        <p class="error-reference">
+          <span>{{ 'login.errorReference' | translate }}:</span>
+          <code>{{ reference }}</code>
+        </p>
+      }
+    </div>
   }
   <lib-ks-login
     class="login-component"

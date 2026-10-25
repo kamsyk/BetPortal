@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
-import { provideTranslateService } from '@ngx-translate/core';
+import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { AuthService, KsLoginComponent, KsSignUpComponent } from 'ks-ag-controls';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -182,6 +182,51 @@ describe('LoginComponent', () => {
       .toContain('login.microsoftAccountExists');
     expect(loginControl().microsoftReturnUrl()).toBe('/advisor');
     expect(openSignUp).not.toHaveBeenCalled();
+  });
+
+
+  it.each([
+    ['account-not-linked', 'Google'],
+    ['account-inactive', 'Facebook'],
+    ['account-unavailable', 'Microsoft'],
+    ['email-unavailable', 'Google'],
+    ['sign-in-failed', 'Facebook'],
+    ['activation-email-failed', 'Microsoft'],
+    ['not-configured', 'Google'],
+  ])('renders a localized %s external-login error for %s', (code, provider) => {
+    queryParams = { googleError: code };
+    if (provider === 'Facebook') {
+      queryParams = { facebookError: code };
+    } else if (provider === 'Microsoft') {
+      queryParams = { microsoftError: code };
+    }
+    component.ngOnInit();
+    expect(component.externalAuthError()).toEqual({
+      messageKey: `login.externalErrors.${code}`,
+      provider,
+    });
+  });
+
+  it('localizes an unrecognized external error, interpolates the provider, and shows its reference once', async () => {
+    const reference = '0123456789abcdef0123456789abcdef';
+    queryParams = { googleError: 'unknown-error', facebookError: 'account-inactive', errorId: reference };
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('en', {
+      login: {
+        errorReference: 'Error reference',
+        externalErrors: { 'sign-in-failed': 'Sign-in with {{provider}} failed.' },
+      },
+    });
+    await translate.use('en').toPromise();
+    component.ngOnInit();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const alerts = (fixture.nativeElement as HTMLElement).querySelectorAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].textContent).toContain('Sign-in with Google failed.');
+    expect(alerts[0].textContent).toContain('Error reference');
+    expect(alerts[0].querySelector('code')?.textContent).toBe(reference);
   });
 
   it('updates the login labels when the selected language changes', async () => {

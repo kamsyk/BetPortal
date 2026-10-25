@@ -14,6 +14,7 @@ import {
   withInterceptors,
 } from '@angular/common/http';
 import { authInterceptor } from './auth/auth.interceptor';
+import { errorInterceptor } from './http/error.interceptor';
 import { environment } from '../environments/environment';
 import { API_BASE_URL } from '../core/tokens';
 import { DEFAULT_LANGUAGE } from './services/language.service';
@@ -23,7 +24,7 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideClientHydration(withEventReplay()),
-    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorInterceptor])),
     provideTranslateService({
       loader: provideTranslateHttpLoader({
         prefix: '/i18n/',

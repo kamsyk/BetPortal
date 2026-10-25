@@ -19,7 +19,17 @@
     "microsoftAccountRequired": "No portal account matches your Microsoft email address. Sign up with Microsoft to register. No account has been created automatically.",
     "facebookAccountRequired": "No portal account matches your Facebook email address. Sign up with Facebook to register. No account has been created automatically.",
     "googleAccountExists": "An account with this email already exists. Please sign in instead.",
-    "googleAccountRequired": "No portal account matches your Google email address. Complete the Sign up form to register. No account has been created automatically."
+    "googleAccountRequired": "No portal account matches your Google email address. Complete the Sign up form to register. No account has been created automatically.",
+    "errorReference": "Error reference",
+    "externalErrors": {
+      "account-not-linked": "This account is not connected to {{provider}}. Sign in using the method you originally used, such as your password or another provider.",
+      "account-inactive": "Your {{provider}} account is not activated yet. Please check your inbox for the activation email.",
+      "account-unavailable": "Your account cannot be used to sign in with {{provider}}. Please contact support and provide the error reference below.",
+      "email-unavailable": "{{provider}} did not provide a verified email address. Please try again and allow access to your email address.",
+      "sign-in-failed": "Sign-in with {{provider}} was cancelled or could not be completed. Please try again.",
+      "activation-email-failed": "Your {{provider}} account was created, but we could not send the activation email. Please contact support and provide the error reference below.",
+      "not-configured": "Sign-in with {{provider}} is currently unavailable. Please use another sign-in method."
+    }
   },
   "signUpConfirmation": {
     "title": "Registration received",
@@ -93,5 +103,11 @@
     "stepThreeTitle": "Start a conversation",
     "stepThreeDescription": "Ask about portal data and use follow-up questions to explore further.",
     "disclaimer": "AI responses can contain mistakes. Verify important information. This portal does not guarantee betting outcomes; treat its content as information, not betting advice."
+  },
+  "httpErrors": {
+    "connection": "Unable to reach the server. Check your connection and try again.",
+    "server": "Something went wrong on our side. Please try again later.",
+    "reference": "Error reference: {{errorId}}",
+    "forbidden": "You do not have permission to perform this action."
   }
 }

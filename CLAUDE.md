@@ -66,6 +66,9 @@ Facebook uses the same provider-link and activation rules through `/api/auth/fac
 
 Microsoft follows the same explicit provider-link and activation rules at `/api/auth/microsoft` and `/api/auth/microsoft/register`, supporting personal and work/school accounts. Configure `Authentication:Microsoft:ClientId`, `ClientSecret`, and `FrontendOrigin`, register the Web callback `/signin-microsoft` in Microsoft Entra, and apply `20261024210000_AddMicrosoftLoginProvider` before registration. A Graph `mail` address is required; `userPrincipalName` is not treated as a mailbox. See `BetPortalWebApi/CLAUDE.md` for setup and error behavior.
 
+### Error handling and logging
+The API never returns exception details to users. Unhandled exceptions become a generic 500 Problem Details, and every Problem Details response carries an `errorId` (the W3C trace id). External sign-in failures redirect to `/login?{provider}Error=<code>&errorId=<id>`; the public portal shows a localized message and the reference. Serilog writes Warning+ events to `dbo.BpAppLogs` (migration `20261025090000_AddAppLogTable`, settings `Serilog` and `DatabaseLogging`), where `TraceId` equals the user-facing `errorId`. Both portals show a snackbar for network, 403 and 5xx HTTP errors via `errorInterceptor`. See `BetPortalWebApi/CLAUDE.md`.
+
 ### Angular auth flow
 `authGuard` calls `AuthService.checkAuthStatus()` (from `ks-ag-controls`) → `GET /api/auth/check`. `authInterceptor` adds `withCredentials: true` to every request; on SSR it forwards the raw `Cookie` header from the incoming request via `global.__request__`.
 

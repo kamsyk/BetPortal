@@ -54,12 +54,39 @@ export class LoginComponent implements OnInit, AfterViewInit {
   readonly googleReturnUrl = signal('');
   readonly googleAccountRequired = signal(false);
   readonly googleAccountExists = signal(false);
+  private readonly googleErrorCode = signal<string | null>(null);
   readonly facebookAuthUrl = signal('');
   readonly facebookAccountRequired = signal(false);
   readonly facebookAccountExists = signal(false);
+  private readonly facebookErrorCode = signal<string | null>(null);
   readonly microsoftAuthUrl = signal('');
   readonly microsoftAccountRequired = signal(false);
   readonly microsoftAccountExists = signal(false);
+  private readonly microsoftErrorCode = signal<string | null>(null);
+  readonly errorId = signal<string | null>(null);
+  readonly externalAuthError = computed(() => {
+    if (this.googleAccountRequired() || this.googleAccountExists()
+      || this.facebookAccountRequired() || this.facebookAccountExists()
+      || this.microsoftAccountRequired() || this.microsoftAccountExists()) {
+      return null;
+    }
+
+    const providerError = [
+      { provider: 'Google', code: this.googleErrorCode() },
+      { provider: 'Facebook', code: this.facebookErrorCode() },
+      { provider: 'Microsoft', code: this.microsoftErrorCode() },
+    ].find((candidate) => candidate.code !== null);
+    if (!providerError?.code) {
+      return null;
+    }
+
+    const supportedCodes = [
+      'account-not-linked', 'account-inactive', 'account-unavailable', 'email-unavailable',
+      'sign-in-failed', 'activation-email-failed', 'not-configured',
+    ];
+    const code = supportedCodes.includes(providerError.code) ? providerError.code : 'sign-in-failed';
+    return { messageKey: `login.externalErrors.${code}`, provider: providerError.provider };
+  });
 
   constructor() {
     // lib-ks-login still opens Sign up in its own dialog; switch to the portal dialog instead.
@@ -76,6 +103,10 @@ export class LoginComponent implements OnInit, AfterViewInit {
     const googleError = this.value('googleError');
     const facebookError = this.value('facebookError');
     const microsoftError = this.value('microsoftError');
+    this.googleErrorCode.set(googleError);
+    this.facebookErrorCode.set(facebookError);
+    this.microsoftErrorCode.set(microsoftError);
+    this.errorId.set(this.value('errorId'));
     const openSignUp = this.data?.signUp === true || this.value('signUp') === 'true';
 
     this.googleAccountRequired.set(googleError === 'account-required');
@@ -129,7 +160,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
     console.log('Login successful!', event);
   }
 
-  private value(key: 'returnUrl' | 'googleError' | 'facebookError' | 'microsoftError' | 'signUp'): string | null {
+  private value(key: 'returnUrl' | 'googleError' | 'facebookError' | 'microsoftError' | 'errorId' | 'signUp'): string | null {
     if (this.data && key !== 'signUp') {
       const provided = this.data[key];
       return typeof provided === 'string' ? provided : null;

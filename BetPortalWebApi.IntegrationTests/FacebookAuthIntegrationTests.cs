@@ -41,7 +41,7 @@ public sealed class FacebookAuthIntegrationTests(ApiFixture fixture)
         await using var scope = fixture.CreateTestScope();
         using var response = await scope.Client.GetAsync(
             $"/api/auth/facebook?returnUrl={Uri.EscapeDataString(returnUrl)}", TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        ExternalAuthAssert.LoginErrorRedirect(response, "facebookError", "sign-in-failed", "/");
     }
 
     [Fact]
@@ -50,7 +50,7 @@ public sealed class FacebookAuthIntegrationTests(ApiFixture fixture)
         using var backchannel = new FacebookBackchannel("unused@example.test");
         using var client = fixture.CreateFacebookClient(backchannel, frontendOrigin: string.Empty);
         using var response = await client.GetAsync("/api/auth/facebook", TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        await ExternalAuthAssert.SanitizedProblemAsync(response, HttpStatusCode.ServiceUnavailable);
     }
 
     [Theory]
@@ -61,24 +61,24 @@ public sealed class FacebookAuthIntegrationTests(ApiFixture fixture)
     {
         await using var scope = fixture.CreateTestScope();
         using var response = await scope.Client.GetAsync(path, TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        ExternalAuthAssert.LoginErrorRedirect(response, "facebookError", "sign-in-failed", "/");
         AssertNoApplicationCookies(response);
     }
 
     [Theory]
     [InlineData(false, null, true, true, true, HttpStatusCode.Redirect, "account-required")]
     [InlineData(false, "Facebook", true, true, true, HttpStatusCode.Redirect, null)]
-    [InlineData(false, "Facebook", false, true, true, HttpStatusCode.Forbidden, null)]
-    [InlineData(false, "Google", true, true, true, HttpStatusCode.Forbidden, null)]
-    [InlineData(false, "", true, true, true, HttpStatusCode.Forbidden, null)]
+    [InlineData(false, "Facebook", false, true, true, HttpStatusCode.Redirect, "account-inactive")]
+    [InlineData(false, "Google", true, true, true, HttpStatusCode.Redirect, "account-not-linked")]
+    [InlineData(false, "", true, true, true, HttpStatusCode.Redirect, "account-not-linked")]
     [InlineData(true, null, true, true, true, HttpStatusCode.Redirect, null)]
     [InlineData(true, "Facebook", true, true, true, HttpStatusCode.Redirect, "account-exists")]
     [InlineData(true, "Google", true, true, true, HttpStatusCode.Redirect, "account-exists")]
-    [InlineData(true, null, true, false, true, HttpStatusCode.Unauthorized, null)]
-    [InlineData(false, null, true, false, true, HttpStatusCode.Unauthorized, null)]
-    [InlineData(true, null, true, true, false, HttpStatusCode.ServiceUnavailable, null)]
+    [InlineData(true, null, true, false, true, HttpStatusCode.Redirect, "email-unavailable")]
+    [InlineData(false, null, true, false, true, HttpStatusCode.Redirect, "email-unavailable")]
+    [InlineData(true, null, true, true, false, HttpStatusCode.Redirect, "activation-email-failed")]
     [InlineData(true, null, true, true, true, HttpStatusCode.Redirect, null, 150)]
-    [InlineData(true, null, true, true, true, HttpStatusCode.Unauthorized, null, 151)]
+    [InlineData(true, null, true, true, true, HttpStatusCode.Redirect, "email-unavailable", 151)]
     public async Task Round_trip_checks_provider_link_and_registration_intent(
         bool register, string? existingProvider, bool active, bool hasEmail, bool emailSent,
         HttpStatusCode expectedStatus, string? expectedError, int? emailLength = null)
@@ -127,10 +127,7 @@ public sealed class FacebookAuthIntegrationTests(ApiFixture fixture)
             Assert.Equal(expectedStatus, callback.StatusCode);
             if (expectedError is not null)
             {
-                Assert.Equal("http://localhost:4200/login", callback.Headers.Location!.GetLeftPart(UriPartial.Path));
-                var query = QueryHelpers.ParseQuery(callback.Headers.Location.Query);
-                Assert.Equal(expectedError, query["facebookError"]);
-                Assert.Equal("/advisor", query["returnUrl"]);
+                ExternalAuthAssert.LoginErrorRedirect(callback, "facebookError", expectedError, "/advisor");
             }
 
             var loggedIn = !register && existingProvider == "Facebook" && active && hasEmail;
@@ -209,7 +206,7 @@ public sealed class FacebookAuthIntegrationTests(ApiFixture fixture)
             Assert.Equal(1, backchannel.TokenRequests);
             Assert.Equal(1, backchannel.ProfileRequests);
             using var replay = await client.GetAsync("/api/auth/facebook/callback", cancellationToken);
-            Assert.Equal(HttpStatusCode.Unauthorized, replay.StatusCode);
+            ExternalAuthAssert.LoginErrorRedirect(replay, "facebookError", "sign-in-failed", "/");
             AssertNoApplicationCookies(replay);
         }
         finally
