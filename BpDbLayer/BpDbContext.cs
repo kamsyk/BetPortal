@@ -28,6 +28,8 @@ namespace BpDbLayer
 
         public DbSet<BpUserLoginProvider> BpUserLoginProviders { get; set; }
 
+        public DbSet<BpUserSession> BpUserSessions { get; set; }
+
         public DbSet<LoginProvider> LoginProviders { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

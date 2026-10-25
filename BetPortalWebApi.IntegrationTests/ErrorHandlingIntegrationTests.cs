@@ -42,7 +42,7 @@ public sealed class ErrorHandlingIntegrationTests(ApiFixture fixture)
         {
             await using var dbContext = fixture.CreateDbContext();
             var rows = await dbContext.Database
-                .SqlQuery<AppLogRow>($"SELECT [Level], [RequestPath], [Exception], [SourceContext] FROM [dbo].[BpAppLogs] WHERE [TraceId] = {traceId}")
+                .SqlQuery<AppLogRow>($"SELECT [Level], [RequestPath], [Exception], [SourceContext] FROM [dbo].[BpAppLogs] WHERE [TraceId] = {traceId} AND [Exception] IS NOT NULL")
                 .ToListAsync(cancellationToken);
             if (rows.Count > 0)
             {
@@ -61,13 +61,17 @@ public sealed class ErrorHandlingIntegrationTests(ApiFixture fixture)
         public Task<string> CreateSessionAsync(int userId, string ipAddress, string userAgent, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException(SensitiveDetail);
 
-        public Task<UserSession?> GetSessionAsync(string sessionId) => throw new InvalidOperationException(SensitiveDetail);
+        public Task<UserSession?> GetSessionAsync(string sessionId, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException(SensitiveDetail);
 
-        public Task<bool> ValidateSessionAsync(string sessionId) => throw new InvalidOperationException(SensitiveDetail);
+        public Task<bool> ValidateSessionAsync(string sessionId, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException(SensitiveDetail);
 
-        public Task RevokeSessionAsync(string sessionId) => throw new InvalidOperationException(SensitiveDetail);
+        public Task RevokeSessionAsync(string sessionId, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException(SensitiveDetail);
 
-        public Task CleanupExpiredSessionsAsync() => throw new InvalidOperationException(SensitiveDetail);
+        public Task CleanupExpiredSessionsAsync(CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException(SensitiveDetail);
 
         public Task<List<string>> GetUserPermissionsAsync(int userId, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException(SensitiveDetail);

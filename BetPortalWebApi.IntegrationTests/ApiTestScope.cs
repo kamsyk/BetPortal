@@ -51,7 +51,7 @@ internal sealed class ApiTestScope : IAsyncDisposable
             }
         }
 
-        UseCookies("SessionId", "AuthCookie");
+        UseCookies("SessionId");
         return login;
     }
 

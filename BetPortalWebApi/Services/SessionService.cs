@@ -1,144 +1,123 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
+using System.Text;
 using BetPortalWebApi.Middleware;
 using BetPortalWebApi.Services.Interfaces;
 using BpDbLayer;
 using BpDbLayer.ModelConfigurations;
+using BpDbLayer.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace BetPortalWebApi.Services
 {
     public class SessionService : ISessionService
     {
-        private readonly IMemoryCache _memoryCache;
+        public static readonly TimeSpan SessionLifetime = TimeSpan.FromHours(24);
+
+        private const int SessionTokenLength = 43;
         private readonly BpDbContext _dbContext;
         private readonly ILogger<SessionService> _logger;
-        private readonly TimeSpan _sessionTimeout = TimeSpan.FromHours(24);
 
-        public SessionService(IMemoryCache memoryCache, BpDbContext dbContext, ILogger<SessionService> logger)
+        public SessionService(BpDbContext dbContext, ILogger<SessionService> logger)
         {
-            _memoryCache = memoryCache;
             _dbContext = dbContext;
             _logger = logger;
         }
 
-        public async Task<string> CreateSessionAsync(int userId, string ipAddress, string userAgent, CancellationToken cancellationToken = default)
+        public async Task<string> CreateSessionAsync(
+            int userId,
+            string ipAddress,
+            string userAgent,
+            CancellationToken cancellationToken = default)
         {
-            //// Todo: KSY - remove it
-            /* // Get user with permissions from database
-             var user = await _dbContext.BpUsers
-                 .Include(u => u.Permissions)
-                 .ThenInclude(up => up.Permission)
-                 .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);*/
-
-            var user = await _dbContext.BpUsers.Where(u => u.Id == userId && u.IsActive).FirstOrDefaultAsync(cancellationToken);
+            var user = await _dbContext.BpUsers
+                .SingleOrDefaultAsync(existingUser => existingUser.Id == userId && existingUser.IsActive, cancellationToken);
             if (user == null)
             {
-                 throw new UnauthorizedAccessException("User not found or inactive");
+                throw new UnauthorizedAccessException("User not found or inactive.");
             }
 
-            // Generate secure session ID
             var sessionId = GenerateSessionId();
-            var expiresAt = DateTime.UtcNow.Add(_sessionTimeout);
+            var createdAt = DateTime.UtcNow;
+            _dbContext.BpUserSessions.Add(new BpUserSession
+            {
+                UserId = user.Id,
+                TokenHash = HashSessionId(sessionId),
+                CreatedDate = createdAt,
+                ExpiresDate = createdAt.Add(SessionLifetime),
+                IpAddress = ipAddress.Length <= 45 ? ipAddress : ipAddress[..45],
+                UserAgent = userAgent.Length <= 512 ? userAgent : userAgent[..512],
+                CreatedByUserId = user.Id,
+            });
 
-            var permissions = await GetUserPermissionsAsync(userId, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("Session created for user {UserId}", userId);
+            return sessionId;
+        }
 
-            // Create session object
-            var session = new UserSession
+        public async Task<UserSession?> GetSessionAsync(string sessionId, CancellationToken cancellationToken = default)
+        {
+            if (!IsValidSessionId(sessionId))
+            {
+                return null;
+            }
+
+            var now = DateTime.UtcNow;
+            var storedSession = await _dbContext.BpUserSessions
+                .Include(session => session.User)
+                .SingleOrDefaultAsync(
+                    session => session.TokenHash == HashSessionId(sessionId)
+                        && session.ExpiresDate > now
+                        && session.User.IsActive,
+                    cancellationToken);
+            if (storedSession == null)
+            {
+                return null;
+            }
+
+            var permissions = await GetUserPermissionsAsync(storedSession.UserId, cancellationToken);
+            var user = storedSession.User;
+            return new UserSession
             {
                 SessionId = sessionId,
                 UserId = user.Id,
                 Username = user.UserName,
                 FullName = user.FirstName + " " + user.Surname,
                 Permissions = permissions,
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = expiresAt,
-                IpAddress = ipAddress,
-                UserAgent = userAgent,
+                IpAddress = storedSession.IpAddress,
+                UserAgent = storedSession.UserAgent,
+                CreatedAt = storedSession.CreatedDate,
+                ExpiresAt = storedSession.ExpiresDate,
             };
-
-            // Store in memory cache with sliding expiration
-            var cacheOptions = new MemoryCacheEntryOptions
-            {
-                AbsoluteExpiration = expiresAt,
-                SlidingExpiration = TimeSpan.FromMinutes(30),
-                Priority = CacheItemPriority.High,
-            };
-
-            _memoryCache.Set($"session_{sessionId}", session, cacheOptions);
-
-            _logger.LogInformation("Session created for user {UserId} with ID {SessionId}", userId, sessionId);
-
-            return sessionId;
         }
 
-        public async Task<UserSession?> GetSessionAsync(string sessionId)
+        public async Task<bool> ValidateSessionAsync(string sessionId, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(sessionId))
+            return await GetSessionAsync(sessionId, cancellationToken) != null;
+        }
+
+        public async Task RevokeSessionAsync(string sessionId, CancellationToken cancellationToken = default)
+        {
+            if (!IsValidSessionId(sessionId))
             {
-                return null;
+                return;
             }
 
-            // Try to get from cache first
-            if (_memoryCache.TryGetValue($"session_{sessionId}", out UserSession? cachedSession))
+            var tokenHash = HashSessionId(sessionId);
+            var deleted = await _dbContext.BpUserSessions
+                .Where(session => session.TokenHash == tokenHash)
+                .ExecuteDeleteAsync(cancellationToken);
+            if (deleted > 0)
             {
-                // Check if session is still valid
-                if (cachedSession != null && cachedSession.ExpiresAt > DateTime.UtcNow)
-                {
-                    // Refresh permissions from database periodically (every 10 minutes)
-                    if (DateTime.UtcNow.Subtract(cachedSession.CreatedAt).TotalMinutes > 10)
-                    {
-                        var refreshedPermissions = await GetUserPermissionsAsync(cachedSession.UserId);
-                        cachedSession.Permissions = refreshedPermissions;
-
-                        // Update cache
-                        var cacheOptions = new MemoryCacheEntryOptions
-                        {
-                            AbsoluteExpiration = cachedSession.ExpiresAt,
-                            SlidingExpiration = TimeSpan.FromMinutes(30),
-                            Priority = CacheItemPriority.High,
-                        };
-                        _memoryCache.Set($"session_{sessionId}", cachedSession, cacheOptions);
-                    }
-
-                    return cachedSession;
-                }
-                else
-                {
-                    // Session expired, remove from cache
-                    _memoryCache.Remove($"session_{sessionId}");
-                }
+                _logger.LogInformation("Session revoked.");
             }
-
-            return null;
         }
 
-        public async Task<bool> ValidateSessionAsync(string sessionId)
+        public async Task CleanupExpiredSessionsAsync(CancellationToken cancellationToken = default)
         {
-            var session = await GetSessionAsync(sessionId);
-            return session != null;
-        }
-
-        public async Task RevokeSessionAsync(string sessionId)
-        {
-            if (!string.IsNullOrEmpty(sessionId))
-            {
-                _memoryCache.Remove($"session_{sessionId}");
-                _logger.LogInformation("Session {SessionId} revoked", sessionId);
-            }
-
-            await Task.CompletedTask;
-        }
-
-        public async Task CleanupExpiredSessionsAsync()
-        {
-            // This is handled automatically by memory cache expiration
-            // In a distributed cache scenario, you'd implement periodic cleanup
-            _logger.LogDebug("Session cleanup completed (handled by memory cache)");
-            await Task.CompletedTask;
+            var deleted = await _dbContext.BpUserSessions
+                .Where(session => session.ExpiresDate <= DateTime.UtcNow)
+                .ExecuteDeleteAsync(cancellationToken);
+            _logger.LogDebug("Removed {SessionCount} expired sessions.", deleted);
         }
 
         public async Task<List<string>> GetUserPermissionsAsync(int userId, CancellationToken cancellationToken = default)
@@ -152,12 +131,21 @@ namespace BetPortalWebApi.Services
             return isAdmin ? ["AdminAccess"] : [];
         }
 
-        private string GenerateSessionId()
+        private static string GenerateSessionId()
         {
-            using var rng = RandomNumberGenerator.Create();
-            var bytes = new byte[32];
-            rng.GetBytes(bytes);
-            return Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").Replace("=", string.Empty);
+            var bytes = RandomNumberGenerator.GetBytes(32);
+            return Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        }
+
+        private static string HashSessionId(string sessionId)
+        {
+            return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(sessionId)));
+        }
+
+        private static bool IsValidSessionId(string? sessionId)
+        {
+            return sessionId is { Length: SessionTokenLength }
+                && sessionId.All(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_');
         }
     }
 }

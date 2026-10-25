@@ -6,7 +6,6 @@ using BpDbLayer;
 using BpDbLayer.Models;
 using BpDbLayer.Utils;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -187,84 +186,27 @@ namespace BetPortalWebApi.Controllers
                     errorId = ErrorReference.Get(HttpContext),
                 });
             }
-
-            /*if (_dbContext is null)
-            {
-                return StatusCode(500, new { success = false, message = "Database context is not available." });
-            }*/
-
-            /* var user = await _dbContext.BpUsers.FirstOrDefaultAsync(u => u.UserName == request.Username && u.IsActive);
-             //// In a real application, you would validate against a database
-             //// if (request.Username == "demo@demo" && request.Password == "password")
-             if (user != null && !string.IsNullOrEmpty(user.Password) && PasswordHasher.VerifyPassword(request.Password, user.Password))
-             {
-                 var claims = new List<Claim>
-                 {
-                     new Claim(ClaimTypes.Name, request.Username),
-                     new Claim(ClaimTypes.NameIdentifier, "1"),
-                     new Claim("FullName", "Demo User"),
-                     new Claim("SessionId", Guid.NewGuid().ToString()),
-                     ////TODO: KSY remove it
-                     new Claim("Permission", "AdminAccess"), // <- add this
-                 };
-
-                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                 var principal = new ClaimsPrincipal(claimsIdentity);
-
-                 var authProps = new AuthenticationProperties
-                 {
-                     IsPersistent = true,
-                     ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7), // match ExpireTimeSpan
-                     AllowRefresh = true,
-                 };
-
-                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProps);
-
-                 return Ok(new
-                 {
-                     success = true,
-                     message = "Login successful",
-                     user = new { username = request.Username, fullName = "Demo User" },
-                 });
-             }
-
-             return Unauthorized(new { success = false, message = "Invalid credentials" });*/
         }
 
         [HttpPost("logout")]
         [Authorize]
         public async Task<IActionResult> Logout()
         {
-            try
+            var sessionId = User.FindFirstValue("SessionId");
+            if (!string.IsNullOrEmpty(sessionId))
             {
-                // Get the session ID from the cookie
-                var sessionId = HttpContext.Request.Cookies["SessionId"];
-
-                // Revoke the session if it exists
-                if (!string.IsNullOrEmpty(sessionId))
-                {
-                    await _sessionService.RevokeSessionAsync(sessionId);
-                }
-
-                // Delete the SessionId cookie by setting it to expire
-                var cookieOptions = new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = HttpContext.Request.IsHttps,
-                    SameSite = SameSiteMode.Lax,
-                    Expires = DateTimeOffset.UtcNow.AddDays(-1),
-                };
-
-                HttpContext.Response.Cookies.Append("SessionId", string.Empty, cookieOptions);
-                await HttpContext.SignOutAsync("CookieAuth");
-
-                return Ok(new { success = true, message = "Logout successful" });
+                await _sessionService.RevokeSessionAsync(sessionId, HttpContext.RequestAborted);
             }
-            catch (Exception ex)
+
+            HttpContext.Response.Cookies.Delete("SessionId", new CookieOptions
             {
-                _logger.LogWarning(ex, "Session cleanup failed during logout.");
-                return Ok(new { success = true, message = "Logout successful" });
-            }
+                Path = "/",
+                HttpOnly = true,
+                Secure = HttpContext.Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+            });
+
+            return Ok(new { success = true, message = "Logout successful" });
         }
 
         /// <summary>Returns the masked email and available sign-in methods for an <c>account-not-linked</c> error token.</summary>
@@ -305,57 +247,14 @@ namespace BetPortalWebApi.Controllers
         }
 
         [HttpGet("check")]
-        public async Task<IActionResult> CheckAuth()
+        public IActionResult CheckAuth()
         {
-            var sessionId = HttpContext.Request.Cookies["SessionId"];
-
-            var session = string.IsNullOrEmpty(sessionId) ? null : await _sessionService.GetSessionAsync(sessionId);
-
-            if (session == null)
-            {
-                var cookieAuth = await HttpContext.AuthenticateAsync("CookieAuth");
-                if (!cookieAuth.Succeeded || cookieAuth.Principal == null)
-                {
-                    return Ok(new { isAuthenticated = false });
-                }
-
-                var username = cookieAuth.Principal.Identity?.Name;
-                return Ok(new
-                {
-                    isAuthenticated = true,
-                    username = username,
-                    sessionValid = false,
-                    cookieValid = true,
-                });
-            }
-
-            var sessionClaims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, session.UserId.ToString()),
-                new Claim(ClaimTypes.Name, session.Username),
-                new Claim("FullName", session.FullName),
-            };
-
-            foreach (var permission in session.Permissions ?? [])
-            {
-                sessionClaims.Add(new Claim("Permission", permission));
-            }
-
-            var sessionIdentity = new ClaimsIdentity(sessionClaims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var sessionPrincipal = new ClaimsPrincipal(sessionIdentity);
-            var sessionAuthProps = new AuthenticationProperties
-            {
-                IsPersistent = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7),
-                AllowRefresh = true,
-            };
-            await HttpContext.SignInAsync("CookieAuth", sessionPrincipal, sessionAuthProps);
-
+            var isAuthenticated = User.Identity?.IsAuthenticated == true;
             return Ok(new
             {
-                isAuthenticated = true,
-                username = session.Username,
-                sessionValid = true,
+                isAuthenticated,
+                username = isAuthenticated ? User.Identity?.Name : null,
+                sessionValid = isAuthenticated,
             });
         }
 
@@ -514,78 +413,14 @@ namespace BetPortalWebApi.Controllers
                 HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 HttpContext.Request.Headers.UserAgent.ToString(),
                 cancellationToken);
-            var permissions = await _sessionService.GetUserPermissionsAsync(user.Id, cancellationToken);
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim("FullName", user.FirstName + " " + user.Surname),
-            };
-            claims.AddRange(permissions.Select(permission => new Claim("Permission", permission)));
-
-            await HttpContext.SignInAsync(
-                "CookieAuth",
-                new ClaimsPrincipal(new ClaimsIdentity(claims, "CookieAuth")),
-                new AuthenticationProperties
-                {
-                    IsPersistent = true,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7),
-                    AllowRefresh = true,
-                });
             HttpContext.Response.Cookies.Append("SessionId", sessionId, new CookieOptions
             {
+                Path = "/",
                 HttpOnly = true,
                 Secure = HttpContext.Request.IsHttps,
                 SameSite = SameSiteMode.Lax,
-                Expires = DateTimeOffset.UtcNow.AddDays(7),
+                Expires = DateTimeOffset.UtcNow.Add(SessionService.SessionLifetime),
             });
         }
-
-        /* [HttpGet("check")]
-         public async Task<IActionResult> CheckAuth()
-         {
-             var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-             if (!result.Succeeded || result.Principal is null)
-             {
-                 return Unauthorized(new { authenticated = false });
-             }
-
-             var p = result.Principal;
-             return Ok(new
-             {
-                 isAuthenticated = true,
-                 authenticated = true,
-                 name = p.Identity?.Name,
-                 userId = p.FindFirst(ClaimTypes.NameIdentifier)?.Value,
-             });
-         }*/
-
-        /* [HttpGet("auth-status")]
-         [AllowAnonymous]
-         public async Task<IActionResult> AuthStatus()
-         {
-             // Ask the authentication system to validate the cookie
-             var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-             if (!result.Succeeded || result.Principal is null)
-             {
-                 return Unauthorized(new
-                 {
-                     authenticated = false,
-                 });
-             }
-
-             var principal = result.Principal;
-
-             return Ok(new
-             {
-                 authenticated = true,
-                 authScheme = result.Ticket?.AuthenticationScheme,
-                 name = principal.Identity?.Name,
-                 userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value,
-                 fullName = principal.FindFirst("FullName")?.Value,
-                 claims = principal.Claims.Select(c => new { c.Type, c.Value }),
-             });
-         }*/
     }
 }

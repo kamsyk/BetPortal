@@ -146,7 +146,11 @@ public sealed class MicrosoftAuthIntegrationTests(ApiFixture fixture)
             if (loggedIn)
             {
                 Assert.Equal("http://localhost:4200/advisor", callback.Headers.Location!.AbsoluteUri);
-                foreach (var name in new[] { "AuthCookie", "SessionId" })
+                Assert.Contains(callback.Headers.GetValues("Set-Cookie"),
+                    cookie => cookie.StartsWith("SessionId=", StringComparison.Ordinal));
+                Assert.DoesNotContain(callback.Headers.GetValues("Set-Cookie"),
+                    cookie => cookie.StartsWith("AuthCookie=", StringComparison.Ordinal));
+                foreach (var name in new[] { "SessionId" })
                 {
                     var cookie = cookies.GetCookies(client.BaseAddress!)[name];
                     Assert.NotNull(cookie);

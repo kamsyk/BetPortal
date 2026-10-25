@@ -118,10 +118,12 @@ Write-endpoints (`POST add`, `PUT {id}`, `DELETE {id}`) require `[Authorize(Poli
 
 ### Authentication
 
-Dual-scheme setup in `Program.cs` (see solution-level `CLAUDE.md` for the full picture):
+Authentication setup in `Program.cs` (see solution-level `CLAUDE.md` for the full picture):
 
-- **Sessions are in-memory only** (`IMemoryCache`). Sessions are lost on process restart; the `AuthCookie` durable cookie will then re-authenticate via `CookieAuth`.
-- `SessionService` derives permissions from the user's active `Admin` role (`BpUsers_BpRoles`): admins get `["AdminAccess"]`, everyone else gets none. `CookieAuth` re-checks the user and permissions on every request.
+- Sessions are persisted in `BpUserSessions`; only a SHA-256 hash of the 32-byte random `SessionId` token is stored. The cookie is HttpOnly, SameSite=Lax, Secure on HTTPS, scoped to `/`, and expires after 24 hours.
+- `SessionAuthenticationHandler` checks the session expiration and current user active status on every request. `SessionService` derives current permissions from the active `Admin` role (`BpUsers_BpRoles`): admins get `["AdminAccess"]`, everyone else gets none.
+- Logout revokes the database session. Expired rows are removed hourly by `SessionCleanupBackgroundService`. `AuthCookie` is no longer an authentication scheme; requests carrying a legacy `AuthCookie` have it cleared.
+- Apply SQL Server migration `20261025112822_AddPersistentSessions` before deploying this version. The API currently uses SQL Server; the MySQL migration project has no migration baseline and must provision the equivalent `BpUserSessions` table through its deployment process before being used with this model.
 - `UserService` is registered as **singleton** because it is stateless. All other services are **scoped**.
 
 ### External dependency

@@ -1,4 +1,5 @@
 using BpDbLayer.Models;
+using BpDbLayer.ModelConfigurations;
 using Microsoft.EntityFrameworkCore;
 
 namespace DbMigration.MsSql
@@ -28,6 +29,8 @@ namespace DbMigration.MsSql
 
         public DbSet<BpUserLoginProvider> BpUserLoginProviders { get; set; }
 
+        public DbSet<BpUserSession> BpUserSessions { get; set; }
+
         public DbSet<LoginProvider> LoginProviders { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -35,6 +38,7 @@ namespace DbMigration.MsSql
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(BpDbContext).Assembly);
+            modelBuilder.ApplyConfiguration(new BpUserSessionConfiguration());
         }
     }
 }

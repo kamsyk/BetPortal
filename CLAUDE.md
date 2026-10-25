@@ -48,15 +48,12 @@ dotnet ef migrations add <Name> --context BpDbContext
 dotnet ef database update --context BpDbContext
 ```
 
+Apply migration `20261025112822_AddPersistentSessions` before deploying the database-backed `SessionId` authentication change. The MySQL project does not have a migration baseline; a MySQL deployment must provision the equivalent `BpUserSessions` table through its deployment migration process.
+
 ## Architecture
 
 ### Authentication
-Dual-scheme auth in `Program.cs`:
-- **`CookieAuth`** — durable `AuthCookie` cookie, 7-day sliding expiration. Primary scheme for persistent sessions.
-- **`SessionAuth`** — legacy `SessionId` cookie validated by `SessionAuthenticationHandler` → `ISessionService`.
-- **`DynamicAuth`** policy scheme (default) — selects `CookieAuth` when `AuthCookie` cookie is present, otherwise falls back to `SessionAuth`.
-
-Login writes both cookies (`SessionId` + `AuthCookie`). The `GET /api/auth/check` endpoint validates whichever session exists and re-issues `CookieAuth` if session is valid.
+Authentication uses only the `SessionId` cookie. `SessionAuthenticationHandler` validates its random token against a database-backed session record; only the SHA-256 token hash is stored. Sessions expire after 24 hours, are revoked on logout, and are checked against the user's current active status and permissions on each request. Invalid sessions are rejected, and legacy `AuthCookie` values are never accepted and are cleared when received.
 
 `AdminAccess` policy requires claim `Permission = "AdminAccess"`, granted only to users with the active `Admin` role. Google sign-in (`/api/auth/google`) requires an active user with a matching `BpUserLoginProvider` for the `Google` provider and verified email (case-insensitive, up to 150 characters). A matching local email alone is not sufficient and never automatically links an account. Unknown emails return to `/login` with an account-required message; no user or session is created.
 

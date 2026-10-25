@@ -23,6 +23,17 @@ namespace BetPortalWebApi.Middleware
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
+            if (Context.Request.Cookies.ContainsKey("AuthCookie"))
+            {
+                Context.Response.Cookies.Delete("AuthCookie", new CookieOptions
+                {
+                    Path = "/",
+                    HttpOnly = true,
+                    Secure = Context.Request.IsHttps,
+                    SameSite = SameSiteMode.Lax,
+                });
+            }
+
             // Get session ID from cookie
             var sessionId = Context.Request.Cookies["SessionId"];
 
@@ -32,12 +43,18 @@ namespace BetPortalWebApi.Middleware
             }
 
             // Validate session
-            var session = await _sessionService.GetSessionAsync(sessionId);
+            var session = await _sessionService.GetSessionAsync(sessionId, Context.RequestAborted);
 
             if (session == null)
             {
                 // Invalid or expired session, clear cookie
-                Context.Response.Cookies.Delete("SessionId");
+                Context.Response.Cookies.Delete("SessionId", new CookieOptions
+                {
+                    Path = "/",
+                    HttpOnly = true,
+                    Secure = Context.Request.IsHttps,
+                    SameSite = SameSiteMode.Lax,
+                });
                 return AuthenticateResult.Fail("Invalid session");
             }
 
@@ -59,7 +76,7 @@ namespace BetPortalWebApi.Middleware
             var identity = new ClaimsIdentity(claims, Scheme.Name);
             var principal = new ClaimsPrincipal(identity);
 
-            Logger.LogDebug("User {Username} authenticated via session {SessionId}", session?.Username, session?.SessionId);
+            Logger.LogDebug("User {Username} authenticated via database session", session.Username);
 
             return AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name));
         }

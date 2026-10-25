@@ -141,10 +141,12 @@ public sealed class FacebookAuthIntegrationTests(ApiFixture fixture)
             if (loggedIn)
             {
                 Assert.Equal("http://localhost:4200/advisor", callback.Headers.Location!.AbsoluteUri);
-                foreach (var cookieName in new[] { "AuthCookie", "SessionId" })
+                Assert.Contains(callback.Headers.GetValues("Set-Cookie"),
+                    cookie => cookie.StartsWith("SessionId=", StringComparison.Ordinal));
+                Assert.DoesNotContain(callback.Headers.GetValues("Set-Cookie"),
+                    cookie => cookie.StartsWith("AuthCookie=", StringComparison.Ordinal));
+                foreach (var cookieName in new[] { "SessionId" })
                 {
-                    Assert.Contains(callback.Headers.GetValues("Set-Cookie"),
-                        cookie => cookie.StartsWith(cookieName + "=", StringComparison.Ordinal));
                     client.DefaultRequestHeaders.Remove("Cookie");
                     var cookie = cookies.GetCookies(client.BaseAddress!)[cookieName];
                     Assert.NotNull(cookie);

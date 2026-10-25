@@ -2,18 +2,19 @@ import { expect, test } from '@playwright/test';
 
 test('restores the menu after a full-page home redirect and on reload', async ({ page, context }, testInfo) => {
   await context.addCookies([{
-    name: 'AuthCookie',
+    name: 'SessionId',
     value: 'synthetic-session',
     domain: 'localhost',
     path: '/',
     httpOnly: true,
-    sameSite: 'Lax',
+    secure: true,
+    sameSite: 'None',
   }]);
   let checks = 0;
   await page.route('http://localhost:5026/api/**', async (route) => {
     const { pathname } = new URL(route.request().url());
     const headers = await route.request().allHeaders();
-    expect(headers['cookie']).toContain('AuthCookie=synthetic-session');
+    expect(headers['cookie']).toContain('SessionId=synthetic-session');
     if (pathname === '/api/auth/check') {
       checks++;
       await route.fulfill({

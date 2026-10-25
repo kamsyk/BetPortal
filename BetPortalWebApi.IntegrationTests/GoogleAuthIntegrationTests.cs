@@ -186,12 +186,12 @@ public sealed class GoogleAuthIntegrationTests
                 {
                     Assert.Equal(destination, callback.Headers.Location.AbsoluteUri);
                     var headers = callback.Headers.GetValues("Set-Cookie").ToList();
-                    Assert.Contains(headers, header => header.StartsWith("AuthCookie=", StringComparison.Ordinal));
                     Assert.Contains(headers, header => header.StartsWith("SessionId=", StringComparison.Ordinal));
+                    Assert.DoesNotContain(headers, header => header.StartsWith("AuthCookie=", StringComparison.Ordinal));
                     ApplyCookies(client, cookies, callback, "/api/auth/check");
                     Assert.Empty(cookies.GetCookies(client.BaseAddress!)["GoogleExternal"]?.Value ?? string.Empty);
 
-                    foreach (var cookieName in new[] { "AuthCookie", "SessionId" })
+                    foreach (var cookieName in new[] { "SessionId" })
                     {
                         client.DefaultRequestHeaders.Remove("Cookie");
                         var cookie = cookies.GetCookies(client.BaseAddress!)[cookieName];
@@ -587,7 +587,7 @@ public sealed class GoogleAuthIntegrationTests
             Assert.Equal(HttpStatusCode.OK, login.StatusCode);
             var cookies = login.Headers.GetValues("Set-Cookie").Select(cookie => cookie.Split(';', 2)[0]).ToList();
 
-            foreach (var cookieName in new[] { "SessionId", "AuthCookie" })
+            foreach (var cookieName in new[] { "SessionId" })
             {
                 scope.Client.DefaultRequestHeaders.Remove("Cookie");
                 scope.Client.DefaultRequestHeaders.Add("Cookie", cookies.Single(cookie => cookie.StartsWith(cookieName + "=", StringComparison.Ordinal)));

@@ -62,6 +62,8 @@ builder.Services.AddSingleton<IUserService, UserService>();
 
 builder.Services.AddScoped<ISessionService, SessionService>();
 
+builder.Services.AddHostedService<SessionCleanupBackgroundService>();
+
 builder.Services.AddScoped<IGoogleAccountService, GoogleAccountService>();
 
 builder.Services.AddScoped<IFacebookAccountService, FacebookAccountService>();
@@ -92,95 +94,15 @@ builder.Services.AddHttpClient("ClaudeChatService", (serviceProvider, client) =>
             : 120);
 });
 
-builder.Services.AddMemoryCache();
-
-// Configure Session-based Authentication
 const string SessionAuthScheme = "SessionAuth";
-
-const string CookieAuthScheme = "CookieAuth";
-
-const string DynamicAuthScheme = "DynamicAuth";
 
 var authentication = builder.Services.AddAuthentication(options =>
     {
-        options.DefaultAuthenticateScheme = DynamicAuthScheme;
-        options.DefaultChallengeScheme = DynamicAuthScheme;
-    })
-    .AddPolicyScheme(DynamicAuthScheme, DynamicAuthScheme, options =>
-    {
-        options.ForwardDefaultSelector = context =>
-        {
-            // Prefer durable auth cookie when present; fallback to legacy SessionId flow.
-            if (context.Request.Cookies.ContainsKey("AuthCookie"))
-            {
-                return CookieAuthScheme;
-            }
-
-            return SessionAuthScheme;
-        };
+        options.DefaultAuthenticateScheme = SessionAuthScheme;
+        options.DefaultChallengeScheme = SessionAuthScheme;
+        options.DefaultScheme = SessionAuthScheme;
     })
     .AddScheme<AuthenticationSchemeOptions, SessionAuthenticationHandler>(SessionAuthScheme, null)
-    .AddCookie(CookieAuthScheme, options =>
-    {
-        options.Cookie.Name = "AuthCookie";
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.ExpireTimeSpan = TimeSpan.FromDays(7);
-        options.SlidingExpiration = true;
-
-        options.Events.OnValidatePrincipal = async context =>
-        {
-            var dbContext = context.HttpContext.RequestServices.GetRequiredService<BpDbContext>();
-            if (!int.TryParse(context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier), out var userId)
-                || !await dbContext.BpUsers.AnyAsync(user => user.Id == userId && user.IsActive, context.HttpContext.RequestAborted))
-            {
-                context.RejectPrincipal();
-                await context.HttpContext.SignOutAsync(CookieAuthScheme);
-                return;
-            }
-
-            var sessionService = context.HttpContext.RequestServices.GetRequiredService<ISessionService>();
-            var permissions = await sessionService.GetUserPermissionsAsync(userId, context.HttpContext.RequestAborted);
-            var identity = (ClaimsIdentity)context.Principal!.Identity!;
-            var oldPermissions = identity.FindAll("Permission").ToList();
-            if (!oldPermissions.Select(claim => claim.Value).Order().SequenceEqual(permissions.Order()))
-            {
-                foreach (var claim in oldPermissions)
-                {
-                    identity.RemoveClaim(claim);
-                }
-
-                identity.AddClaims(permissions.Select(permission => new Claim("Permission", permission)));
-                context.ShouldRenew = true;
-            }
-        };
-
-        // Handle API requests with status codes instead of redirects
-        options.Events.OnRedirectToLogin = context =>
-        {
-            if (context.Request.Path.StartsWithSegments("/api"))
-            {
-                context.Response.StatusCode = 401;
-                return Task.CompletedTask;
-            }
-
-            context.Response.Redirect(context.RedirectUri);
-            return Task.CompletedTask;
-        };
-
-        options.Events.OnRedirectToAccessDenied = context =>
-        {
-            if (context.Request.Path.StartsWithSegments("/api"))
-            {
-                context.Response.StatusCode = 403;
-                return Task.CompletedTask;
-            }
-
-            context.Response.Redirect(context.RedirectUri);
-            return Task.CompletedTask;
-        };
-    })
     .AddCookie("GoogleExternal", options =>
     {
         options.Cookie.Name = "GoogleExternal";

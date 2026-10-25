@@ -312,6 +312,51 @@ namespace DbMigration.MsSql.Migrations
                     b.ToTable("BpUserLoginProviders");
                 });
 
+            modelBuilder.Entity("BpDbLayer.Models.BpUserSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("UserAgent")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("BpUserSessions");
+                });
+
             modelBuilder.Entity("BpDbLayer.Models.BpUserToken", b =>
                 {
                     b.Property<int>("UserId")
@@ -595,6 +640,17 @@ namespace DbMigration.MsSql.Migrations
                         .IsRequired();
 
                     b.Navigation("LoginProvider");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BpDbLayer.Models.BpUserSession", b =>
+                {
+                    b.HasOne("BpDbLayer.Models.BpUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });

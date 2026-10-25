@@ -6,13 +6,13 @@ namespace BetPortalWebApi.Services.Interfaces
     {
         Task<string> CreateSessionAsync(int userId, string ipAddress, string userAgent, CancellationToken cancellationToken = default);
 
-        Task<UserSession?> GetSessionAsync(string sessionId);
+        Task<UserSession?> GetSessionAsync(string sessionId, CancellationToken cancellationToken = default);
 
-        Task<bool> ValidateSessionAsync(string sessionId);
+        Task<bool> ValidateSessionAsync(string sessionId, CancellationToken cancellationToken = default);
 
-        Task RevokeSessionAsync(string sessionId);
+        Task RevokeSessionAsync(string sessionId, CancellationToken cancellationToken = default);
 
-        Task CleanupExpiredSessionsAsync();
+        Task CleanupExpiredSessionsAsync(CancellationToken cancellationToken = default);
 
         Task<List<string>> GetUserPermissionsAsync(int userId, CancellationToken cancellationToken = default);
     }
