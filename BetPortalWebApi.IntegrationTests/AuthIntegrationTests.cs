@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
+using BpDbLayer.ModelConfigurations;
 using BpDbLayer.Models;
 using BpDbLayer.Utils;
 using Microsoft.EntityFrameworkCore;
@@ -125,6 +126,58 @@ public sealed class AuthIntegrationTests
                 .Where(user => user.UserName == userName)
                 .ToListAsync(cancellationToken));
             await cleanupContext.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task Admin_access_is_revoked_when_role_is_removed_during_active_session()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var scope = _fixture.CreateTestScope();
+        await scope.LoginAsAdminAsync(cancellationToken);
+
+        try
+        {
+            using var initialWrite = await scope.Client.PostAsJsonAsync(
+                "/api/sport/add",
+                new { Name = $"{scope.NamePrefix}before-role-removal", Active = true },
+                cancellationToken);
+            Assert.Equal(HttpStatusCode.OK, initialWrite.StatusCode);
+
+            await using (var updateContext = _fixture.CreateDbContext())
+            {
+                var adminRole = await updateContext.BpUsers_BpRoles.SingleAsync(
+                    userRole => userRole.UserId == BpUserConfiguration.AdminUserId
+                        && userRole.RoleId == BpRoleConfiguration.AdminRoleId,
+                    cancellationToken);
+                updateContext.BpUsers_BpRoles.Remove(adminRole);
+                await updateContext.SaveChangesAsync(cancellationToken);
+            }
+
+            using var forbiddenWrite = await scope.Client.PostAsJsonAsync(
+                "/api/sport/add",
+                new { Name = $"{scope.NamePrefix}after-role-removal", Active = true },
+                cancellationToken);
+            using var allowedRead = await scope.Client.GetAsync("/api/sport/list", cancellationToken);
+
+            Assert.Equal(HttpStatusCode.Forbidden, forbiddenWrite.StatusCode);
+            Assert.Equal(HttpStatusCode.OK, allowedRead.StatusCode);
+        }
+        finally
+        {
+            await using var cleanupContext = _fixture.CreateDbContext();
+            if (!await cleanupContext.BpUsers_BpRoles.AnyAsync(
+                userRole => userRole.UserId == BpUserConfiguration.AdminUserId
+                    && userRole.RoleId == BpRoleConfiguration.AdminRoleId,
+                cancellationToken))
+            {
+                cleanupContext.BpUsers_BpRoles.Add(new BpUserBpRole
+                {
+                    UserId = BpUserConfiguration.AdminUserId,
+                    RoleId = BpRoleConfiguration.AdminRoleId,
+                });
+                await cleanupContext.SaveChangesAsync(cancellationToken);
+            }
         }
     }
 
