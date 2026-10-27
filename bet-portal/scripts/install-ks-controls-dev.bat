@@ -30,10 +30,22 @@ if errorlevel 1 (
 )
 
 echo Installing ks-ag-controls for Development ...
+set "LIBRARY_VERSION="
+for /f "delims=" %%V in ('node -p "require('./package.json').version"') do set "LIBRARY_VERSION=%%V"
+if not defined LIBRARY_VERSION (
+  echo Could not read the built library version!
+  exit /b 1
+)
+set "LIBRARY_ARCHIVE=%LIBRARY_DIR%\dist\ks-ag-controls\ks-ag-controls-%LIBRARY_VERSION%.tgz"
+if not exist "%LIBRARY_ARCHIVE%" (
+  echo Library archive not found: "%LIBRARY_ARCHIVE%"
+  exit /b 1
+)
+
 cd /d "%PORTAL_DIR%"
 if errorlevel 1 exit /b %errorlevel%
 
-call npm install "%LIBRARY_DIR%\dist\ks-ag-controls\ks-ag-controls-0.0.9.tgz"
+call npm install "%LIBRARY_ARCHIVE%"
 if errorlevel 1 (
   echo Version update failed!
   exit /b %errorlevel%

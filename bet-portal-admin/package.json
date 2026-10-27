@@ -49,6 +49,9 @@
     "vitest": "^4.1.11"
   },
   "overrides": {
-    "piscina": "^5.3.2"
+    "piscina": "^5.3.2",
+    "@angular/build": {
+      "undici": "7.30.1"
+    }
   }
 }

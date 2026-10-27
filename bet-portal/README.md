@@ -17,7 +17,9 @@ To build, package, and install the library from the sibling
 
 The library checkout must have its dependencies installed first. The script
 builds the library styles and Angular package, stops on errors, and installs
-without first removing the existing dependency. Once the tarball exists,
+the tarball matching the built package's version without first removing the
+existing dependency. The admin portal's development installer follows the same
+workflow. Once the tarball exists,
 `npm ci` can also restore the portal dependencies.
 
 Do not use `--force` or `--legacy-peer-deps` to install this library on Angular 20:
