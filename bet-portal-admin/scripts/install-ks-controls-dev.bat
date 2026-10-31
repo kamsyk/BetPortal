@@ -2,7 +2,7 @@
 setlocal enableextensions
 
 set "PORTAL_DIR=%~dp0.."
-set "LIBRARY_DIR=%~dp0..\..\..\..\Angular\ks-ag-controls\ks-ag-controls-workspace"
+set "LIBRARY_DIR=%~dp0..\..\..\ks-ag-controls\ks-ag-controls-workspace"
 
 echo Building library...
 cd /d "%LIBRARY_DIR%"

@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git fetch *)",
+      "Bash(git ls-remote *)",
+      "Bash(git rebase *)",
+      "Bash(dotnet build *)",
+      "Skill(code-review)",
+      "Bash(git diff *)",
+      "Read(//tmp/**)",
+      "Bash(mkdir -p \"/c/Users/burtk/AppData/Local/Temp/claude/D--Develop-CSharpProjects-BetPortal/a309ba5e-b57a-4e5b-947a-f2b9375847bc/scratchpad\")",
+      "Read(//c/Users/burtk/AppData/Local/Temp/claude/D--Develop-CSharpProjects-BetPortal/a309ba5e-b57a-4e5b-947a-f2b9375847bc/scratchpad/**)",
+      "Bash(grep -n \"Claude\" BetPortalWebApi/appsettings.Development.json)",
+      "Bash(grep -rn \"sk-ant-api03\" --include=\"*.json\" .)",
+      "Bash(echo \"tracked-check-exit:$?\")",
+      "Bash(git check-ignore *)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('app/main.py'\\).read\\(\\)\\); ast.parse\\(open\\('app/config.py'\\).read\\(\\)\\); print\\('syntax OK'\\)\")",
+      "Bash(git reset *)",
+      "Bash(git stash *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}
